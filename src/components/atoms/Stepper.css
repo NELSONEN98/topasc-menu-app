@@ -1,0 +1,44 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #FFF3D6;
+  border-radius: 1.125rem;
+  padding: 0.1875rem;
+  flex: 0 0 auto;
+}
+
+.stepper__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #4B4B4B;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.stepper__btn:hover:not(:disabled) {
+  background: #333;
+  transform: scale(1.1);
+}
+
+.stepper__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stepper__value {
+  font-weight: 700;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  min-width: 0.625rem;
+  text-align: center;
+}

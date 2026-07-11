@@ -1,0 +1,77 @@
+/* ============================================================
+   HERO 2A — Header con imagen y título (Broaster Topasc)
+   Basado en header-2a.html — exactos estilos en REM
+   ============================================================ */
+
+.hero-2a {
+  position: relative;
+  width: 100%;
+  height: 10.625rem;
+  overflow: hidden;
+  background: #cfcfcf;
+}
+
+.hero-2a-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-2a-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+}
+
+.hero-2a-title-block {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.625rem 1.125rem;
+  pointer-events: none;
+}
+
+.hero-2a-title-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.hero-2a-title {
+  margin: 0;
+  font: 400 2.875rem / 0.95 'Luckiest Guy', cursive;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
+}
+
+.hero-2a-crest {
+  position: absolute;
+  top: -0.8125rem;
+  right: -0.0625rem;
+  transform: rotate(20deg);
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet y Desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  .hero-2a {
+    height: 13rem;
+  }
+
+  .hero-2a-title {
+    font-size: 3.25rem;
+  }
+
+  .hero-2a-title-block {
+    padding: 1rem 2rem;
+  }
+
+  .hero-2a-crest {
+    width: 42px;
+    height: 25px;
+  }
+}

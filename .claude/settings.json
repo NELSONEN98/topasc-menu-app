@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Read(//mnt/c/Users/nelso/Desktop/**)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(pkill -f \"npm run dev\")"
+    ]
+  }
+}

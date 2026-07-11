@@ -1,0 +1,52 @@
+/* ============================================================
+   BACK BUTTON — Botón de navegación atrás
+   ============================================================ */
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: #E11E2B;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.back-btn:hover {
+  transform: translateX(-0.25rem);
+  opacity: 0.8;
+}
+
+.back-btn:active {
+  transform: translateX(0);
+}
+
+.back-btn__icon {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.back-btn__text {
+  font-size: 0.875rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width: 768px) {
+  .back-btn {
+    font-size: 0.9375rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .back-btn__text {
+    font-size: 0.9375rem;
+  }
+}

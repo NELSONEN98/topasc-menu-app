@@ -1,0 +1,96 @@
+/* ============================================================
+   CART BAR — Botón flotante inferior "Ver carrito"
+   Basado en cart-bar.html — dos variantes: rojo (1a) / oscuro (1b)
+   ============================================================ */
+
+.cart-bar {
+  position: sticky;
+  bottom: 1.125rem;
+  left: 1.125rem;
+  right: 1.125rem;
+  width: calc(100% - 2.25rem);
+  margin: 1.125rem 1.125rem 1.125rem 1.125rem;
+  background: #E11E2B;
+  border-radius: 1rem;
+  padding: 0.875rem 1.125rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0.5rem 1.25rem rgba(225, 30, 43, 0.4);
+  cursor: pointer;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  z-index: 100;
+  align-self: center;
+  max-width: 22.125rem;
+}
+
+.cart-bar:hover {
+  box-shadow: 0 0.75rem 1.5rem rgba(225, 30, 43, 0.5);
+}
+
+.cart-bar:active {
+  box-shadow: 0 0.5rem 1.25rem rgba(225, 30, 43, 0.4);
+}
+
+.cart-bar__count {
+  font: 700 0.8125rem 'Poppins', sans-serif;
+  color: #fff;
+}
+
+.cart-bar__total {
+  font: 700 0.875rem 'Poppins', sans-serif;
+  color: #fff;
+}
+
+/* ============================================================
+   VARIANTE: Rojo (1a) — Default
+   ============================================================ */
+.cart-bar--red {
+  background: #E11E2B;
+  box-shadow: 0 0.5rem 1.25rem rgba(225, 30, 43, 0.4);
+}
+
+.cart-bar--red:hover {
+  box-shadow: 0 0.75rem 1.5rem rgba(225, 30, 43, 0.5);
+}
+
+/* ============================================================
+   VARIANTE: Oscuro/Amarillo (1b)
+   ============================================================ */
+.cart-bar--dark {
+  background: #241C15;
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.3);
+}
+
+.cart-bar--dark:hover {
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+.cart-bar--dark .cart-bar__count {
+  color: #FFC629;
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet y Desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  .cart-bar {
+    left: 2rem;
+    right: 2rem;
+    width: calc(100% - 4rem);
+    max-width: 26rem;
+    margin: 1.5rem 2rem 1.5rem 2rem;
+    bottom: 1.5rem;
+  }
+
+  .cart-bar__count {
+    font-size: 0.875rem;
+  }
+
+  .cart-bar__total {
+    font-size: 0.9375rem;
+  }
+}

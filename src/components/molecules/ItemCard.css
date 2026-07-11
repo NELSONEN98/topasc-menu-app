@@ -1,0 +1,184 @@
+/* ============================================================
+   ITEM CARD — Tarjeta de producto horizontal
+   Basado en item-card.html — dos estados: sin agregar / agregado
+   ============================================================ */
+
+.item-row {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 0.625rem;
+  box-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.06);
+  align-items: center;
+}
+
+.item-row-image {
+  width: 4.875rem;
+  height: 4.875rem;
+  flex: 0 0 auto;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  background: #cfcfcf;
+}
+
+.item-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1875rem;
+}
+
+.item-row-name {
+  font: 700 0.875rem 'Poppins', sans-serif;
+  color: #241C15;
+  margin: 0;
+}
+
+.item-row-desc {
+  font: 400 0.71875rem 'Inter', sans-serif;
+  color: #8A7E70;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.item-row-price {
+  font: 700 0.875rem 'Poppins', sans-serif;
+  color: #E11E2B;
+  margin: 0.125rem 0 0 0;
+}
+
+.item-row-action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   ESTADO 1: Sin agregar — Botón + circular
+   ============================================================ */
+.item-add-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #4B4B4B;
+  color: #fff;
+  font: 700 1.125rem sans-serif;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.item-add-btn:hover {
+  background: #333;
+  transform: scale(1.1);
+}
+
+.item-add-btn:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   ESTADO 2: Agregado — Stepper − N +
+   ============================================================ */
+.item-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FFF3D6;
+  border-radius: 1.25rem;
+  padding: 0.25rem;
+}
+
+.item-stepper__btn {
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font: 700 1rem sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.item-stepper__btn--dec {
+  background: #FFC629;
+  color: #241C15;
+}
+
+.item-stepper__btn--dec:hover {
+  background: #FFB70D;
+  transform: scale(1.1);
+}
+
+.item-stepper__btn--dec:active {
+  transform: scale(0.95);
+}
+
+.item-stepper__btn--inc {
+  background: #4B4B4B;
+  color: #fff;
+}
+
+.item-stepper__btn--inc:hover {
+  background: #333;
+  transform: scale(1.1);
+}
+
+.item-stepper__btn--inc:active {
+  transform: scale(0.95);
+}
+
+.item-stepper__qty {
+  font: 700 0.8125rem 'Poppins', sans-serif;
+  min-width: 0.75rem;
+  text-align: center;
+  color: #241C15;
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet y Desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  .item-row {
+    border-radius: 1.125rem;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .item-row-image {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+
+  .item-row-name {
+    font-size: 0.9375rem;
+  }
+
+  .item-row-desc {
+    font-size: 0.75rem;
+  }
+
+  .item-row-price {
+    font-size: 0.9375rem;
+  }
+
+  .item-add-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}

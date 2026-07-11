@@ -1,0 +1,105 @@
+/* ============================================================
+   BROASTER TOPASC — Global Styles (REM-based)
+   ============================================================ */
+
+:root {
+  font-size: 16px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #FBF6EE;
+  color: #241C15;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #FBF6EE 0%, #fff 100%);
+}
+
+/* ============================================================
+   PHONE SHELL — Mobile-first container
+   ============================================================ */
+.phone-shell {
+  width: 24.375rem;
+  height: 52.75rem;
+  border-radius: 2.75rem;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 1.875rem 3.75rem rgba(0, 0, 0, 0.25);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   STATUS BAR — Ver StatusBar.css para estilos completos
+   ============================================================ */
+/* Estilos movidos a StatusBar.css */
+
+/* ============================================================
+   SCROLL AREA
+   ============================================================ */
+.scroll-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.scroll-area::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet y Desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  .phone-shell {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

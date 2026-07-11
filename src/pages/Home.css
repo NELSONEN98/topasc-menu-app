@@ -1,0 +1,201 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #FBF6EE;
+  position: relative;
+}
+
+/* ============================================================
+   BACK BUTTON CONTAINER
+   ============================================================ */
+.home__back {
+  padding: 0.75rem 1.125rem;
+  background: #fff;
+  border-bottom: 0.0625rem solid #F0E6D6;
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   CATEGORIES NAVIGATION
+   ============================================================ */
+.home__categories {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.125rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 0 0 auto;
+  background: #fff;
+  border-bottom: 0.0625rem solid #F0E6D6;
+  scrollbar-width: none;
+}
+
+.home__categories::-webkit-scrollbar {
+  display: none;
+}
+
+.home__category-btn {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  background: #FFF3D6;
+  color: #241C15;
+  border: none;
+  border-radius: 1.5rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.home__category-btn:hover {
+  background: #FFE9A8;
+  transform: translateY(-0.125rem);
+}
+
+.home__category-btn.active {
+  background: #E11E2B;
+  color: #fff;
+}
+
+/* ============================================================
+   PRODUCTS WRAPPER — Contenedor relativo para CartBar absolute
+   ============================================================ */
+.home__products-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: visible;
+  min-height: 0;
+}
+
+/* ============================================================
+   PRODUCTS LIST
+   ============================================================ */
+.home__products {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.home__products::-webkit-scrollbar {
+  width: 0.375rem;
+}
+
+.home__products::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.home__products::-webkit-scrollbar-thumb {
+  background: rgba(225, 30, 43, 0.3);
+  border-radius: 0.1875rem;
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.home__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem 0;
+  flex: 0 0 auto;
+}
+
+.home__pagination-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #FFF3D6;
+  color: #241C15;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home__pagination-btn:hover:not(:disabled) {
+  background: #FFE9A8;
+  transform: scale(1.1);
+}
+
+.home__pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.home__pagination-dot {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: #FFF3D6;
+  color: #241C15;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home__pagination-dot:hover {
+  background: #FFE9A8;
+  transform: scale(1.1);
+}
+
+.home__pagination-dot.active {
+  background: #E11E2B;
+  color: #fff;
+}
+
+.home__products-spacer {
+  height: 5rem;
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet
+   ============================================================ */
+@media (min-width: 768px) {
+  .home {
+    padding: 0;
+  }
+
+  .home__back {
+    padding: 1rem 2rem;
+  }
+
+  .home__categories {
+    padding: 1.5rem 2rem;
+    gap: 1rem;
+  }
+
+  .home__category-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .home__products {
+    padding: 1.5rem 2rem;
+    gap: 1rem;
+  }
+
+  .home__pagination {
+    padding: 1.5rem 2rem 0;
+  }
+}

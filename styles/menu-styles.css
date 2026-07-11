@@ -1,0 +1,277 @@
+/* ============================================================
+   Broaster Topasc — CSS exportado
+   Incluye: Loader, Carrito, y header "Riff sobre 1a" (2a)
+   ============================================================ */
+
+/* ---------- Fuentes ---------- */
+/* Cargar en <head>:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+*/
+
+/* ---------- Base ---------- */
+.phone-shell {
+  width: 390px;
+  height: 844px;
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.25), 0 0 0 10px #111;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar {
+  height: 30px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  font: 600 13px 'Inter', sans-serif;
+  background: #E11E2B;
+  color: #fff;
+}
+
+.scroll-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.scroll-area::-webkit-scrollbar { display: none; }
+
+.item-row { display: flex; gap: 12px; }
+
+.stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   1) LOADER
+   ============================================================ */
+.loader-screen {
+  flex: 1;
+  background: #E11E2B;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+.loader-title-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.loader-title {
+  margin: 0;
+  font: 400 46px/0.95 'Luckiest Guy', cursive;
+  letter-spacing: .5px;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,.45);
+  text-align: center;
+}
+
+.loader-crest {
+  position: absolute;
+  top: -13px;
+  right: -1px;
+  transform: rotate(20deg);
+}
+
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  animation: spin 0.9s linear infinite;
+  margin-top: 6px;
+}
+
+.loader-caption {
+  font: 600 13px 'Inter', sans-serif;
+  color: #FFE9A8;
+}
+
+/* ============================================================
+   2) CARRITO
+   ============================================================ */
+.cart-header {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #F0E6D6;
+}
+
+.cart-header-back {
+  font: 700 20px sans-serif;
+  color: #241C15;
+}
+
+.cart-header-title {
+  font: 700 17px 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.cart-body {
+  padding: 14px 18px 20px;
+  background: #FBF6EE;
+}
+
+.cart-item {
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.cart-item-image {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+}
+
+.cart-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.cart-item-name {
+  font: 700 13.5px 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.cart-item-price {
+  font: 700 12.5px 'Poppins', sans-serif;
+  color: #E11E2B;
+}
+
+.cart-item-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFF3D6;
+  border-radius: 18px;
+  padding: 3px;
+  flex: 0 0 auto;
+}
+
+.cart-item-stepper button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #4B4B4B;
+  color: #fff;
+  font: 700 15px sans-serif;
+}
+
+.cart-item-qty {
+  font: 700 12px 'Poppins', sans-serif;
+  min-width: 10px;
+  text-align: center;
+}
+
+.cart-summary {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  font: 500 13px 'Inter', sans-serif;
+  color: #241C15;
+}
+
+.cart-summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0 0;
+  font: 700 15px 'Poppins', sans-serif;
+  color: #E11E2B;
+}
+
+.cart-footer {
+  padding: 12px 18px 22px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.05);
+}
+
+.cart-whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #25D366;
+  color: #fff;
+  text-decoration: none;
+  padding: 14px;
+  border-radius: 16px;
+  font: 700 14.5px 'Poppins', sans-serif;
+}
+
+/* ============================================================
+   3) RIFF SOBRE 1a — Header con nombre en Luckiest Guy (2a)
+   ============================================================ */
+.hero-2a {
+  position: relative;
+  height: 170px;
+}
+
+.hero-2a-image {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-2a-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%);
+  pointer-events: none;
+}
+
+.hero-2a-title-block {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 18px;
+  pointer-events: none;
+}
+
+.hero-2a-title-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.hero-2a-title {
+  margin: 0;
+  font: 400 46px/0.95 'Luckiest Guy', cursive;
+  letter-spacing: .5px;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,.45);
+}
+
+.hero-2a-crest {
+  position: absolute;
+  top: -13px;
+  right: -1px;
+  transform: rotate(20deg);
+}

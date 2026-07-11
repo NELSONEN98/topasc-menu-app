@@ -1,0 +1,23 @@
+/* ============================================================
+   STATUS BAR — Horario y señal
+   ============================================================ */
+
+.status-bar {
+  height: 1.875rem;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  text-align: center;
+  font: 600 0.8125rem 'Inter', sans-serif;
+  background: #E11E2B;
+  color: #fff;
+}
+
+.status-bar__schedule {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: #fff;
+}

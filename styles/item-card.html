@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Broaster Topasc — Tarjeta de producto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F2ECE3; font-family: 'Inter', system-ui, sans-serif; padding: 24px; }
+
+  .item-row {
+    display: flex;
+    gap: 12px;
+    width: 390px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  .item-row-image {
+    width: 78px;
+    height: 78px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #cfcfcf; /* placeholder, reemplazar por foto real */
+  }
+
+  .item-row-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .item-row-name {
+    font: 700 14px 'Poppins', sans-serif;
+    color: #241C15;
+  }
+
+  .item-row-desc {
+    font: 400 11.5px 'Inter', sans-serif;
+    color: #8A7E70;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .item-row-price {
+    font: 700 14px 'Poppins', sans-serif;
+    color: #E11E2B;
+    margin-top: 2px;
+  }
+
+  .item-row-action {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Estado sin cantidad: botón "+" solo */
+  .item-add-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #4B4B4B;
+    color: #fff;
+    font: 700 18px sans-serif;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Estado con cantidad: stepper − N + */
+  .item-stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFF3D6;
+    border-radius: 20px;
+    padding: 4px;
+  }
+
+  .item-stepper button {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font: 700 16px sans-serif;
+  }
+
+  .item-stepper .dec {
+    background: #FFC629;
+    color: #241C15;
+  }
+
+  .item-stepper .inc {
+    background: #4B4B4B;
+    color: #fff;
+  }
+
+  .item-stepper .qty {
+    font: 700 13px 'Poppins', sans-serif;
+    min-width: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Estado: sin agregar -->
+  <div class="item-row">
+    <img class="item-row-image" src="" alt="Salchipapa Sencilla">
+    <div class="item-row-info">
+      <div class="item-row-name">Salchipapa Sencilla</div>
+      <div class="item-row-desc">Papas fritas, salchicha y salsas de la casa</div>
+      <div class="item-row-price">$12.000</div>
+    </div>
+    <div class="item-row-action">
+      <button class="item-add-btn">+</button>
+    </div>
+  </div>
+
+  <br>
+
+  <!-- Estado: agregado (cantidad > 0) -->
+  <div class="item-row">
+    <img class="item-row-image" src="" alt="Salchipapa Sencilla">
+    <div class="item-row-info">
+      <div class="item-row-name">Salchipapa Sencilla</div>
+      <div class="item-row-desc">Papas fritas, salchicha y salsas de la casa</div>
+      <div class="item-row-price">$12.000</div>
+    </div>
+    <div class="item-row-action">
+      <div class="item-stepper">
+        <button class="dec">−</button>
+        <span class="qty">2</span>
+        <button class="inc">+</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
