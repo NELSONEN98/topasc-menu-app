@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Hero } from '../components/organisms/Hero';
 import { CartBar } from '../components/organisms/CartBar';
 import { BackButton } from '../components/atoms/BackButton';
-import { ItemCard } from '../components/molecules/ItemCard';
+import { ProductGrid } from '../components/organisms/ProductGrid';
+import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { useCart } from '../context/CartContext';
 import { mockProducts, categories } from '../data/products.mock';
 import { ITEMS_PER_PAGE } from '../config/settings';
@@ -12,6 +13,7 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const allFiltered =
     activeCategory === 'Todos'
@@ -53,14 +55,11 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
 
       <div className="home__products-wrapper">
         <div className="home__products">
-          {filteredProducts.map((product) => (
-            <ItemCard
-              key={product.id}
-              product={product}
-              onAddToCart={addToCart}
-              cartItems={cartItems}
-            />
-          ))}
+          <ProductGrid
+            products={filteredProducts}
+            cartItems={cartItems}
+            onProductClick={setSelectedProduct}
+          />
 
           {totalPages > 1 && (
             <div className="home__pagination">
@@ -109,6 +108,14 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
           />
         )}
       </div>
+
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          cartItems={cartItems}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

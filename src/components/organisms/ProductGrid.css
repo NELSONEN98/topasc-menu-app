@@ -1,0 +1,6 @@
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+}

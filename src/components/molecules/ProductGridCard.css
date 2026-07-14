@@ -1,0 +1,102 @@
+.grid-card {
+  background: #fff;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-card__image {
+  width: 100%;
+  height: 6rem;
+  object-fit: cover;
+  background: #cfcfcf;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.grid-card__image:active {
+  opacity: 0.8;
+}
+
+.grid-card__name {
+  padding: 0.5625rem 0.625rem 0;
+  font: 700 0.78125rem 'Poppins', sans-serif;
+  color: #241C15;
+  line-height: 1.25;
+  min-height: 1.9375rem;
+}
+
+.grid-card__body {
+  padding: 0 0.625rem 0.6875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.grid-card__price {
+  font: 700 0.8125rem 'Poppins', sans-serif;
+  color: #E11E2B;
+}
+
+.grid-card__add {
+  width: 100%;
+  height: 1.75rem;
+  border-radius: 1.25rem;
+  background: #4B4B4B;
+  color: #fff;
+  font: 700 0.8125rem 'Poppins', sans-serif;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.grid-card__add:active {
+  background: #333;
+}
+
+.grid-card__stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FBF1D6;
+  border-radius: 1.25rem;
+  padding: 0.1875rem;
+}
+
+.grid-card__stepper-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font: 700 0.9375rem sans-serif;
+  transition: background 0.2s ease;
+}
+
+.grid-card__stepper-btn--dec {
+  background: #fff;
+  color: #241C15;
+}
+
+.grid-card__stepper-btn--dec:active {
+  background: #f5f5f5;
+}
+
+.grid-card__stepper-btn--inc {
+  background: #4B4B4B;
+  color: #fff;
+}
+
+.grid-card__stepper-btn--inc:active {
+  background: #333;
+}
+
+.grid-card__qty {
+  font: 700 0.75rem 'Poppins', sans-serif;
+  color: #241C15;
+  min-width: 1.5rem;
+  text-align: center;
+}

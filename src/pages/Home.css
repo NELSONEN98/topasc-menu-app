@@ -78,10 +78,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem 1.125rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
 .home__products::-webkit-scrollbar {

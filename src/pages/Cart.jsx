@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Header } from '../components/organisms/Header';
 import { CartItem } from '../components/molecules/CartItem';
 import { Button } from '../components/atoms/Button';
+import { OrderConfirmation } from '../components/organisms/OrderConfirmation';
 import { useCart } from '../context/CartContext';
 import { DELIVERY_FEES } from '../config/settings';
 import './Cart.css';
@@ -8,6 +10,7 @@ import './Cart.css';
 export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
   const { cartItems, updateQuantity, removeFromCart, getTotal, clearCart } =
     useCart();
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
@@ -27,13 +30,18 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
       return;
     }
 
-    // Aquí irá la integración con WhatsApp o backend
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmationComplete = () => {
     const message = `Hola, quisiera hacer un pedido por $${formatPrice(total)}. Detalles:\n${cartItems
       .map((item) => `- ${item.name} x${item.quantity}`)
       .join('\n')}`;
 
     const whatsappUrl = `https://wa.me/573123456789?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+
+    setShowConfirmation(false);
   };
 
   return (
@@ -89,10 +97,12 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
-            <div className="cart__summary-row">
-              <span>Envío</span>
-              <span>{deliveryFee === 0 ? 'Gratis' : formatPrice(deliveryFee)}</span>
-            </div>
+            {orderType === 'delivery' && (
+              <div className="cart__summary-row">
+                <span>Envío</span>
+                <span>{deliveryFee === 0 ? 'Gratis' : formatPrice(deliveryFee)}</span>
+              </div>
+            )}
             <div className="cart__summary-row cart__summary-row--total">
               <span>Total</span>
               <span>{formatPrice(total)}</span>
@@ -118,6 +128,10 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
             </Button>
           </div>
         </>
+      )}
+
+      {showConfirmation && (
+        <OrderConfirmation onComplete={handleConfirmationComplete} />
       )}
     </div>
   );

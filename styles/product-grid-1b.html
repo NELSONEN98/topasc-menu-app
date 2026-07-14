@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Broaster Topasc — Grid de productos (1b)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #FFFDF8; font-family: 'Inter', system-ui, sans-serif; padding: 24px; }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 390px;
+    padding: 10px 14px;
+  }
+
+  .product-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .product-card-image {
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    background: #cfcfcf; /* placeholder, reemplazar por foto real */
+  }
+
+  .product-card-name {
+    padding: 9px 10px 0;
+    font: 700 12.5px 'Poppins', sans-serif;
+    color: #241C15;
+    line-height: 1.25;
+    min-height: 31px;
+  }
+
+  .product-card-body {
+    padding: 0 10px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .product-card-price {
+    font: 700 13px 'Poppins', sans-serif;
+    color: #E11E2B;
+  }
+
+  .product-card-add {
+    width: 100%;
+    height: 28px;
+    border-radius: 20px;
+    background: #4B4B4B;
+    color: #fff;
+    font: 700 13px 'Poppins', sans-serif;
+    border: none;
+    cursor: pointer;
+  }
+
+  .product-card-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FBF1D6;
+    border-radius: 20px;
+    padding: 3px;
+  }
+
+  .product-card-stepper button {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font: 700 15px sans-serif;
+  }
+
+  .product-card-stepper .dec {
+    background: #fff;
+    color: #241C15;
+  }
+
+  .product-card-stepper .inc {
+    background: #4B4B4B;
+    color: #fff;
+  }
+
+  .product-card-stepper .qty {
+    font: 700 12px 'Poppins', sans-serif;
+  }
+</style>
+</head>
+<body>
+
+  <div class="product-grid">
+
+    <div class="product-card">
+      <img class="product-card-image" src="" alt="Salchipapa Especial">
+      <div class="product-card-name">Salchipapa Especial</div>
+      <div class="product-card-body">
+        <div class="product-card-price">$16.000</div>
+        <button class="product-card-add">Agregar</button>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <img class="product-card-image" src="" alt="Salchipapa Mixta">
+      <div class="product-card-name">Salchipapa Mixta</div>
+      <div class="product-card-body">
+        <div class="product-card-price">$18.000</div>
+        <div class="product-card-stepper">
+          <button class="dec">−</button>
+          <span class="qty">2</span>
+          <button class="inc">+</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
