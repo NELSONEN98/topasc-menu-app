@@ -42,6 +42,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
     window.open(whatsappUrl, '_blank');
 
     setShowConfirmation(false);
+    clearCart();
   };
 
   return (
