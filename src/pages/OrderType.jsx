@@ -28,6 +28,12 @@ const DineInIcon = () => (
 export const OrderType = ({ onSelectType }) => {
   const orderTypes = [
     {
+      id: 'dine-in',
+      label: 'Pedir a la mesa',
+      icon: DineInIcon,
+      description: 'Come aquí en nuestro local',
+    },
+    {
       id: 'delivery',
       label: 'Domicilio',
       icon: DeliveryIcon,
@@ -38,12 +44,6 @@ export const OrderType = ({ onSelectType }) => {
       label: 'Recoger',
       icon: PickupIcon,
       description: 'Retira tu pedido en tienda',
-    },
-    {
-      id: 'dine-in',
-      label: 'Pedir a la mesa',
-      icon: DineInIcon,
-      description: 'Come aquí en nuestro local',
     },
   ];
 
