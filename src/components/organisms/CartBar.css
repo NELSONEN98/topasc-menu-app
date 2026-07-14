@@ -4,12 +4,12 @@
    ============================================================ */
 
 .cart-bar {
-  position: sticky;
+  position: fixed;
   bottom: 1.125rem;
-  left: 1.125rem;
-  right: 1.125rem;
+  left: 50%;
+  transform: translateX(-50%);
   width: calc(100% - 2.25rem);
-  margin: 1.125rem 1.125rem 1.125rem 1.125rem;
+  max-width: 22.125rem;
   background: #E11E2B;
   border-radius: 1rem;
   padding: 0.875rem 1.125rem;
@@ -23,8 +23,6 @@
   font-weight: 700;
   transition: all 0.3s ease;
   z-index: 100;
-  align-self: center;
-  max-width: 22.125rem;
 }
 
 .cart-bar:hover {
@@ -78,11 +76,8 @@
    ============================================================ */
 @media (min-width: 768px) {
   .cart-bar {
-    left: 2rem;
-    right: 2rem;
     width: calc(100% - 4rem);
     max-width: 26rem;
-    margin: 1.5rem 2rem 1.5rem 2rem;
     bottom: 1.5rem;
   }
 

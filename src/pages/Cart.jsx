@@ -38,7 +38,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
       .map((item) => `- ${item.name} x${item.quantity}`)
       .join('\n')}`;
 
-    const whatsappUrl = `https://wa.me/573123456789?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/573176694721?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 
     setShowConfirmation(false);
