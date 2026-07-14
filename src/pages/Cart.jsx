@@ -3,6 +3,7 @@ import { Header } from '../components/organisms/Header';
 import { CartItem } from '../components/molecules/CartItem';
 import { Button } from '../components/atoms/Button';
 import { OrderConfirmation } from '../components/organisms/OrderConfirmation';
+import { TableNumberModal } from '../components/organisms/TableNumberModal';
 import { useCart } from '../context/CartContext';
 import { DELIVERY_FEES } from '../config/settings';
 import './Cart.css';
@@ -11,6 +12,8 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
   const { cartItems, updateQuantity, removeFromCart, getTotal, clearCart } =
     useCart();
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
+  const [tableNumber, setTableNumber] = useState('');
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
@@ -30,18 +33,33 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
       return;
     }
 
+    if (orderType === 'dine-in') {
+      setShowTableModal(true);
+    } else {
+      setShowConfirmation(true);
+    }
+  };
+
+  const handleTableNumberConfirm = (number) => {
+    setTableNumber(number);
+    setShowTableModal(false);
     setShowConfirmation(true);
   };
 
   const handleConfirmationComplete = () => {
-    const message = `Hola, quisiera hacer un pedido por $${formatPrice(total)}. Detalles:\n${cartItems
+    let message = `Hola, quisiera hacer un pedido por $${formatPrice(total)}. Detalles:\n${cartItems
       .map((item) => `- ${item.name} x${item.quantity}`)
       .join('\n')}`;
+
+    if (orderType === 'dine-in' && tableNumber) {
+      message += `\n\nMesa: ${tableNumber}`;
+    }
 
     const whatsappUrl = `https://wa.me/573176694721?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 
     setShowConfirmation(false);
+    setTableNumber('');
     clearCart();
   };
 
@@ -129,6 +147,13 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
             </Button>
           </div>
         </>
+      )}
+
+      {showTableModal && (
+        <TableNumberModal
+          onConfirm={handleTableNumberConfirm}
+          onCancel={() => setShowTableModal(false)}
+        />
       )}
 
       {showConfirmation && (
