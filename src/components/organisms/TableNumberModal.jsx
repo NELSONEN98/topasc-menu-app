@@ -44,7 +44,7 @@ export const TableNumberModal = ({ onConfirm, onCancel }) => {
             Cancelar
           </button>
           <button className="table-modal-btn table-modal-btn--confirm" onClick={handleConfirm}>
-            Confirmar Mesa
+            Confirmar
           </button>
         </div>
       </div>
