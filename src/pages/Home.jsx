@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Hero } from '../components/organisms/Hero';
 import { CartBar } from '../components/organisms/CartBar';
 import { BackButton } from '../components/atoms/BackButton';
 import { ProductGrid } from '../components/organisms/ProductGrid';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { useCart } from '../context/CartContext';
-import { mockProducts, categories } from '../data/products.mock';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
 
@@ -15,10 +16,15 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const allItems = useQuery(api.items.listarMenu) || [];
+  const allCategorias = useQuery(api.categorias.listar) || [];
+
+  const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
+
   const allFiltered =
     activeCategory === 'Todos'
-      ? mockProducts
-      : mockProducts.filter((p) => p.category === activeCategory);
+      ? allItems
+      : allItems.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
 
   const totalPages = Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -55,11 +61,17 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
 
       <div className="home__products-wrapper">
         <div className="home__products">
-          <ProductGrid
-            products={filteredProducts}
-            cartItems={cartItems}
-            onProductClick={setSelectedProduct}
-          />
+          {allItems === undefined ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
+              Cargando menú...
+            </div>
+          ) : (
+            <ProductGrid
+              products={filteredProducts}
+              cartItems={cartItems}
+              onProductClick={setSelectedProduct}
+            />
+          )}
 
           {totalPages > 1 && (
             <div className="home__pagination">
