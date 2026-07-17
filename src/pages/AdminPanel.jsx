@@ -11,6 +11,9 @@ export const AdminPanel = ({ onLogout }) => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [productPage, setProductPage] = useState(1);
   const [salsasPage, setSalsasPage] = useState(1);
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('');
+  const [productStatusFilter, setProductStatusFilter] = useState('');
   const ITEMS_PER_PAGE = 8;
 
   const items = useQuery(api.items.listarMenu) || [];
@@ -25,11 +28,21 @@ export const AdminPanel = ({ onLogout }) => {
     return acc;
   }, {});
 
+  // Filtrado de productos
+  const filteredProducts = items.filter(item => {
+    const matchesSearch = item.nombre.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesCategory = productCategoryFilter === '' || item.categoriaId === productCategoryFilter;
+    const matchesStatus = productStatusFilter === '' ||
+      (productStatusFilter === 'active' && item.disponible) ||
+      (productStatusFilter === 'inactive' && !item.disponible);
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
   // Paginación de productos
-  const totalProductPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const totalProductPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const productStartIdx = (productPage - 1) * ITEMS_PER_PAGE;
   const productEndIdx = productStartIdx + ITEMS_PER_PAGE;
-  const paginatedProducts = items.slice(productStartIdx, productEndIdx);
+  const paginatedProducts = filteredProducts.slice(productStartIdx, productEndIdx);
 
   // Paginación de salsas (datos de ejemplo)
   const salsasData = [
@@ -151,10 +164,73 @@ export const AdminPanel = ({ onLogout }) => {
             <div className="admin-section-header">
               <div>
                 <h1 className="admin-section-title">Productos</h1>
-                <p className="admin-section-meta">{items.length} productos · {activeProducts} activos</p>
+                <p className="admin-section-meta">{filteredProducts.length} de {items.length} productos · {activeProducts} activos</p>
               </div>
               <button className="btn-add-item" onClick={handleAddProduct}>
                 + Agregar producto
+              </button>
+            </div>
+
+            <div className="admin-filters">
+              <div className="filter-group" style={{ flex: 2 }}>
+                <label className="filter-label">Buscar</label>
+                <input
+                  type="text"
+                  className="filter-input"
+                  placeholder="Buscar por nombre..."
+                  value={productSearch}
+                  onChange={(e) => {
+                    setProductSearch(e.target.value);
+                    setProductPage(1);
+                  }}
+                />
+              </div>
+
+              <div className="filter-group">
+                <label className="filter-label">Categoría</label>
+                <select
+                  className="filter-select"
+                  value={productCategoryFilter}
+                  onChange={(e) => {
+                    setProductCategoryFilter(e.target.value);
+                    setProductPage(1);
+                  }}
+                >
+                  <option value="">Todas</option>
+                  {categorias.map(cat => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label className="filter-label">Estado</label>
+                <select
+                  className="filter-select"
+                  value={productStatusFilter}
+                  onChange={(e) => {
+                    setProductStatusFilter(e.target.value);
+                    setProductPage(1);
+                  }}
+                >
+                  <option value="">Todos</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </div>
+
+              <button
+                className="btn-reset"
+                onClick={() => {
+                  setProductSearch('');
+                  setProductCategoryFilter('');
+                  setProductStatusFilter('');
+                  setProductPage(1);
+                }}
+              >
+                Resetear
               </button>
             </div>
 
