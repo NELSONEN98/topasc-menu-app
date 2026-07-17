@@ -1,66 +1,55 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import '../styles/admin-styles.css';
 
 export const AdminPanel = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('productos');
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
 
   const items = useQuery(api.items.listarMenu) || [];
-  const actualizarItem = useMutation(api.items.actualizar);
+  const activeProducts = items.filter(item => item.disponible).length;
 
-  const handleEdit = (item) => {
-    setEditingId(item._id);
-    setEditData({
-      nombre: item.nombre,
-      precio: item.precio,
-      disponible: item.disponible,
-      descripcion: item.descripcion,
-    });
+  const handleAddProduct = () => {
+    // TODO: implementar modal para agregar producto
+    alert('Agregar nuevo producto');
   };
 
-  const handleSave = async () => {
-    await actualizarItem({
-      id: editingId,
-      campos: editData,
-    });
-    setEditingId(null);
-  };
-
-  const handleToggleDisponible = async () => {
-    await actualizarItem({
-      id: editingId,
-      campos: { disponible: !editData.disponible },
-    });
-    setEditingId(null);
-  };
-
-  const handleInputChange = (field, value) => {
-    setEditData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleEditProduct = (productId) => {
+    // TODO: implementar modal para editar producto
+    alert(`Editar producto: ${productId}`);
   };
 
   return (
     <div className="admin-shell">
-      <div className="admin-sidebar">
-        <div className="admin-sidebar-tabs">
+      {/* Navbar */}
+      <nav className="admin-navbar">
+        <div className="admin-navbar-brand">
+          <span className="admin-navbar-brand-white">Broaster </span>
+          <span className="admin-navbar-brand-gold">topasc</span>
+        </div>
+
+        <div className="admin-navbar-nav">
           <button
-            className="tab-btn"
+            className={`admin-nav-item ${activeTab === 'productos' ? 'active' : ''}`}
             onClick={() => setActiveTab('productos')}
-            style={{
-              color: activeTab === 'productos' ? '#E11E2B' : '#999',
-              fontSize: '14px',
-              fontWeight: activeTab === 'productos' ? 700 : 500,
-            }}
           >
-            Productos
+            🍽 Productos
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'salsas' ? 'active' : ''}`}
+            onClick={() => setActiveTab('salsas')}
+          >
+            🧂 Salsas
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'horario' ? 'active' : ''}`}
+            onClick={() => setActiveTab('horario')}
+          >
+            🕒 Horario
           </button>
         </div>
-        <div className="admin-sidebar-footer">
+
+        <div className="admin-navbar-actions">
           <button
             onClick={onLogout}
             style={{
@@ -70,140 +59,92 @@ export const AdminPanel = ({ onLogout }) => {
               padding: '8px 16px',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: 600,
+              transition: 'background .2s',
             }}
+            onMouseOver={(e) => e.target.style.background = '#C01820'}
+            onMouseOut={(e) => e.target.style.background = '#E11E2B'}
           >
             Salir
           </button>
         </div>
-      </div>
+      </nav>
 
+      {/* Main Content */}
       <div className="admin-main">
+        {/* Productos Section */}
         {activeTab === 'productos' && (
           <div>
-            <h1 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: 700 }}>
-              Productos
-            </h1>
+            <div className="admin-section-header">
+              <div>
+                <h1 className="admin-section-title">Productos</h1>
+                <p className="admin-section-meta">{items.length} productos · {activeProducts} activos</p>
+              </div>
+              <button className="btn-add-item" onClick={handleAddProduct}>
+                + Agregar producto
+              </button>
+            </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <div style={{ minWidth: '600px' }}>
-                {/* Header Row */}
-                <div className="prod-row" style={{
-                  paddingBottom: '12px',
-                  borderBottom: '2px solid #241C15',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  color: '#666',
-                }}>
-                  <div></div>
-                  <div>Nombre</div>
-                  <div>Precio</div>
-                  <div>Estado</div>
-                  <div></div>
-                </div>
+            <div className="admin-table-wrapper">
+              <div className="admin-table-header">
+                <div>Nombre</div>
+                <div>Categoría</div>
+                <div>Precio</div>
+                <div>Estado</div>
+                <div></div>
+              </div>
 
-                {/* Product Rows */}
+              <div className="admin-table-body">
                 {items.map(item => (
-                  <div key={item._id} className="prod-row" style={{
-                    padding: '12px 0',
-                    borderBottom: '1px solid #E0D5C7',
-                    alignItems: 'center',
-                  }}>
-                    <img
-                      src={item.imagenUrl}
-                      alt={item.nombre}
-                      className="row-thumb"
-                      style={{ objectFit: 'cover', cursor: editingId === item._id ? 'pointer' : 'default' }}
-                    />
-                    {editingId === item._id ? (
-                      <>
-                        <input
-                          type="text"
-                          value={editData.nombre}
-                          onChange={(e) => handleInputChange('nombre', e.target.value)}
-                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}
-                          placeholder="Nombre"
-                        />
-                        <input
-                          type="number"
-                          value={editData.precio}
-                          onChange={(e) => handleInputChange('precio', parseInt(e.target.value))}
-                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}
-                          placeholder="Precio"
-                        />
-                        <button
-                          onClick={handleToggleDisponible}
-                          className="switch"
-                          style={{
-                            background: editData.disponible ? '#22C55E' : '#ccc',
-                            justifyContent: editData.disponible ? 'flex-end' : 'flex-start',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '2px',
-                          }}
-                        >
-                          <div className="switch-knob" style={{ left: editData.disponible ? '20px' : '2px' }}></div>
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          style={{
-                            background: '#22C55E',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '8px 16px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                          }}
-                        >
-                          Guardar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.nombre}</div>
-                          <div style={{ fontSize: '12px', color: '#999' }}>{item.descripcion}</div>
-                        </div>
-                        <div style={{ fontWeight: 600, fontSize: '14px' }}>
-                          ${item.precio.toLocaleString()}
-                        </div>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="switch"
-                          style={{
-                            background: item.disponible ? '#22C55E' : '#ccc',
-                            justifyContent: item.disponible ? 'flex-end' : 'flex-start',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '2px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <div className="switch-knob" style={{ left: item.disponible ? '20px' : '2px' }}></div>
-                        </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          style={{
-                            background: '#E11E2B',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Editar
-                        </button>
-                      </>
-                    )}
+                  <div key={item._id} className="admin-table-row">
+                    <div className="admin-table-cell-name">{item.nombre}</div>
+                    <div className="admin-table-cell-category">{item.categoriaId}</div>
+                    <div className="admin-table-cell-price">${item.precio.toLocaleString()}</div>
+                    <div className="admin-table-cell-status">
+                      <span className={`status-badge ${item.disponible ? 'status-active' : 'status-inactive'}`}>
+                        {item.disponible ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <button className="btn-edit" onClick={() => handleEditProduct(item._id)}>
+                      Editar
+                    </button>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Salsas Section */}
+        {activeTab === 'salsas' && (
+          <div>
+            <div className="admin-section-header">
+              <div>
+                <h1 className="admin-section-title">Salsas</h1>
+                <p className="admin-section-meta">Gestiona las salsas disponibles</p>
+              </div>
+              <button className="btn-add-item" onClick={() => alert('Agregar nueva salsa')}>
+                + Agregar salsa
+              </button>
+            </div>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+              Sección de salsas en desarrollo
+            </div>
+          </div>
+        )}
+
+        {/* Horario Section */}
+        {activeTab === 'horario' && (
+          <div>
+            <div className="admin-section-header">
+              <div>
+                <h1 className="admin-section-title">Horario</h1>
+                <p className="admin-section-meta">Configura el horario de atención</p>
+              </div>
+            </div>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+              Sección de horario en desarrollo
             </div>
           </div>
         )}
