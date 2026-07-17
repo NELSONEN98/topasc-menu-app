@@ -171,13 +171,65 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .btn-edit:hover { background: #C01820; }
 
-@media (max-width: 760px) {
-  .admin-sidebar { gap: 16px !important; padding: 14px 16px !important; flex-wrap: wrap; }
-  .admin-sidebar-footer { display: none; }
-  .admin-main { padding: 20px 16px !important; max-width: 100% !important; }
-  .prod-row { grid-template-columns: 52px 1.3fr 0.8fr 0.7fr !important; gap: 10px !important; }
-  .sauce-row { grid-template-columns: 52px 1.6fr 0.9fr 0.7fr !important; gap: 10px !important; }
-  .prod-row-cat, .prod-row-edit { display: none !important; }
-  .row-thumb { width: 40px !important; height: 40px !important; border-radius: 9px !important; }
-  .admin-modal-card { width: 92vw !important; }
+@media (max-width: 768px) {
+  .admin-navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .admin-navbar-brand {
+    font-size: 16px;
+  }
+
+  .admin-navbar-nav {
+    width: 100%;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .admin-nav-item {
+    font-size: 12px;
+  }
+
+  .admin-navbar-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .admin-navbar-actions button {
+    width: 100%;
+  }
+
+  .admin-main {
+    padding: 20px 16px;
+  }
+
+  .admin-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-add-item {
+    width: 100%;
+  }
+
+  .admin-table-header {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    font-size: 11px !important;
+  }
+
+  .admin-table-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    padding: 12px 16px !important;
+  }
+
+  .btn-edit {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
