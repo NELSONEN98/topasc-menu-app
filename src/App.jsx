@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
 import { StatusBar } from './components/organisms/StatusBar';
 import { SplashScreen } from './pages/SplashScreen';
@@ -6,6 +6,7 @@ import { OrderType } from './pages/OrderType';
 import { Home } from './pages/Home';
 import { Cart } from './pages/Cart';
 import { AdminPanel } from './pages/AdminPanel';
+import { AdminLogin } from './pages/AdminLogin';
 import { useCart } from './context/CartContext';
 import './styles/global.css';
 
@@ -14,6 +15,14 @@ const AppContent = () => {
   const [currentPage, setCurrentPage] = useState('order-type');
   const [orderType, setOrderType] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/admin') {
+      setShowAdminLogin(true);
+    }
+  }, []);
 
   const handleSelectType = (type) => {
     clearCart();
@@ -26,8 +35,24 @@ const AppContent = () => {
     setCurrentPage('order-type');
   };
 
+  const handleAdminLogin = () => {
+    setShowAdminLogin(false);
+    setIsAdmin(true);
+    window.history.replaceState({}, '', '/');
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    setShowAdminLogin(false);
+    window.history.replaceState({}, '', '/');
+  };
+
+  if (showAdminLogin && !isAdmin) {
+    return <AdminLogin onLogin={handleAdminLogin} />;
+  }
+
   if (isAdmin) {
-    return <AdminPanel onLogout={() => setIsAdmin(false)} />;
+    return <AdminPanel onLogout={handleAdminLogout} />;
   }
 
   return (
@@ -48,7 +73,7 @@ const AppContent = () => {
         />
       )}
       <button
-        onClick={() => setIsAdmin(true)}
+        onClick={() => setShowAdminLogin(true)}
         style={{
           position: 'fixed',
           bottom: '20px',
