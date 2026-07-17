@@ -28,6 +28,12 @@
   width: 90%;
   max-width: 500px;
   animation: slideUp .3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content.modal-large {
+  max-width: 700px;
 }
 
 @keyframes slideUp {
@@ -168,4 +174,10 @@
 
 .btn-save:hover {
   background: #FFC933;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
