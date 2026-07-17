@@ -3,7 +3,8 @@ import { useCart } from '../../context/CartContext';
 
 export const ProductDetailModal = ({ product, cartItems = [], onClose }) => {
   const { updateQuantity, removeFromCart, addToCart } = useCart();
-  const cartItem = cartItems.find((item) => item.id === product.id);
+  const productId = product._id || product.id;
+  const cartItem = cartItems.find((item) => (item._id || item.id) === productId);
   const quantity = cartItem ? cartItem.quantity : 0;
 
   const handleAdd = () => {
@@ -11,14 +12,14 @@ export const ProductDetailModal = ({ product, cartItems = [], onClose }) => {
   };
 
   const handleIncrement = () => {
-    updateQuantity(product.id, quantity + 1);
+    updateQuantity(productId, quantity + 1);
   };
 
   const handleDecrement = () => {
     if (quantity > 1) {
-      updateQuantity(product.id, quantity - 1);
+      updateQuantity(productId, quantity - 1);
     } else {
-      removeFromCart(product.id);
+      removeFromCart(productId);
     }
   };
 
@@ -38,8 +39,8 @@ export const ProductDetailModal = ({ product, cartItems = [], onClose }) => {
         </button>
 
         <img
-          src={product.image}
-          alt={product.name}
+          src={product.imagenUrl || product.image}
+          alt={product.nombre || product.name}
           className="modal-image"
           onError={(e) => {
             e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop';
@@ -47,11 +48,10 @@ export const ProductDetailModal = ({ product, cartItems = [], onClose }) => {
         />
 
         <div className="modal-body">
-          <h2 className="modal-name">{product.name}</h2>
-          <p className="modal-category">{product.category}</p>
-          <p className="modal-description">{product.description}</p>
+          <h2 className="modal-name">{product.nombre || product.name}</h2>
+          <p className="modal-description">{product.descripcion || product.description}</p>
 
-          <div className="modal-price">{formatPrice(product.price)}</div>
+          <div className="modal-price">{formatPrice(product.precio || product.price)}</div>
 
           <div className="modal-actions">
             {quantity === 0 ? (
