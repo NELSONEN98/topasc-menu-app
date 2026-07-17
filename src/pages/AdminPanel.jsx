@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { ProductModal } from '../components/organisms/ProductModal';
 import '../styles/admin-styles.css';
 
 export const AdminPanel = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('productos');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const items = useQuery(api.items.listarMenu) || [];
   const categorias = useQuery(api.categorias.listar) || [];
+  const crearItem = useMutation(api.items.crear);
+  const actualizarItem = useMutation(api.items.actualizar);
+
   const activeProducts = items.filter(item => item.disponible).length;
 
   const categoriaMap = categorias.reduce((acc, cat) => {
@@ -16,13 +22,46 @@ export const AdminPanel = ({ onLogout }) => {
   }, {});
 
   const handleAddProduct = () => {
-    // TODO: implementar modal para agregar producto
-    alert('Agregar nuevo producto');
+    setEditingProduct(null);
+    setModalOpen(true);
   };
 
   const handleEditProduct = (productId) => {
-    // TODO: implementar modal para editar producto
-    alert(`Editar producto: ${productId}`);
+    const product = items.find(item => item._id === productId);
+    setEditingProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleSaveProduct = async (formData) => {
+    try {
+      if (editingProduct) {
+        await actualizarItem({
+          id: editingProduct._id,
+          campos: {
+            nombre: formData.nombre,
+            categoriaId: formData.categoriaId,
+            precio: formData.precio,
+            descripcion: formData.descripcion,
+            disponible: formData.disponible,
+          },
+        });
+      } else {
+        await crearItem({
+          categoriaId: formData.categoriaId,
+          nombre: formData.nombre,
+          descripcion: formData.descripcion,
+          precio: formData.precio,
+          imagenUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+          disponible: formData.disponible,
+          activo: true,
+        });
+      }
+      setModalOpen(false);
+      setEditingProduct(null);
+    } catch (error) {
+      console.error('Error al guardar producto:', error);
+      alert('Error al guardar el producto');
+    }
   };
 
   return (
@@ -157,6 +196,15 @@ export const AdminPanel = ({ onLogout }) => {
           </div>
         )}
       </div>
+
+      {/* Product Modal */}
+      <ProductModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        product={editingProduct}
+        categorias={categorias}
+        onSave={handleSaveProduct}
+      />
     </div>
   );
 };
