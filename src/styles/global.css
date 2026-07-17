@@ -24,12 +24,15 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #FBF6EE 0%, #fff 100%);
 }
 
 /* ============================================================
    PHONE SHELL — Mobile-first container
    ============================================================ */
+#root {
+  background: linear-gradient(135deg, #FBF6EE 0%, #fff 100%);
+}
+
 .phone-shell {
   width: 24.375rem;
   height: 52.75rem;
