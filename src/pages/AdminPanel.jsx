@@ -29,6 +29,14 @@ export const AdminPanel = ({ onLogout }) => {
     setEditingId(null);
   };
 
+  const handleToggleDisponible = async () => {
+    await actualizarItem({
+      id: editingId,
+      campos: { disponible: !editData.disponible },
+    });
+    setEditingId(null);
+  };
+
   const handleInputChange = (field, value) => {
     setEditData(prev => ({
       ...prev,
@@ -52,7 +60,7 @@ export const AdminPanel = ({ onLogout }) => {
             Productos
           </button>
         </div>
-        <div className="admin-sidebar-footer" style={{ marginLeft: 'auto' }}>
+        <div className="admin-sidebar-footer">
           <button
             onClick={onLogout}
             style={{
@@ -80,13 +88,33 @@ export const AdminPanel = ({ onLogout }) => {
 
             <div style={{ overflowX: 'auto' }}>
               <div style={{ minWidth: '600px' }}>
+                {/* Header Row */}
+                <div className="prod-row" style={{
+                  paddingBottom: '12px',
+                  borderBottom: '2px solid #241C15',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  color: '#666',
+                }}>
+                  <div></div>
+                  <div>Nombre</div>
+                  <div>Precio</div>
+                  <div>Estado</div>
+                  <div></div>
+                </div>
+
+                {/* Product Rows */}
                 {items.map(item => (
-                  <div key={item._id} className="prod-row" style={{ padding: '12px 0', borderBottom: '1px solid #E0D5C7' }}>
+                  <div key={item._id} className="prod-row" style={{
+                    padding: '12px 0',
+                    borderBottom: '1px solid #E0D5C7',
+                    alignItems: 'center',
+                  }}>
                     <img
                       src={item.imagenUrl}
                       alt={item.nombre}
                       className="row-thumb"
-                      style={{ objectFit: 'cover' }}
+                      style={{ objectFit: 'cover', cursor: editingId === item._id ? 'pointer' : 'default' }}
                     />
                     {editingId === item._id ? (
                       <>
@@ -94,22 +122,29 @@ export const AdminPanel = ({ onLogout }) => {
                           type="text"
                           value={editData.nombre}
                           onChange={(e) => handleInputChange('nombre', e.target.value)}
-                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}
+                          placeholder="Nombre"
                         />
                         <input
                           type="number"
                           value={editData.precio}
                           onChange={(e) => handleInputChange('precio', parseInt(e.target.value))}
-                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+                          style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}
+                          placeholder="Precio"
                         />
-                        <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={editData.disponible}
-                            onChange={(e) => handleInputChange('disponible', e.target.checked)}
-                          />
-                          Disponible
-                        </label>
+                        <button
+                          onClick={handleToggleDisponible}
+                          className="switch"
+                          style={{
+                            background: editData.disponible ? '#22C55E' : '#ccc',
+                            justifyContent: editData.disponible ? 'flex-end' : 'flex-start',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '2px',
+                          }}
+                        >
+                          <div className="switch-knob" style={{ left: editData.disponible ? '20px' : '2px' }}></div>
+                        </button>
                         <button
                           onClick={handleSave}
                           style={{
@@ -117,9 +152,10 @@ export const AdminPanel = ({ onLogout }) => {
                             color: '#fff',
                             border: 'none',
                             padding: '8px 16px',
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             cursor: 'pointer',
                             fontWeight: 600,
+                            fontSize: '12px',
                           }}
                         >
                           Guardar
@@ -129,12 +165,25 @@ export const AdminPanel = ({ onLogout }) => {
                       <>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.nombre}</div>
-                          <div style={{ fontSize: '12px', color: '#666' }}>{item.descripcion}</div>
+                          <div style={{ fontSize: '12px', color: '#999' }}>{item.descripcion}</div>
                         </div>
-                        <div style={{ fontWeight: 600 }}>${item.precio.toLocaleString()}</div>
-                        <div style={{ fontSize: '12px' }}>
-                          {item.disponible ? '✓ Disponible' : '✗ No disponible'}
+                        <div style={{ fontWeight: 600, fontSize: '14px' }}>
+                          ${item.precio.toLocaleString()}
                         </div>
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="switch"
+                          style={{
+                            background: item.disponible ? '#22C55E' : '#ccc',
+                            justifyContent: item.disponible ? 'flex-end' : 'flex-start',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '2px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div className="switch-knob" style={{ left: item.disponible ? '20px' : '2px' }}></div>
+                        </button>
                         <button
                           onClick={() => handleEdit(item)}
                           style={{
