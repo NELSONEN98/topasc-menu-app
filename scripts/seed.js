@@ -71,7 +71,7 @@ async function seed() {
           nombre: cat.nombre,
           orden: cat.orden,
         });
-        categoriaIds[cat.nombre] = result;
+        categoriaIds[cat.nombre] = result.value || result;
         console.log(`✓ Categoría: ${cat.nombre}`);
       } catch (err) {
         console.error(`❌ Error en categoría ${cat.nombre}:`, err.message);
