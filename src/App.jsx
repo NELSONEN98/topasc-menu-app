@@ -14,15 +14,6 @@ const AppContent = () => {
   const { clearCart } = useCart();
   const [currentPage, setCurrentPage] = useState('order-type');
   const [orderType, setOrderType] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path === '/admin') {
-      setShowAdminLogin(true);
-    }
-  }, []);
 
   const handleSelectType = (type) => {
     clearCart();
@@ -34,26 +25,6 @@ const AppContent = () => {
     clearCart();
     setCurrentPage('order-type');
   };
-
-  const handleAdminLogin = () => {
-    setShowAdminLogin(false);
-    setIsAdmin(true);
-    window.history.replaceState({}, '', '/');
-  };
-
-  const handleAdminLogout = () => {
-    setIsAdmin(false);
-    setShowAdminLogin(false);
-    window.history.replaceState({}, '', '/');
-  };
-
-  if (showAdminLogin && !isAdmin) {
-    return <AdminLogin onLogin={handleAdminLogin} />;
-  }
-
-  if (isAdmin) {
-    return <AdminPanel onLogout={handleAdminLogout} />;
-  }
 
   return (
     <>
@@ -72,32 +43,28 @@ const AppContent = () => {
           orderType={orderType}
         />
       )}
-      <button
-        onClick={() => setShowAdminLogin(true)}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          background: '#333',
-          color: '#fff',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '20px',
-          zIndex: 999,
-        }}
-        title="Admin"
-      >
-        ⚙️
-      </button>
     </>
   );
 };
 
 export const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/admin')) {
+      setIsAdminMode(true);
+    }
+  }, []);
+
+  if (isAdminMode) {
+    if (!adminAuthenticated) {
+      return <AdminLogin onLogin={() => setAdminAuthenticated(true)} />;
+    }
+    return <AdminPanel onLogout={() => setAdminAuthenticated(false)} />;
+  }
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
