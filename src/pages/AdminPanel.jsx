@@ -7,7 +7,13 @@ export const AdminPanel = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('productos');
 
   const items = useQuery(api.items.listarMenu) || [];
+  const categorias = useQuery(api.categorias.listar) || [];
   const activeProducts = items.filter(item => item.disponible).length;
+
+  const categoriaMap = categorias.reduce((acc, cat) => {
+    acc[cat._id] = cat.nombre;
+    return acc;
+  }, {});
 
   const handleAddProduct = () => {
     // TODO: implementar modal para agregar producto
@@ -99,7 +105,9 @@ export const AdminPanel = ({ onLogout }) => {
                 {items.map(item => (
                   <div key={item._id} className="admin-table-row">
                     <div className="admin-table-cell-name">{item.nombre}</div>
-                    <div className="admin-table-cell-category">{item.categoriaId}</div>
+                    <div className="admin-table-cell-category">
+                      {categoriaMap[item.categoriaId] || 'Sin categoría'}
+                    </div>
                     <div className="admin-table-cell-price">${item.precio.toLocaleString()}</div>
                     <div className="admin-table-cell-status">
                       <span className={`status-badge ${item.disponible ? 'status-active' : 'status-inactive'}`}>
