@@ -101,7 +101,7 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .admin-section-title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--dark-bg);
 }
 
@@ -183,6 +183,51 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .status-active { background: #E8F5E9; color: #2E7D32; }
 .status-inactive { background: #FFEBEE; color: #C62828; }
+
+.status-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.status-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: #E11E2B;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.status-toggle.active {
+  background: #22C55E;
+}
+
+.status-toggle::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  transition: left .2s;
+}
+
+.status-toggle.active::after {
+  left: 22px;
+}
+
+.status-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+}
 
 .btn-edit {
   background: #E8E8E8;

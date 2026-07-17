@@ -221,22 +221,11 @@ export const AdminPanel = ({ onLogout }) => {
                 </select>
               </div>
 
-              <button
-                className="btn-reset"
-                onClick={() => {
-                  setProductSearch('');
-                  setProductCategoryFilter('');
-                  setProductStatusFilter('');
-                  setProductPage(1);
-                }}
-              >
-                Resetear
-              </button>
             </div>
 
             <div className="admin-table-wrapper">
               <div className="admin-table-header">
-                <div>Imagen</div>
+                <div></div>
                 <div>Nombre</div>
                 <div>Categoría</div>
                 <div>Precio</div>
@@ -254,9 +243,20 @@ export const AdminPanel = ({ onLogout }) => {
                     </div>
                     <div className="admin-table-cell-price">${item.precio.toLocaleString()}</div>
                     <div className="admin-table-cell-status">
-                      <span className={`status-badge ${item.disponible ? 'status-active' : 'status-inactive'}`}>
-                        {item.disponible ? 'Activo' : 'Inactivo'}
-                      </span>
+                      <button
+                        className={`status-toggle ${item.disponible ? 'active' : ''}`}
+                        onClick={async () => {
+                          try {
+                            await actualizarItem({
+                              id: item._id,
+                              campos: { disponible: !item.disponible },
+                            });
+                          } catch (error) {
+                            console.error('Error al cambiar estado:', error);
+                          }
+                        }}
+                        title={item.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
+                      />
                     </div>
                     <button className="btn-edit" onClick={() => handleEditProduct(item._id)}>
                       Editar
@@ -289,7 +289,7 @@ export const AdminPanel = ({ onLogout }) => {
 
             <div className="admin-table-wrapper">
               <div className="admin-table-header admin-table-header-sauces">
-                <div>Imagen</div>
+                <div></div>
                 <div>Nombre</div>
                 <div>Precio</div>
                 <div>Estado</div>
@@ -303,9 +303,11 @@ export const AdminPanel = ({ onLogout }) => {
                     <div className="admin-table-cell-name">{salsa.nombre}</div>
                     <div className="admin-table-cell-price">${salsa.precio.toLocaleString()}</div>
                     <div className="admin-table-cell-status">
-                      <span className={`status-badge ${salsa.disponible ? 'status-active' : 'status-inactive'}`}>
-                        {salsa.disponible ? 'Activo' : 'Inactivo'}
-                      </span>
+                      <button
+                        className={`status-toggle ${salsa.disponible ? 'active' : ''}`}
+                        onClick={() => alert(`Cambiar estado: ${salsa.nombre}`)}
+                        title={salsa.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
+                      />
                     </div>
                     <button className="btn-edit" onClick={() => alert(`Editar: ${salsa.nombre}`)}>
                       Editar
