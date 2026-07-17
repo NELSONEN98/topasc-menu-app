@@ -14,6 +14,7 @@ export const AdminPanel = ({ onLogout }) => {
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
   const ITEMS_PER_PAGE = 8;
 
   const items = useQuery(api.items.listarMenu) || [];
@@ -75,6 +76,21 @@ export const AdminPanel = ({ onLogout }) => {
 
   const handleSaveProduct = async (formData) => {
     try {
+      if (!formData.nombre.trim()) {
+        alert('El nombre del producto es obligatorio');
+        return;
+      }
+      if (!formData.categoriaId) {
+        alert('Debes seleccionar una categoría');
+        return;
+      }
+      if (formData.precio <= 0) {
+        alert('El precio debe ser mayor a 0');
+        return;
+      }
+
+      const isEditing = !!editingProduct;
+
       if (editingProduct) {
         await actualizarItem({
           id: editingProduct._id,
@@ -98,16 +114,44 @@ export const AdminPanel = ({ onLogout }) => {
           activo: true,
         });
       }
+
       setModalOpen(false);
       setEditingProduct(null);
+
+      // Mostrar mensaje de éxito
+      setSaveMessage(isEditing ? '✓ Producto actualizado' : '✓ Producto creado');
+      setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
       console.error('Error al guardar producto:', error);
-      alert('Error al guardar el producto');
+      setSaveMessage('❌ Error al guardar');
+      setTimeout(() => setSaveMessage(''), 3000);
     }
   };
 
   return (
     <div className="admin-shell">
+      {/* Toast de éxito/error */}
+      {saveMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: saveMessage.includes('Error') ? '#fee' : '#efe',
+            color: saveMessage.includes('Error') ? '#c33' : '#3a3',
+            padding: '12px 20px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            zIndex: 2000,
+            fontWeight: '600',
+            fontSize: '14px',
+            animation: 'slideDown .3s ease-out',
+          }}
+        >
+          {saveMessage}
+        </div>
+      )}
+
       {/* Navbar */}
       <nav className="admin-navbar">
         <div className="admin-navbar-brand">
