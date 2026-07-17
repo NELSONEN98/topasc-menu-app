@@ -57,13 +57,7 @@ const ClientApp = () => {
 };
 
 const AdminApp = () => {
-  const [authenticated, setAuthenticated] = useState(false);
-
-  if (!authenticated) {
-    return <AdminLogin onLogin={() => setAuthenticated(true)} />;
-  }
-
-  return <AdminPanel onLogout={() => setAuthenticated(false)} />;
+  return <AdminPanel onLogout={() => {}} />;
 };
 
 export const App = () => {
