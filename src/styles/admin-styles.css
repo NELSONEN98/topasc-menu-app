@@ -112,8 +112,8 @@ input, select { font-family: 'Inter', sans-serif; }
 }
 
 .btn-add-item {
-  background: #E8E8E8;
-  color: #555;
+  background: var(--primary-gold);
+  color: var(--dark-bg);
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -123,7 +123,7 @@ input, select { font-family: 'Inter', sans-serif; }
   transition: background .2s;
 }
 
-.btn-add-item:hover { background: #D8D8D8; }
+.btn-add-item:hover { background: #FFC933; }
 
 .admin-table-wrapper {
   background: #fff;
@@ -185,8 +185,8 @@ input, select { font-family: 'Inter', sans-serif; }
 .status-inactive { background: #FFEBEE; color: #C62828; }
 
 .btn-edit {
-  background: var(--primary-red);
-  color: #fff;
+  background: #E8E8E8;
+  color: #555;
   border: none;
   padding: 5px 10px;
   border-radius: 4px;
@@ -197,7 +197,7 @@ input, select { font-family: 'Inter', sans-serif; }
   text-align: center;
 }
 
-.btn-edit:hover { background: #C01820; }
+.btn-edit:hover { background: #D8D8D8; }
 
 /* Filtros */
 .admin-filters {
