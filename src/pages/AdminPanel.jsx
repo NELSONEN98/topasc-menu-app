@@ -83,6 +83,7 @@ export const AdminPanel = ({ onLogout }) => {
             categoriaId: formData.categoriaId,
             precio: formData.precio,
             descripcion: formData.descripcion,
+            imagenUrl: formData.imagenUrl,
             disponible: formData.disponible,
           },
         });
@@ -92,7 +93,7 @@ export const AdminPanel = ({ onLogout }) => {
           nombre: formData.nombre,
           descripcion: formData.descripcion,
           precio: formData.precio,
-          imagenUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+          imagenUrl: formData.imagenUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
           disponible: formData.disponible,
           activo: true,
         });
