@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { StatusBar } from './components/organisms/StatusBar';
 import { SplashScreen } from './pages/SplashScreen';
@@ -10,8 +11,9 @@ import { AdminLogin } from './pages/AdminLogin';
 import { useCart } from './context/CartContext';
 import './styles/global.css';
 
-const AppContent = () => {
+const ClientApp = () => {
   const { clearCart } = useCart();
+  const [showSplash, setSplash] = useState(true);
   const [currentPage, setCurrentPage] = useState('order-type');
   const [orderType, setOrderType] = useState(null);
 
@@ -26,58 +28,54 @@ const AppContent = () => {
     setCurrentPage('order-type');
   };
 
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setSplash(false)} />;
+  }
+
   return (
-    <>
-      {currentPage === 'order-type' ? (
-        <OrderType onSelectType={handleSelectType} />
-      ) : currentPage === 'home' ? (
-        <Home
-          onNavigateToCart={() => setCurrentPage('cart')}
-          onNavigateBack={handleNavigateBack}
-          orderType={orderType}
-        />
-      ) : (
-        <Cart
-          onNavigateToHome={() => setCurrentPage('home')}
-          onNavigateBack={handleNavigateBack}
-          orderType={orderType}
-        />
-      )}
-    </>
+    <div className="phone-shell">
+      <StatusBar />
+      <div className="scroll-area">
+        {currentPage === 'order-type' ? (
+          <OrderType onSelectType={handleSelectType} />
+        ) : currentPage === 'home' ? (
+          <Home
+            onNavigateToCart={() => setCurrentPage('cart')}
+            onNavigateBack={handleNavigateBack}
+            orderType={orderType}
+          />
+        ) : (
+          <Cart
+            onNavigateToHome={() => setCurrentPage('home')}
+            onNavigateBack={handleNavigateBack}
+            orderType={orderType}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
+const AdminApp = () => {
+  const [authenticated, setAuthenticated] = useState(false);
+
+  if (!authenticated) {
+    return <AdminLogin onLogin={() => setAuthenticated(true)} />;
+  }
+
+  return <AdminPanel onLogout={() => setAuthenticated(false)} />;
+};
+
 export const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path.startsWith('/admin')) {
-      setIsAdminMode(true);
-    }
-  }, []);
-
-  if (isAdminMode) {
-    if (!adminAuthenticated) {
-      return <AdminLogin onLogin={() => setAdminAuthenticated(true)} />;
-    }
-    return <AdminPanel onLogout={() => setAdminAuthenticated(false)} />;
-  }
-
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
-
   return (
-    <CartProvider>
-      <div className="phone-shell">
-        <StatusBar />
-        <div className="scroll-area">
-          <AppContent />
-        </div>
-      </div>
-    </CartProvider>
+    <BrowserRouter>
+      <CartProvider>
+        <Routes>
+          <Route path="/" element={<ClientApp />} />
+          <Route path="/admin" element={<AdminApp />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </CartProvider>
+    </BrowserRouter>
   );
 };
