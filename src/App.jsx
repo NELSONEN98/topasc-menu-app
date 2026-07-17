@@ -5,6 +5,7 @@ import { SplashScreen } from './pages/SplashScreen';
 import { OrderType } from './pages/OrderType';
 import { Home } from './pages/Home';
 import { Cart } from './pages/Cart';
+import { AdminPanel } from './pages/AdminPanel';
 import { useCart } from './context/CartContext';
 import './styles/global.css';
 
@@ -12,6 +13,7 @@ const AppContent = () => {
   const { clearCart } = useCart();
   const [currentPage, setCurrentPage] = useState('order-type');
   const [orderType, setOrderType] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleSelectType = (type) => {
     clearCart();
@@ -23,6 +25,10 @@ const AppContent = () => {
     clearCart();
     setCurrentPage('order-type');
   };
+
+  if (isAdmin) {
+    return <AdminPanel onLogout={() => setIsAdmin(false)} />;
+  }
 
   return (
     <>
@@ -41,6 +47,26 @@ const AppContent = () => {
           orderType={orderType}
         />
       )}
+      <button
+        onClick={() => setIsAdmin(true)}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          background: '#333',
+          color: '#fff',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '20px',
+          zIndex: 999,
+        }}
+        title="Admin"
+      >
+        ⚙️
+      </button>
     </>
   );
 };

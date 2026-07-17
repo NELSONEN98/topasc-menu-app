@@ -1,0 +1,29 @@
+/* Broaster Topasc — Admin panel CSS */
+* { box-sizing: border-box; }
+body { margin: 0; background: #F2ECE3; font-family: 'Inter', system-ui, sans-serif; }
+input, select { font-family: 'Inter', sans-serif; }
+
+.tab-btn { border: none; cursor: pointer; background: none; }
+
+.prod-row { display: grid; grid-template-columns: 100px 1.6fr 0.8fr 0.8fr 1fr 0.6fr; gap: 14px; align-items: center; }
+.sauce-row { display: grid; grid-template-columns: 100px 2fr 1fr 0.8fr 0.6fr; gap: 14px; align-items: center; }
+.row-thumb { width: 76px; height: 76px; border-radius: 14px; background: #EDE4D3; }
+
+.switch { position: relative; width: 42px; height: 24px; border-radius: 12px; cursor: pointer; border: none; flex: 0 0 auto; }
+.switch-knob { position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s; }
+
+.admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.admin-sidebar { width: 100%; flex: 0 0 auto; background: #241C15; padding: 16px 32px; display: flex; flex-direction: row; align-items: center; gap: 32px; }
+.admin-sidebar-tabs { display: flex; flex-direction: row; gap: 4px; }
+.admin-main { flex: 1; padding: 36px 40px; max-width: 980px; }
+
+@media (max-width: 760px) {
+  .admin-sidebar { gap: 16px !important; padding: 14px 16px !important; flex-wrap: wrap; }
+  .admin-sidebar-footer { display: none; }
+  .admin-main { padding: 20px 16px !important; max-width: 100% !important; }
+  .prod-row { grid-template-columns: 52px 1.3fr 0.8fr 0.7fr !important; gap: 10px !important; }
+  .sauce-row { grid-template-columns: 52px 1.6fr 0.9fr 0.7fr !important; gap: 10px !important; }
+  .prod-row-cat, .prod-row-edit { display: none !important; }
+  .row-thumb { width: 40px !important; height: 40px !important; border-radius: 9px !important; }
+  .admin-modal-card { width: 92vw !important; }
+}
