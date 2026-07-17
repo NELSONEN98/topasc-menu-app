@@ -58,7 +58,7 @@ const ClientApp = () => {
 
 const AdminApp = () => {
   return (
-    <div style={{ background: '#F2ECE3', minHeight: '100vh' }}>
+    <div style={{ background: '#F2ECE3', minHeight: '100vh', height: '100%', width: '100%' }}>
       <AdminPanel onLogout={() => {}} />
     </div>
   );
