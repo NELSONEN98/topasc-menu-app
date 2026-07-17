@@ -133,6 +133,7 @@ export const AdminPanel = ({ onLogout }) => {
 
             <div className="admin-table-wrapper">
               <div className="admin-table-header">
+                <div>Imagen</div>
                 <div>Nombre</div>
                 <div>Categoría</div>
                 <div>Precio</div>
@@ -143,6 +144,7 @@ export const AdminPanel = ({ onLogout }) => {
               <div className="admin-table-body">
                 {items.map(item => (
                   <div key={item._id} className="admin-table-row">
+                    <img src={item.imagenUrl} alt={item.nombre} className="admin-table-img" />
                     <div className="admin-table-cell-name">{item.nombre}</div>
                     <div className="admin-table-cell-category">
                       {categoriaMap[item.categoriaId] || 'Sin categoría'}
@@ -169,14 +171,43 @@ export const AdminPanel = ({ onLogout }) => {
             <div className="admin-section-header">
               <div>
                 <h1 className="admin-section-title">Salsas</h1>
-                <p className="admin-section-meta">Gestiona las salsas disponibles</p>
+                <p className="admin-section-meta">3 salsas · 3 activas</p>
               </div>
               <button className="btn-add-item" onClick={() => alert('Agregar nueva salsa')}>
                 + Agregar salsa
               </button>
             </div>
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              Sección de salsas en desarrollo
+
+            <div className="admin-table-wrapper">
+              <div className="admin-table-header admin-table-header-sauces">
+                <div>Imagen</div>
+                <div>Nombre</div>
+                <div>Precio</div>
+                <div>Estado</div>
+                <div></div>
+              </div>
+
+              <div className="admin-table-body">
+                {[
+                  { _id: 1, nombre: 'Salsa Roja', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
+                  { _id: 2, nombre: 'Salsa Verde', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
+                  { _id: 3, nombre: 'Salsa Picante', precio: 3500, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
+                ].map(salsa => (
+                  <div key={salsa._id} className="admin-table-row admin-table-row-sauces">
+                    <img src={salsa.imagen} alt={salsa.nombre} className="admin-table-img" />
+                    <div className="admin-table-cell-name">{salsa.nombre}</div>
+                    <div className="admin-table-cell-price">${salsa.precio.toLocaleString()}</div>
+                    <div className="admin-table-cell-status">
+                      <span className={`status-badge ${salsa.disponible ? 'status-active' : 'status-inactive'}`}>
+                        {salsa.disponible ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <button className="btn-edit" onClick={() => alert(`Editar: ${salsa.nombre}`)}>
+                      Editar
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -187,11 +218,60 @@ export const AdminPanel = ({ onLogout }) => {
             <div className="admin-section-header">
               <div>
                 <h1 className="admin-section-title">Horario</h1>
-                <p className="admin-section-meta">Configura el horario de atención</p>
+                <p className="admin-section-meta">Configura el horario de atención semanal</p>
               </div>
             </div>
-            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-              Sección de horario en desarrollo
+
+            <div className="horario-container">
+              {[
+                { dia: 'Lunes', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
+                { dia: 'Martes', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
+                { dia: 'Miércoles', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
+                { dia: 'Jueves', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
+                { dia: 'Viernes', entrada: '11:00 AM', salida: '12:00 AM', abierto: true },
+                { dia: 'Sábado', entrada: '12:00 PM', salida: '12:00 AM', abierto: true },
+                { dia: 'Domingo', entrada: '12:00 PM', salida: '10:00 PM', abierto: true },
+              ].map((horario, idx) => (
+                <div key={idx} className="horario-card">
+                  <div className="horario-day">
+                    <span className="horario-day-badge"></span>
+                    {horario.dia}
+                  </div>
+
+                  {horario.abierto ? (
+                    <div className="horario-times">
+                      <div className="horario-time-row">
+                        <span className="horario-time-label">Entrada</span>
+                        <span className="horario-time-value">{horario.entrada}</span>
+                      </div>
+                      <div className="horario-time-row">
+                        <span className="horario-time-label">Salida</span>
+                        <span className="horario-time-value">{horario.salida}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="horario-closed">Cerrado</div>
+                  )}
+
+                  <button
+                    style={{
+                      background: '#f0f0f0',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#241C15',
+                      transition: 'background .2s',
+                    }}
+                    onMouseOver={(e) => e.target.style.background = '#e0e0e0'}
+                    onMouseOut={(e) => e.target.style.background = '#f0f0f0'}
+                  >
+                    Editar
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}

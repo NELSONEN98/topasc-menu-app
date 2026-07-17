@@ -18,6 +18,11 @@ input, select { font-family: 'Inter', sans-serif; }
   align-items: center;
   gap: 40px;
   border-bottom: 1px solid var(--border-light);
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
 }
 
 .admin-navbar-brand {
@@ -66,11 +71,11 @@ input, select { font-family: 'Inter', sans-serif; }
 .switch { position: relative; width: 42px; height: 24px; border-radius: 12px; cursor: pointer; border: none; flex: 0 0 auto; }
 .switch-knob { position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s; }
 
-.admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.admin-shell { min-height: 100vh; display: flex; flex-direction: column; padding-top: 64px; }
 .admin-sidebar { width: 100%; flex: 0 0 auto; background: #241C15; padding: 16px 32px; display: flex; flex-direction: row; align-items: center; gap: 32px; }
 .admin-sidebar-tabs { display: flex; flex-direction: row; gap: 4px; }
 .admin-sidebar-footer { margin-left: auto; }
-.admin-main { flex: 1; padding: 36px 40px; }
+.admin-main { flex: 1; padding: 36px 40px; width: 100%; }
 
 .admin-section-header {
   display: flex;
@@ -116,7 +121,7 @@ input, select { font-family: 'Inter', sans-serif; }
   background: #F8F5F0;
   padding: 16px 24px;
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr;
+  grid-template-columns: 80px 2fr 1.5fr 1fr 1fr 0.8fr;
   gap: 16px;
   border-bottom: 1px solid var(--border-light);
   font-weight: 600;
@@ -130,12 +135,20 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .admin-table-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr;
+  grid-template-columns: 80px 2fr 1.5fr 1fr 1fr 0.8fr;
   gap: 16px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--border-light);
   align-items: center;
   transition: background .2s;
+}
+
+.admin-table-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #EDE4D3;
 }
 
 .admin-table-row:hover { background: #FAFAF8; }
@@ -170,6 +183,108 @@ input, select { font-family: 'Inter', sans-serif; }
 }
 
 .btn-edit:hover { background: #C01820; }
+
+/* Tabla de Salsas */
+.admin-table-header-sauces {
+  grid-template-columns: 80px 2fr 1fr 1fr 0.8fr !important;
+}
+
+.admin-table-row-sauces {
+  grid-template-columns: 80px 2fr 1fr 1fr 0.8fr !important;
+}
+
+/* Vista de Horario */
+.horario-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.horario-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.horario-day {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--dark-bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.horario-day-badge {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-gold);
+}
+
+.horario-times {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.horario-time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.horario-time-row:last-child {
+  border-bottom: none;
+}
+
+.horario-time-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.horario-time-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark-bg);
+}
+
+.horario-closed {
+  text-align: center;
+  padding: 20px 0;
+  color: #E11E2B;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.horario-summary {
+  background: #F8F5F0;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.horario-summary-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.horario-summary-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark-bg);
+}
 
 @media (max-width: 768px) {
   .admin-navbar {
