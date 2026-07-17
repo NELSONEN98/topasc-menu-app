@@ -30,12 +30,13 @@ export const AdminPanel = ({ onLogout }) => {
 
   // Filtrado de productos
   const filteredProducts = items.filter(item => {
+    const hasImage = item.imagenUrl && item.imagenUrl.trim() !== '';
     const matchesSearch = item.nombre.toLowerCase().includes(productSearch.toLowerCase());
     const matchesCategory = productCategoryFilter === '' || item.categoriaId === productCategoryFilter;
     const matchesStatus = productStatusFilter === '' ||
       (productStatusFilter === 'active' && item.disponible) ||
       (productStatusFilter === 'inactive' && !item.disponible);
-    return matchesSearch && matchesCategory && matchesStatus;
+    return hasImage && matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Paginación de productos
