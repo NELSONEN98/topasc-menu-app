@@ -47,19 +47,19 @@ async function seed() {
   ];
 
   const items = [
-    { categoria: "Broaster", nombre: "Salchipapa Especial", descripcion: "Papas con salchichas premium", precio: 16000 },
-    { categoria: "Broaster", nombre: "Alitas BBQ", descripcion: "Alitas crujientes con salsa BBQ", precio: 18000 },
-    { categoria: "Broaster", nombre: "Pechuga Completa", descripcion: "Pechuga de pollo jugosa", precio: 22000 },
-    { categoria: "Ensaladas", nombre: "Ensalada Griega", descripcion: "Lechuga, tomate, queso feta", precio: 14000 },
-    { categoria: "Ensaladas", nombre: "Ensalada César", descripcion: "Lechuga romana con crutones", precio: 15000 },
-    { categoria: "Sándwiches", nombre: "Sándwich de Pollo", descripcion: "Pan tostado con pechuga", precio: 12000 },
-    { categoria: "Sándwiches", nombre: "Sándwich de Queso", descripcion: "Queso derretido en pan", precio: 10000 },
-    { categoria: "Papas y Acompañamientos", nombre: "Papas Francesas", descripcion: "Papas crujientes", precio: 8000 },
-    { categoria: "Papas y Acompañamientos", nombre: "Papas Gratinadas", descripcion: "Papas con queso", precio: 10000 },
-    { categoria: "Bebidas", nombre: "Gaseosa 2L", descripcion: "Bebida gaseosa", precio: 8000 },
-    { categoria: "Bebidas", nombre: "Jugo Natural", descripcion: "Jugo fresco", precio: 6000 },
-    { categoria: "Postres", nombre: "Brownie", descripcion: "Chocolate caliente", precio: 7000 },
-    { categoria: "Postres", nombre: "Helado", descripcion: "Helado cremoso", precio: 5000 },
+    { categoria: "Broaster", nombre: "Salchipapa Especial", descripcion: "Papas con salchichas premium", precio: 16000, imagenUrl: "https://images.unsplash.com/photo-1585238341710-4ead7b36651b?w=300&h=300&fit=crop" },
+    { categoria: "Broaster", nombre: "Alitas BBQ", descripcion: "Alitas crujientes con salsa BBQ", precio: 18000, imagenUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=300&h=300&fit=crop" },
+    { categoria: "Broaster", nombre: "Pechuga Completa", descripcion: "Pechuga de pollo jugosa", precio: 22000, imagenUrl: "https://images.unsplash.com/photo-1626082927389-6cd097cdc46e?w=300&h=300&fit=crop" },
+    { categoria: "Ensaladas", nombre: "Ensalada Griega", descripcion: "Lechuga, tomate, queso feta", precio: 14000, imagenUrl: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=300&fit=crop" },
+    { categoria: "Ensaladas", nombre: "Ensalada César", descripcion: "Lechuga romana con crutones", precio: 15000, imagenUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=300&fit=crop" },
+    { categoria: "Sándwiches", nombre: "Sándwich de Pollo", descripcion: "Pan tostado con pechuga", precio: 12000, imagenUrl: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=300&h=300&fit=crop" },
+    { categoria: "Sándwiches", nombre: "Sándwich de Queso", descripcion: "Queso derretido en pan", precio: 10000, imagenUrl: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=300&h=300&fit=crop" },
+    { categoria: "Papas y Acompañamientos", nombre: "Papas Francesas", descripcion: "Papas crujientes", precio: 8000, imagenUrl: "https://images.unsplash.com/photo-1585238341710-4ead7b36651b?w=300&h=300&fit=crop" },
+    { categoria: "Papas y Acompañamientos", nombre: "Papas Gratinadas", descripcion: "Papas con queso", precio: 10000, imagenUrl: "https://images.unsplash.com/photo-1599599810694-b5ac4dd4c251?w=300&h=300&fit=crop" },
+    { categoria: "Bebidas", nombre: "Gaseosa 2L", descripcion: "Bebida gaseosa", precio: 8000, imagenUrl: "https://images.unsplash.com/photo-1554866585-f9c27d5b7e64?w=300&h=300&fit=crop" },
+    { categoria: "Bebidas", nombre: "Jugo Natural", descripcion: "Jugo fresco", precio: 6000, imagenUrl: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=300&h=300&fit=crop" },
+    { categoria: "Postres", nombre: "Brownie", descripcion: "Chocolate caliente", precio: 7000, imagenUrl: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=300&h=300&fit=crop" },
+    { categoria: "Postres", nombre: "Helado", descripcion: "Helado cremoso", precio: 5000, imagenUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=300&h=300&fit=crop" },
   ];
 
   try {
@@ -85,6 +85,7 @@ async function seed() {
           nombre: item.nombre,
           descripcion: item.descripcion,
           precio: item.precio,
+          imagenUrl: item.imagenUrl,
         });
         console.log(`✓ Item: ${item.nombre}`);
       } catch (err) {
