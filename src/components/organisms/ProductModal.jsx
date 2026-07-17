@@ -51,6 +51,22 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
     }
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result;
+        setFormData(prev => ({
+          ...prev,
+          imagenUrl: base64,
+        }));
+        setImagePreview(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -126,40 +142,55 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group" style={{ flex: 2 }}>
-              <label htmlFor="imagenUrl">URL de Imagen</label>
+          <div className="form-group">
+            <label>Imagen del Producto</label>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
               <input
-                id="imagenUrl"
-                type="url"
-                name="imagenUrl"
-                value={formData.imagenUrl}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
+                id="imageFile"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ flex: 1 }}
               />
             </div>
-
-            {imagePreview && (
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px' }}>
-                  Vista previa
-                </label>
-                <img
-                  src={imagePreview}
-                  alt="preview"
-                  style={{
-                    width: '100%',
-                    maxWidth: '120px',
-                    height: '120px',
-                    borderRadius: '8px',
-                    objectFit: 'cover',
-                    border: '1px solid #ddd',
-                  }}
-                  onError={() => setImagePreview('')}
-                />
-              </div>
-            )}
+            <label htmlFor="imagenUrl" style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '8px' }}>
+              O pegá una URL de imagen
+            </label>
+            <input
+              id="imagenUrl"
+              type="url"
+              name="imagenUrl"
+              value={formData.imagenUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg"
+            />
           </div>
+
+          {imagePreview && (
+            <div style={{
+              padding: '16px',
+              background: '#F8F5F0',
+              borderRadius: '8px',
+              textAlign: 'center',
+              marginBottom: '20px',
+            }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Vista previa
+              </label>
+              <img
+                src={imagePreview}
+                alt="preview"
+                style={{
+                  maxWidth: '200px',
+                  maxHeight: '200px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  border: '1px solid #ddd',
+                }}
+                onError={() => setImagePreview('')}
+              />
+            </div>
+          )}
 
           <div className="form-group form-checkbox">
             <label htmlFor="disponible">
