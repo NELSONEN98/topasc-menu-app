@@ -84,7 +84,13 @@ input, select { font-family: 'Inter', sans-serif; }
 .admin-sidebar { width: 100%; flex: 0 0 auto; background: #241C15; padding: 16px 32px; display: flex; flex-direction: row; align-items: center; gap: 32px; }
 .admin-sidebar-tabs { display: flex; flex-direction: row; gap: 4px; }
 .admin-sidebar-footer { margin-left: auto; }
-.admin-main { flex: 1; padding: 36px 40px; width: 100%; }
+.admin-main {
+  flex: 1;
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
 
 .admin-section-header {
   display: flex;
