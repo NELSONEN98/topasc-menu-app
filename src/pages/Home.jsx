@@ -10,7 +10,7 @@ import { useCart } from '../context/CartContext';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
 
-export const Home = ({ onNavigateToCart, onNavigateBack }) => {
+export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -18,6 +18,7 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
 
   const allItems = useQuery(api.items.listarMenu) || [];
   const allCategorias = useQuery(api.categorias.listar) || [];
+  const salsas = useQuery(api.salsas.listarDisponibles) || [];
 
   const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
 
@@ -38,6 +39,12 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
   return (
     <div className="home">
       <Hero />
+
+      {mesa && (
+        <div className="home__mesa-banner">
+          Estás en la <strong>Mesa {mesa.numero}</strong>
+        </div>
+      )}
 
       {onNavigateBack && (
         <div className="home__back">
@@ -68,7 +75,6 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
           ) : (
             <ProductGrid
               products={filteredProducts}
-              cartItems={cartItems}
               onProductClick={setSelectedProduct}
             />
           )}
@@ -124,7 +130,7 @@ export const Home = ({ onNavigateToCart, onNavigateBack }) => {
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
-          cartItems={cartItems}
+          salsas={salsas}
           onClose={() => setSelectedProduct(null)}
         />
       )}

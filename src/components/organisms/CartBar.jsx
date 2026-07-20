@@ -17,13 +17,13 @@ export const CartBar = ({ itemCount = 0, total = 0, onClick, variant = 'red' }) 
     <button
       className={`cart-bar cart-bar--${variant}`}
       onClick={onClick}
-      aria-label="Ver carrito"
+      aria-label="Ver orden"
     >
       <span className="cart-bar__count">
         {itemCount} {pluralProductos}
       </span>
       <span className="cart-bar__total">
-        Ver carrito · {formatPrice(total)} ›
+        Ver orden · {formatPrice(total)} ›
       </span>
     </button>
   );

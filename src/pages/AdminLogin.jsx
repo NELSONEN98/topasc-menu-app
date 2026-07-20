@@ -44,7 +44,7 @@ export const AdminLogin = ({ onLogin }) => {
           fontWeight: 700,
           color: '#241C15',
         }}>
-          Admin Broaster Topasc
+          Admin Topasc
         </h1>
 
         <form onSubmit={handleSubmit}>

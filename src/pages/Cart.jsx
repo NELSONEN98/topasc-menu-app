@@ -1,19 +1,28 @@
 import { useState } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Header } from '../components/organisms/Header';
 import { CartItem } from '../components/molecules/CartItem';
 import { Button } from '../components/atoms/Button';
 import { OrderConfirmation } from '../components/organisms/OrderConfirmation';
 import { TableNumberModal } from '../components/organisms/TableNumberModal';
-import { useCart } from '../context/CartContext';
-import { DELIVERY_FEES } from '../config/settings';
+import { AddressModal } from '../components/organisms/AddressModal';
+import { PickupModal } from '../components/organisms/PickupModal';
+import { useCart, SIN_SALSAS } from '../context/CartContext';
+import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
-export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
+export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) => {
   const { cartItems, updateQuantity, removeFromCart, getTotal, clearCart } =
     useCart();
+  const crearPedido = useMutation(api.pedidos.crear);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableNumber, setTableNumber] = useState('');
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [address, setAddress] = useState(null);
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [pickup, setPickup] = useState(null);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
@@ -34,7 +43,16 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
     }
 
     if (orderType === 'dine-in') {
-      setShowTableModal(true);
+      // Si viene por QR ya sabemos la mesa: no preguntamos el número
+      if (mesa) {
+        setShowConfirmation(true);
+      } else {
+        setShowTableModal(true);
+      }
+    } else if (orderType === 'delivery') {
+      setShowAddressModal(true);
+    } else if (orderType === 'pickup') {
+      setShowPickupModal(true);
     } else {
       setShowConfirmation(true);
     }
@@ -46,30 +64,99 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
     setShowConfirmation(true);
   };
 
+  const handleAddressConfirm = (data) => {
+    setAddress(data);
+    setShowAddressModal(false);
+    setShowConfirmation(true);
+  };
+
+  const handlePickupConfirm = (data) => {
+    setPickup(data);
+    setShowPickupModal(false);
+    setShowConfirmation(true);
+  };
+
   const handleConfirmationComplete = () => {
-    let message = `Hola, quisiera hacer un pedido por $${formatPrice(total)}. Detalles:\n${cartItems
-      .map((item) => `- ${item.name} x${item.quantity}`)
+    // Persistir el pedido en Convex (fire-and-forget): el envío por WhatsApp
+    // es el canal principal, así que un fallo al guardar no debe frenarlo.
+    const pedidoItems = cartItems.map((item) => ({
+      itemId: item.id,
+      nombreSnapshot: item.name,
+      precioSnapshot: item.price,
+      cantidad: item.quantity,
+      salsasBase: item.salsas?.length ? item.salsas : undefined,
+      salsasExtra: item.salsasExtra?.length ? item.salsasExtra : undefined,
+      notas: item.comentario || undefined,
+    }));
+
+    // La mesa por QR gana sobre el número tipeado manualmente
+    const mesaNumeroFinal =
+      orderType === 'dine-in' ? mesa?.numero || tableNumber : undefined;
+
+    crearPedido({
+      tipoPedido: orderType,
+      total,
+      costoDomicilio: orderType === 'delivery' ? deliveryFee : undefined,
+      clienteNombre: pickup?.nombre,
+      codigoRetiro: pickup?.codigo,
+      mesaId: orderType === 'dine-in' ? mesa?._id : undefined,
+      mesaNumero: mesaNumeroFinal,
+      direccionEntrega: address?.direccion,
+      direccionReferencia: address?.referencia || undefined,
+      items: pedidoItems,
+    }).catch((e) =>
+      console.error('No se pudo guardar el pedido en Convex:', e)
+    );
+
+    let message = `Hola, quisiera hacer un pedido por ${formatPrice(total)}. Detalles:\n${cartItems
+      .map((item) => {
+        let line = `- ${item.name} x${item.quantity}`;
+        if (item.salsas?.length > 0)
+          line +=
+            item.salsas[0] === SIN_SALSAS
+              ? `\n  ${SIN_SALSAS}`
+              : `\n  Salsas: ${item.salsas.join(', ')}`;
+        if (item.salsasExtra?.length > 0)
+          line += `\n  Extras: ${item.salsasExtra.map((s) => s.nombre).join(', ')}`;
+        if (item.comentario) line += `\n  Nota: ${item.comentario}`;
+        return line;
+      })
       .join('\n')}`;
 
-    if (orderType === 'dine-in' && tableNumber) {
-      message += `\n\nMesa: ${tableNumber}`;
+    if (orderType === 'dine-in' && mesaNumeroFinal) {
+      message += `\n\nMesa: ${mesaNumeroFinal}`;
     }
 
-    const whatsappUrl = `https://wa.me/573176694721?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    if (orderType === 'delivery' && address) {
+      message += `\n\nEntregar en: ${address.direccion}`;
+      if (address.referencia) message += `\nReferencia: ${address.referencia}`;
+    }
+
+    if (orderType === 'pickup' && pickup) {
+      message += `\n\nRecoge: ${pickup.nombre}`;
+      message += `\nCódigo de retiro: ${pickup.codigo}`;
+    }
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
     setShowConfirmation(false);
     setTableNumber('');
+    setAddress(null);
+    setPickup(null);
     clearCart();
+
+    // window.open corre fuera del gesto del click (viene del timer de la
+    // animación), así que el navegador puede bloquearlo como popup. Si lo
+    // bloquea (devuelve null), navegamos la ventana actual, que nunca se bloquea.
+    const nuevaVentana = window.open(whatsappUrl, '_blank');
+    if (!nuevaVentana) {
+      window.location.href = whatsappUrl;
+    }
   };
 
   return (
     <div className="cart">
-      <Header
-        title="Tu Carrito"
-        onCartClick={onNavigateToHome}
-        variant="neutral"
-      />
+      <Header title="Tu Orden" variant="neutral" />
 
       <div className="cart__top-action">
         <Button
@@ -78,16 +165,16 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
           onClick={onNavigateToHome}
           className="cart__continue-btn"
         >
-          ← Seguir comprando
+          Seguir agregando +
         </Button>
       </div>
 
       {cartItems.length === 0 ? (
         <div className="cart__empty">
-          <span className="cart__empty-icon">🛒</span>
-          <h2 className="cart__empty-title">Carrito Vacío</h2>
+          <span className="cart__empty-icon">🧾</span>
+          <h2 className="cart__empty-title">Tu orden está vacía</h2>
           <p className="cart__empty-message">
-            Agrega productos para empezar a comprar
+            Agrega productos para empezar tu orden
           </p>
           <Button
             variant="primary"
@@ -95,7 +182,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
             onClick={onNavigateToHome}
             className="cart__continue-btn"
           >
-            Continuar comprando
+            Agregar productos
           </Button>
         </div>
       ) : (
@@ -103,7 +190,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
           <div className="cart__items">
             {cartItems.map((item) => (
               <CartItem
-                key={item.id}
+                key={item.lineId}
                 item={item}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}
@@ -143,7 +230,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
               onClick={clearCart}
               className="cart__clear-btn"
             >
-              Limpiar carrito
+              Vaciar orden
             </Button>
           </div>
         </>
@@ -153,6 +240,20 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery' }) => {
         <TableNumberModal
           onConfirm={handleTableNumberConfirm}
           onCancel={() => setShowTableModal(false)}
+        />
+      )}
+
+      {showAddressModal && (
+        <AddressModal
+          onConfirm={handleAddressConfirm}
+          onCancel={() => setShowAddressModal(false)}
+        />
+      )}
+
+      {showPickupModal && (
+        <PickupModal
+          onConfirm={handlePickupConfirm}
+          onCancel={() => setShowPickupModal(false)}
         />
       )}
 

@@ -1,4 +1,4 @@
-.modal-overlay {
+.detail-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -9,10 +9,12 @@
   align-items: flex-end;
   justify-content: center;
   z-index: 1000;
-  animation: slideUp 0.3s ease-out;
+  animation: detailSlideUp 0.3s ease-out;
 }
 
-.modal-content {
+.detail-content {
+  /* Ancla el botón de cerrar (absolute) dentro de la card */
+  position: relative;
   background: #fff;
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
@@ -21,54 +23,55 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.3s ease-out;
+  animation: detailSlideUp 0.3s ease-out;
 }
 
-.modal-close {
+.detail-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.75rem;
+  right: 0.75rem;
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
+  background: #E11E2B;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   cursor: pointer;
   z-index: 1001;
-  color: #241C15;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.25);
   transition: background 0.2s ease;
 }
 
-.modal-close:active {
-  background: rgba(0, 0, 0, 0.2);
+.detail-close:active {
+  background: #c01820;
 }
 
-.modal-image {
+.detail-image {
   width: 100%;
-  height: 12rem;
+  height: 18.7rem; /* 12rem + 30% + 20% */
   object-fit: cover;
   background: #cfcfcf;
 }
 
-.modal-body {
+.detail-body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.modal-name {
+.detail-name {
   margin: 0;
   font: 700 1.5rem 'Poppins', sans-serif;
   color: #241C15;
   line-height: 1.2;
 }
 
-.modal-category {
+.detail-category {
   margin: 0;
   font: 500 0.75rem 'Inter', sans-serif;
   color: #999;
@@ -76,54 +79,191 @@
   letter-spacing: 0.5px;
 }
 
-.modal-description {
+.detail-description {
   margin: 0.5rem 0 0 0;
   font: 400 0.875rem 'Inter', sans-serif;
   color: #666;
   line-height: 1.5;
 }
 
-.modal-price {
+.detail-price {
   font: 700 1.25rem 'Poppins', sans-serif;
   color: #E11E2B;
   margin: 0.5rem 0;
 }
 
-.modal-actions {
+.detail-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
-.modal-add-btn {
+.detail-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-section__title {
+  font: 700 0.9375rem 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.detail-section__badge {
+  font: 600 0.6875rem 'Inter', sans-serif;
+  color: #666;
+  background: #f0f0f0;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.75rem;
+}
+
+.detail-section__badge--required {
+  color: #E11E2B;
+  background: #FDE8EA;
+}
+
+.detail-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.detail-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.625rem;
+  cursor: pointer;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.625rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.detail-option:active {
+  background: #FBF1D6;
+}
+
+/* Chip seleccionado: borde y fondo rojos suaves */
+.detail-option:has(.detail-option__input:checked) {
+  border-color: #E11E2B;
+  background: #FDE8EA;
+}
+
+.detail-option__input {
+  accent-color: #E11E2B;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: 0 0 auto;
+}
+
+.detail-option__name {
+  flex: 1;
+  font: 500 0.8125rem 'Inter', sans-serif;
+  color: #241C15;
+}
+
+.detail-option__price {
+  font: 600 0.75rem 'Inter', sans-serif;
+  color: #999;
+}
+
+.detail-option--none {
+  grid-column: 1 / -1;
+  justify-content: center;
+  border: 1.5px dashed #E11E2B;
+  background: #fff;
+}
+
+.detail-option--none .detail-option__name {
+  flex: 0 0 auto;
+  color: #E11E2B;
+  font-weight: 600;
+}
+
+.detail-option--none:has(.detail-option__input:checked) {
+  border-style: solid;
+}
+
+.detail-comment {
   width: 100%;
+  border: 1px solid #eee;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font: 400 0.875rem 'Inter', sans-serif;
+  color: #241C15;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.detail-comment:focus {
+  border-color: #E11E2B;
+}
+
+/* Footer fijo dentro de la card: el contenido scrollea, el CTA queda siempre visible */
+.detail-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 0.75rem 1.5rem calc(1rem + env(safe-area-inset-bottom));
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.detail-footer__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-hint {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #FBF1D6;
+  border-radius: 0.625rem;
+  font: 500 0.75rem 'Inter', sans-serif;
+  color: #8a6d1a;
+  line-height: 1.4;
+}
+
+.detail-add-btn {
+  flex: 1;
   padding: 0.75rem;
-  height: 2.5rem;
-  border-radius: 1.25rem;
+  height: 2.75rem;
+  border-radius: 1.375rem;
   background: #E11E2B;
   color: #fff;
   font: 700 0.875rem 'Poppins', sans-serif;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
-.modal-add-btn:active {
+.detail-add-btn:active {
   background: #c01820;
 }
 
-.modal-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #FBF1D6;
-  border-radius: 1.25rem;
-  padding: 0.3rem;
-  gap: 0.5rem;
+.detail-add-btn:disabled {
+  background: #E11E2B;
+  color: #fff;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
-.modal-stepper__btn {
+.detail-stepper {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  background: #FBF1D6;
+  border-radius: 1.375rem;
+  padding: 0.375rem;
+  gap: 0.375rem;
+}
+
+.detail-stepper__btn {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
@@ -133,32 +273,32 @@
   transition: background 0.2s ease;
 }
 
-.modal-stepper__btn--dec {
+.detail-stepper__btn--dec {
   background: #fff;
   color: #241C15;
 }
 
-.modal-stepper__btn--dec:active {
+.detail-stepper__btn--dec:active {
   background: #f5f5f5;
 }
 
-.modal-stepper__btn--inc {
+.detail-stepper__btn--inc {
   background: #4B4B4B;
   color: #fff;
 }
 
-.modal-stepper__btn--inc:active {
+.detail-stepper__btn--inc:active {
   background: #333;
 }
 
-.modal-qty {
+.detail-qty {
   font: 700 0.875rem 'Poppins', sans-serif;
   color: #241C15;
-  flex: 1;
+  min-width: 1.5rem;
   text-align: center;
 }
 
-.modal-close-btn {
+.detail-close-btn {
   width: 100%;
   padding: 0.75rem;
   height: 2.5rem;
@@ -171,11 +311,11 @@
   transition: background 0.2s ease;
 }
 
-.modal-close-btn:active {
+.detail-close-btn:active {
   background: #e0e0e0;
 }
 
-@keyframes slideUp {
+@keyframes detailSlideUp {
   from {
     transform: translateY(100%);
     opacity: 0;

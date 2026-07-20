@@ -1,11 +1,11 @@
 import './Hero.css';
 
-export const Hero = ({ title = 'Broaster Topasc', imageUrl = '/fondo-test.jpg' }) => {
+export const Hero = ({ title = 'Topasc', imageUrl = '/fondo-test.jpg' }) => {
   return (
     <div className="hero-2a">
       <img
         src={imageUrl}
-        alt="Broaster Topasc"
+        alt="Topasc"
         className="hero-2a-image"
         onError={(e) => {
           e.target.style.background = '#cfcfcf';
@@ -19,9 +19,8 @@ export const Hero = ({ title = 'Broaster Topasc', imageUrl = '/fondo-test.jpg' }
             <circle cx="17" cy="5" r="6" fill="#fff" />
             <circle cx="29" cy="14" r="4" fill="#fff" />
           </svg>
-          <p className="hero-2a-title">Broaster</p>
+          <p className="hero-2a-title">Topasc</p>
         </div>
-        <p className="hero-2a-title">Topasc</p>
       </div>
     </div>
   );

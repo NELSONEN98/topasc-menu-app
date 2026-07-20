@@ -34,6 +34,18 @@
   line-height: 1.2;
 }
 
+.cart-item__option {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6875rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.cart-item__option--note {
+  font-style: italic;
+}
+
 .cart-item__price {
   font-family: 'Poppins', sans-serif;
   font-size: 0.78125rem;

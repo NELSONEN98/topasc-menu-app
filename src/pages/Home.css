@@ -7,6 +7,22 @@
 }
 
 /* ============================================================
+   MESA BANNER (entrada por QR)
+   ============================================================ */
+.home__mesa-banner {
+  padding: 0.625rem 1.125rem;
+  background: #E11E2B;
+  color: #fff;
+  font: 500 0.875rem 'Inter', sans-serif;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.home__mesa-banner strong {
+  font-weight: 700;
+}
+
+/* ============================================================
    BACK BUTTON CONTAINER
    ============================================================ */
 .home__back {

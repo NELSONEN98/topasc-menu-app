@@ -62,6 +62,15 @@ async function seed() {
     { categoria: "Postres", nombre: "Helado", descripcion: "Helado cremoso", precio: 5000, imagenUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=300&h=300&fit=crop" },
   ];
 
+  const salsas = [
+    { nombre: "Salsa Roja", tipo: "base", precio: 0 },
+    { nombre: "Salsa Rosada", tipo: "base", precio: 0 },
+    { nombre: "Salsa de Ajo", tipo: "base", precio: 0 },
+    { nombre: "Salsa BBQ", tipo: "base", precio: 0 },
+    { nombre: "Mostaza", tipo: "base", precio: 0 },
+    { nombre: "Salsa Picante", tipo: "base", precio: 0 },
+  ];
+
   try {
     const categoriaIds = {};
 
@@ -90,6 +99,15 @@ async function seed() {
         console.log(`✓ Item: ${item.nombre}`);
       } catch (err) {
         console.error(`❌ Error en item ${item.nombre}:`, err.message);
+      }
+    }
+
+    for (const salsa of salsas) {
+      try {
+        await callMutation("salsas:crear", salsa);
+        console.log(`✓ Salsa: ${salsa.nombre}`);
+      } catch (err) {
+        console.error(`❌ Error en salsa ${salsa.nombre}:`, err.message);
       }
     }
 

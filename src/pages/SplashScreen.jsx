@@ -15,8 +15,7 @@ export const SplashScreen = ({ onComplete }) => {
   return (
     <div className={`splash-screen ${isExiting ? 'splash-screen--exit' : ''}`}>
       <div className="splash-screen__content">
-        <h1 className="splash-screen__title">Broaster</h1>
-        <p className="splash-screen__subtitle">Topasc</p>
+        <h1 className="splash-screen__title">Topasc</h1>
         <div className="splash-screen__loader"></div>
       </div>
     </div>

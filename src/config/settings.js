@@ -24,10 +24,10 @@ export const CURRENCY = {
 };
 
 // Nombre del negocio
-export const BUSINESS_NAME = 'Broaster Topasc';
+export const BUSINESS_NAME = 'Topasc';
 
 // Número de WhatsApp para contacto (sin +, sin espacios)
-export const WHATSAPP_NUMBER = '573123456789';
+export const WHATSAPP_NUMBER = '573206873870';
 
 // Cantidad de productos por página
 export const ITEMS_PER_PAGE = 6;

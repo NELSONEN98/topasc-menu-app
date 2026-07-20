@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { ProductModal } from '../components/organisms/ProductModal';
+import { SalsaModal } from '../components/organisms/SalsaModal';
+import { AdminPedidos } from '../components/organisms/AdminPedidos';
 import { Pagination } from '../components/molecules/Pagination';
 import '../styles/admin-styles.css';
 
 export const AdminPanel = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState('productos');
+  const [activeTab, setActiveTab] = useState('pedidos');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [salsaModalOpen, setSalsaModalOpen] = useState(false);
+  const [editingSalsa, setEditingSalsa] = useState(null);
   const [productPage, setProductPage] = useState(1);
   const [salsasPage, setSalsasPage] = useState(1);
   const [productSearch, setProductSearch] = useState('');
@@ -19,8 +23,11 @@ export const AdminPanel = ({ onLogout }) => {
 
   const items = useQuery(api.items.listarMenu) || [];
   const categorias = useQuery(api.categorias.listar) || [];
+  const salsas = useQuery(api.salsas.listar) || [];
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);
+  const crearSalsa = useMutation(api.salsas.crear);
+  const actualizarSalsa = useMutation(api.salsas.actualizar);
 
   const activeProducts = items.filter(item => item.disponible).length;
 
@@ -46,22 +53,12 @@ export const AdminPanel = ({ onLogout }) => {
   const productEndIdx = productStartIdx + ITEMS_PER_PAGE;
   const paginatedProducts = filteredProducts.slice(productStartIdx, productEndIdx);
 
-  // Paginación de salsas (datos de ejemplo)
-  const salsasData = [
-    { _id: 1, nombre: 'Salsa Roja', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 2, nombre: 'Salsa Verde', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 3, nombre: 'Salsa Picante', precio: 3500, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 4, nombre: 'Salsa BBQ', precio: 4000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 5, nombre: 'Salsa Ajo', precio: 3500, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 6, nombre: 'Salsa Mostaza', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 7, nombre: 'Salsa Sriracha', precio: 4500, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 8, nombre: 'Salsa Limón', precio: 3000, disponible: true, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-    { _id: 9, nombre: 'Salsa Cilantro', precio: 3500, disponible: false, imagen: 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop' },
-  ];
-  const totalSalsasPages = Math.ceil(salsasData.length / ITEMS_PER_PAGE);
+  // Paginación de salsas
+  const totalSalsasPages = Math.ceil(salsas.length / ITEMS_PER_PAGE);
   const salsasStartIdx = (salsasPage - 1) * ITEMS_PER_PAGE;
   const salsasEndIdx = salsasStartIdx + ITEMS_PER_PAGE;
-  const paginatedSalsas = salsasData.slice(salsasStartIdx, salsasEndIdx);
+  const paginatedSalsas = salsas.slice(salsasStartIdx, salsasEndIdx);
+  const SALSA_PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1623340158501-ba1fd069b06b?w=80&h=80&fit=crop';
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -72,6 +69,50 @@ export const AdminPanel = ({ onLogout }) => {
     const product = items.find(item => item._id === productId);
     setEditingProduct(product);
     setModalOpen(true);
+  };
+
+  const handleSaveSalsa = async (formData) => {
+    try {
+      if (!formData.nombre.trim()) {
+        alert('El nombre de la salsa es obligatorio');
+        return;
+      }
+      if (formData.tipo === 'especial' && formData.precio <= 0) {
+        alert('Las salsas especiales deben tener un precio mayor a 0');
+        return;
+      }
+
+      const isEditing = !!editingSalsa;
+
+      if (editingSalsa) {
+        await actualizarSalsa({
+          id: editingSalsa._id,
+          campos: {
+            nombre: formData.nombre,
+            tipo: formData.tipo,
+            precio: formData.tipo === 'base' ? 0 : formData.precio,
+            imagenUrl: formData.imagenUrl || undefined,
+            disponible: formData.disponible,
+          },
+        });
+      } else {
+        await crearSalsa({
+          nombre: formData.nombre,
+          tipo: formData.tipo,
+          precio: formData.tipo === 'base' ? 0 : formData.precio,
+          imagenUrl: formData.imagenUrl || undefined,
+        });
+      }
+
+      setSalsaModalOpen(false);
+      setEditingSalsa(null);
+      setSaveMessage(isEditing ? '✓ Salsa actualizada' : '✓ Salsa creada');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error al guardar salsa:', error);
+      setSaveMessage('❌ Error al guardar');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
   };
 
   const handleSaveProduct = async (formData) => {
@@ -101,6 +142,7 @@ export const AdminPanel = ({ onLogout }) => {
             descripcion: formData.descripcion,
             imagenUrl: formData.imagenUrl,
             disponible: formData.disponible,
+            llevaSalsas: formData.llevaSalsas,
           },
         });
       } else {
@@ -110,8 +152,8 @@ export const AdminPanel = ({ onLogout }) => {
           descripcion: formData.descripcion,
           precio: formData.precio,
           imagenUrl: formData.imagenUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+          llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,
-          activo: true,
         });
       }
 
@@ -155,11 +197,16 @@ export const AdminPanel = ({ onLogout }) => {
       {/* Navbar */}
       <nav className="admin-navbar">
         <div className="admin-navbar-brand">
-          <span className="admin-navbar-brand-white">Broaster </span>
-          <span className="admin-navbar-brand-gold">topasc</span>
+          <span className="admin-navbar-brand-gold">Topasc</span>
         </div>
 
         <div className="admin-navbar-nav">
+          <button
+            className={`admin-nav-item ${activeTab === 'pedidos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pedidos')}
+          >
+            🧾 Pedidos
+          </button>
           <button
             className={`admin-nav-item ${activeTab === 'productos' ? 'active' : ''}`}
             onClick={() => setActiveTab('productos')}
@@ -204,6 +251,19 @@ export const AdminPanel = ({ onLogout }) => {
 
       {/* Main Content */}
       <div className="admin-main">
+        {/* Pedidos Section */}
+        {activeTab === 'pedidos' && (
+          <div>
+            <div className="admin-section-header">
+              <div>
+                <h1 className="admin-section-title">Pedidos</h1>
+                <p className="admin-section-meta">Pedidos activos en tiempo real</p>
+              </div>
+            </div>
+            <AdminPedidos />
+          </div>
+        )}
+
         {/* Productos Section */}
         {activeTab === 'productos' && (
           <div>
@@ -326,9 +386,15 @@ export const AdminPanel = ({ onLogout }) => {
             <div className="admin-section-header">
               <div>
                 <h1 className="admin-section-title">Salsas</h1>
-                <p className="admin-section-meta">{salsasData.length} salsas · {salsasData.filter(s => s.disponible).length} activas</p>
+                <p className="admin-section-meta">{salsas.length} salsas · {salsas.filter(s => s.disponible).length} activas</p>
               </div>
-              <button className="btn-add-item" onClick={() => alert('Agregar nueva salsa')}>
+              <button
+                className="btn-add-item"
+                onClick={() => {
+                  setEditingSalsa(null);
+                  setSalsaModalOpen(true);
+                }}
+              >
                 + Agregar salsa
               </button>
             </div>
@@ -345,17 +411,41 @@ export const AdminPanel = ({ onLogout }) => {
               <div className="admin-table-body">
                 {paginatedSalsas.map(salsa => (
                   <div key={salsa._id} className="admin-table-row admin-table-row-sauces">
-                    <img src={salsa.imagen} alt={salsa.nombre} className="admin-table-img" />
-                    <div className="admin-table-cell-name">{salsa.nombre}</div>
-                    <div className="admin-table-cell-price">${salsa.precio.toLocaleString()}</div>
+                    <img src={salsa.imagenUrl || SALSA_PLACEHOLDER_IMG} alt={salsa.nombre} className="admin-table-img" />
+                    <div className="admin-table-cell-name">
+                      {salsa.nombre}
+                      {salsa.tipo === 'especial' && (
+                        <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 600, color: '#B8860B', background: '#FBF1D6', padding: '2px 8px', borderRadius: '10px' }}>
+                          Especial
+                        </span>
+                      )}
+                    </div>
+                    <div className="admin-table-cell-price">
+                      {salsa.tipo === 'base' ? 'Gratis' : `$${salsa.precio.toLocaleString()}`}
+                    </div>
                     <div className="admin-table-cell-status">
                       <button
                         className={`status-toggle ${salsa.disponible ? 'active' : ''}`}
-                        onClick={() => alert(`Cambiar estado: ${salsa.nombre}`)}
+                        onClick={async () => {
+                          try {
+                            await actualizarSalsa({
+                              id: salsa._id,
+                              campos: { disponible: !salsa.disponible },
+                            });
+                          } catch (error) {
+                            console.error('Error al cambiar estado:', error);
+                          }
+                        }}
                         title={salsa.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
                       />
                     </div>
-                    <button className="btn-edit" onClick={() => alert(`Editar: ${salsa.nombre}`)}>
+                    <button
+                      className="btn-edit"
+                      onClick={() => {
+                        setEditingSalsa(salsa);
+                        setSalsaModalOpen(true);
+                      }}
+                    >
                       Editar
                     </button>
                   </div>
@@ -443,6 +533,17 @@ export const AdminPanel = ({ onLogout }) => {
         product={editingProduct}
         categorias={categorias}
         onSave={handleSaveProduct}
+      />
+
+      {/* Salsa Modal */}
+      <SalsaModal
+        isOpen={salsaModalOpen}
+        onClose={() => {
+          setSalsaModalOpen(false);
+          setEditingSalsa(null);
+        }}
+        salsa={editingSalsa}
+        onSave={handleSaveSalsa}
       />
     </div>
   );

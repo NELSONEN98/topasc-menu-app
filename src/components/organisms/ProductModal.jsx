@@ -9,6 +9,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
     descripcion: '',
     imagenUrl: '',
     disponible: true,
+    llevaSalsas: true,
   });
 
   const [imagePreview, setImagePreview] = useState('');
@@ -22,6 +23,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         descripcion: product.descripcion || '',
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
+        llevaSalsas: product.llevaSalsas !== false,
       });
       setImagePreview(product.imagenUrl || '');
     } else {
@@ -32,6 +34,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         descripcion: '',
         imagenUrl: '',
         disponible: true,
+        llevaSalsas: true,
       });
       setImagePreview('');
     }
@@ -202,6 +205,19 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
                 onChange={handleChange}
               />
               Disponible
+            </label>
+          </div>
+
+          <div className="form-group form-checkbox">
+            <label htmlFor="llevaSalsas">
+              <input
+                id="llevaSalsas"
+                type="checkbox"
+                name="llevaSalsas"
+                checked={formData.llevaSalsas}
+                onChange={handleChange}
+              />
+              Lleva salsas (el cliente debe elegirlas al pedir)
             </label>
           </div>
 

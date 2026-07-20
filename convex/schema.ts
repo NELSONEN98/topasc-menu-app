@@ -16,10 +16,25 @@ export default defineSchema({
     imagenUrl: v.optional(v.string()),
     disponible: v.boolean(),
     activo: v.boolean(),
+    // undefined = lleva salsas (default); false = bebidas, postres, etc.
+    llevaSalsas: v.optional(v.boolean()),
   }).index("por_categoria", ["categoriaId"]),
 
+  salsas: defineTable({
+    nombre: v.string(),
+    // "base" = incluida gratis (elección obligatoria); "especial" = paga, opcional
+    tipo: v.union(v.literal("base"), v.literal("especial")),
+    precio: v.number(),
+    imagenUrl: v.optional(v.string()),
+    disponible: v.boolean(),
+    activo: v.boolean(),
+  }),
+
   mesas: defineTable({
+    // codigo = token del QR (no legible, va en la URL /mesa/:codigo)
     codigo: v.string(),
+    // numero = etiqueta legible para el local ("5", "Mesa VIP")
+    numero: v.string(),
     activo: v.boolean(),
   }).index("por_codigo", ["codigo"]),
 
@@ -41,6 +56,7 @@ export default defineSchema({
     mesaNumero: v.optional(v.string()),
     clienteNombre: v.optional(v.string()),
     clienteTelefono: v.optional(v.string()),
+    codigoRetiro: v.optional(v.string()),
     direccionEntrega: v.optional(v.string()),
     direccionReferencia: v.optional(v.string()),
     costoDomicilio: v.optional(v.number()),
@@ -52,6 +68,10 @@ export default defineSchema({
         nombreSnapshot: v.string(),
         precioSnapshot: v.number(),
         cantidad: v.number(),
+        salsasBase: v.optional(v.array(v.string())),
+        salsasExtra: v.optional(
+          v.array(v.object({ nombre: v.string(), precio: v.number() }))
+        ),
         notas: v.optional(v.string()),
       })
     ),
