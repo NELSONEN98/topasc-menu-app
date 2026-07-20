@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { PaymentSelector } from '../molecules/PaymentSelector';
 import './TableNumberModal.css';
 import './AddressModal.css';
 
@@ -16,6 +17,7 @@ const generarCodigo = () => {
 
 export const PickupModal = ({ onConfirm, onCancel }) => {
   const [nombre, setNombre] = useState('');
+  const [metodoPago, setMetodoPago] = useState(null);
   // Un único código por apertura de la modal
   const codigo = useMemo(() => generarCodigo(), []);
 
@@ -24,7 +26,11 @@ export const PickupModal = ({ onConfirm, onCancel }) => {
       alert('Por favor ingresa tu nombre');
       return;
     }
-    onConfirm({ nombre: nombre.trim(), codigo });
+    if (!metodoPago) {
+      alert('Por favor elegí el método de pago');
+      return;
+    }
+    onConfirm({ nombre: nombre.trim(), codigo, metodoPago });
   };
 
   return (
@@ -53,6 +59,8 @@ export const PickupModal = ({ onConfirm, onCancel }) => {
               Mostralo o decilo al recoger tu orden
             </span>
           </div>
+
+          <PaymentSelector value={metodoPago} onChange={setMetodoPago} />
         </div>
 
         <div className="table-modal-actions">

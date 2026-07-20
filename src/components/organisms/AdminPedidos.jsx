@@ -28,6 +28,11 @@ const TIPO_LABEL = {
   'dine-in': '🪑 En mesa',
 };
 
+const PAGO_LABEL = {
+  efectivo: '💵 Efectivo',
+  transferencia: '📱 Transferencia',
+};
+
 const formatPrice = (price) =>
   new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -133,7 +138,14 @@ export const AdminPedidos = () => {
             </ul>
 
             <div className="pedido-card__footer">
-              <span className="pedido-card__total">{formatPrice(pedido.total)}</span>
+              <div className="pedido-card__total-wrap">
+                <span className="pedido-card__total">{formatPrice(pedido.total)}</span>
+                {pedido.metodoPago && (
+                  <span className="pedido-card__pago">
+                    {PAGO_LABEL[pedido.metodoPago] || pedido.metodoPago}
+                  </span>
+                )}
+              </div>
               <div className="pedido-card__acciones">
                 <button
                   className="pedido-btn pedido-btn--cancel"

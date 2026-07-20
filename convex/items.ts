@@ -48,3 +48,10 @@ export const actualizar = mutation({
     await ctx.db.patch(id, campos);
   },
 });
+
+export const borrar = mutation({
+  args: { id: v.id("items") },
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
+  },
+});

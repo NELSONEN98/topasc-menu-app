@@ -60,6 +60,10 @@ export default defineSchema({
     direccionEntrega: v.optional(v.string()),
     direccionReferencia: v.optional(v.string()),
     costoDomicilio: v.optional(v.number()),
+    // Método de pago: obligatorio en domicilio y recoger; en mesa se paga en el local
+    metodoPago: v.optional(
+      v.union(v.literal("efectivo"), v.literal("transferencia"))
+    ),
     total: v.number(),
     notas: v.optional(v.string()),
     items: v.array(

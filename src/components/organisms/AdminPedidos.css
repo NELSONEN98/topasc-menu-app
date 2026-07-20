@@ -145,9 +145,20 @@
   gap: 0.5rem;
 }
 
+.pedido-card__total-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .pedido-card__total {
   font: 800 1.125rem 'Poppins', sans-serif;
   color: #241C15;
+}
+
+.pedido-card__pago {
+  font: 600 0.6875rem 'Inter', sans-serif;
+  color: #666;
 }
 
 .pedido-card__acciones {

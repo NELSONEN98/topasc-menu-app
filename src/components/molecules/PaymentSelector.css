@@ -1,0 +1,46 @@
+.payment-selector {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.payment-selector__label {
+  font: 600 0.8125rem 'Inter', sans-serif;
+  color: #241C15;
+  text-align: left;
+}
+
+.payment-selector__options {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.payment-opt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border: 0.125rem solid #e5e5e5;
+  border-radius: 0.875rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.payment-opt__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.payment-opt__label {
+  font: 600 0.8125rem 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.payment-opt--active {
+  border-color: #E11E2B;
+  background: #FDE8EA;
+}

@@ -1,17 +1,27 @@
 import { useState } from 'react';
+import { PaymentSelector } from '../molecules/PaymentSelector';
 import './TableNumberModal.css';
 import './AddressModal.css';
 
 export const AddressModal = ({ onConfirm, onCancel }) => {
   const [direccion, setDireccion] = useState('');
   const [referencia, setReferencia] = useState('');
+  const [metodoPago, setMetodoPago] = useState(null);
 
   const handleConfirm = () => {
     if (!direccion.trim()) {
       alert('Por favor ingresa la dirección de entrega');
       return;
     }
-    onConfirm({ direccion: direccion.trim(), referencia: referencia.trim() });
+    if (!metodoPago) {
+      alert('Por favor elegí el método de pago');
+      return;
+    }
+    onConfirm({
+      direccion: direccion.trim(),
+      referencia: referencia.trim(),
+      metodoPago,
+    });
   };
 
   return (
@@ -39,6 +49,8 @@ export const AddressModal = ({ onConfirm, onCancel }) => {
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
           />
+
+          <PaymentSelector value={metodoPago} onChange={setMetodoPago} />
         </div>
 
         <div className="table-modal-actions">

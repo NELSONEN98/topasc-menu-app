@@ -28,6 +28,9 @@ export const crear = mutation({
     mesaId: v.optional(v.id("mesas")),
     mesaNumero: v.optional(v.string()),
     costoDomicilio: v.optional(v.number()),
+    metodoPago: v.optional(
+      v.union(v.literal("efectivo"), v.literal("transferencia"))
+    ),
     total: v.number(),
     items: v.array(itemValidator),
     notas: v.optional(v.string()),

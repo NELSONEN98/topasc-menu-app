@@ -245,6 +245,28 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .btn-edit:hover { background: #D8D8D8; }
 
+.admin-table-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.btn-delete {
+  background: #FDE8EA;
+  color: #E11E2B;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-delete:hover { background: #FBD5D9; }
+
 /* Filtros */
 .admin-filters {
   display: flex;

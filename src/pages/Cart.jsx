@@ -93,6 +93,9 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
     const mesaNumeroFinal =
       orderType === 'dine-in' ? mesa?.numero || tableNumber : undefined;
 
+    // El método de pago viene de la modal de domicilio o de recoger
+    const metodoPago = address?.metodoPago ?? pickup?.metodoPago;
+
     crearPedido({
       tipoPedido: orderType,
       total,
@@ -103,6 +106,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
       mesaNumero: mesaNumeroFinal,
       direccionEntrega: address?.direccion,
       direccionReferencia: address?.referencia || undefined,
+      metodoPago,
       items: pedidoItems,
     }).catch((e) =>
       console.error('No se pudo guardar el pedido en Convex:', e)
@@ -135,6 +139,12 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
     if (orderType === 'pickup' && pickup) {
       message += `\n\nRecoge: ${pickup.nombre}`;
       message += `\nCódigo de retiro: ${pickup.codigo}`;
+    }
+
+    if (metodoPago) {
+      const pagoLabel =
+        metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia';
+      message += `\nPago: ${pagoLabel}`;
     }
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;

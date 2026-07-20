@@ -26,6 +26,7 @@ export const AdminPanel = ({ onLogout }) => {
   const salsas = useQuery(api.salsas.listar) || [];
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);
+  const borrarItem = useMutation(api.items.borrar);
   const crearSalsa = useMutation(api.salsas.crear);
   const actualizarSalsa = useMutation(api.salsas.actualizar);
 
@@ -69,6 +70,21 @@ export const AdminPanel = ({ onLogout }) => {
     const product = items.find(item => item._id === productId);
     setEditingProduct(product);
     setModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (item) => {
+    if (!window.confirm(`¿Eliminar "${item.nombre}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    try {
+      await borrarItem({ id: item._id });
+      setSaveMessage('✓ Producto eliminado');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error al eliminar producto:', error);
+      setSaveMessage('❌ Error al eliminar');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
   };
 
   const handleSaveSalsa = async (formData) => {
@@ -364,9 +380,14 @@ export const AdminPanel = ({ onLogout }) => {
                         title={item.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
                       />
                     </div>
-                    <button className="btn-edit" onClick={() => handleEditProduct(item._id)}>
-                      Editar
-                    </button>
+                    <div className="admin-table-actions">
+                      <button className="btn-edit" onClick={() => handleEditProduct(item._id)}>
+                        Editar
+                      </button>
+                      <button className="btn-delete" onClick={() => handleDeleteProduct(item)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

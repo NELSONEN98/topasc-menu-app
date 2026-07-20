@@ -24,3 +24,10 @@ export const crear = mutation({
     });
   },
 });
+
+export const borrar = mutation({
+  args: { id: v.id("categorias") },
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
+  },
+});
