@@ -29,6 +29,7 @@ export const AdminPanel = ({ onLogout }) => {
   const borrarItem = useMutation(api.items.borrar);
   const crearSalsa = useMutation(api.salsas.crear);
   const actualizarSalsa = useMutation(api.salsas.actualizar);
+  const borrarSalsa = useMutation(api.salsas.borrar);
 
   const activeProducts = items.filter(item => item.disponible).length;
 
@@ -37,15 +38,15 @@ export const AdminPanel = ({ onLogout }) => {
     return acc;
   }, {});
 
-  // Filtrado de productos
+  // Filtrado de productos (NO se filtra por imagen: un producto sin foto
+  // debe seguir siendo visible y editable, si no queda inaccesible)
   const filteredProducts = items.filter(item => {
-    const hasImage = item.imagenUrl && item.imagenUrl.trim() !== '';
     const matchesSearch = item.nombre.toLowerCase().includes(productSearch.toLowerCase());
     const matchesCategory = productCategoryFilter === '' || item.categoriaId === productCategoryFilter;
     const matchesStatus = productStatusFilter === '' ||
       (productStatusFilter === 'active' && item.disponible) ||
       (productStatusFilter === 'inactive' && !item.disponible);
-    return hasImage && matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Paginación de productos
@@ -82,6 +83,21 @@ export const AdminPanel = ({ onLogout }) => {
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
       console.error('Error al eliminar producto:', error);
+      setSaveMessage('❌ Error al eliminar');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteSalsa = async (salsa) => {
+    if (!window.confirm(`¿Eliminar la salsa "${salsa.nombre}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    try {
+      await borrarSalsa({ id: salsa._id });
+      setSaveMessage('✓ Salsa eliminada');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error al eliminar salsa:', error);
       setSaveMessage('❌ Error al eliminar');
       setTimeout(() => setSaveMessage(''), 3000);
     }
@@ -358,8 +374,19 @@ export const AdminPanel = ({ onLogout }) => {
               <div className="admin-table-body">
                 {paginatedProducts.map(item => (
                   <div key={item._id} className="admin-table-row">
-                    <img src={item.imagenUrl} alt={item.nombre} className="admin-table-img" />
-                    <div className="admin-table-cell-name">{item.nombre}</div>
+                    {item.imagenUrl && item.imagenUrl.trim() !== '' ? (
+                      <img src={item.imagenUrl} alt={item.nombre} className="admin-table-img" />
+                    ) : (
+                      <div className="admin-table-img admin-table-img--empty" title="Sin imagen">
+                        📷
+                      </div>
+                    )}
+                    <div className="admin-table-cell-name">
+                      {item.nombre}
+                      {(!item.imagenUrl || item.imagenUrl.trim() === '') && (
+                        <span className="admin-table-noimg">Falta imagen</span>
+                      )}
+                    </div>
                     <div className="admin-table-cell-category">
                       {categoriaMap[item.categoriaId] || 'Sin categoría'}
                     </div>
@@ -460,15 +487,20 @@ export const AdminPanel = ({ onLogout }) => {
                         title={salsa.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
                       />
                     </div>
-                    <button
-                      className="btn-edit"
-                      onClick={() => {
-                        setEditingSalsa(salsa);
-                        setSalsaModalOpen(true);
-                      }}
-                    >
-                      Editar
-                    </button>
+                    <div className="admin-table-actions">
+                      <button
+                        className="btn-edit"
+                        onClick={() => {
+                          setEditingSalsa(salsa);
+                          setSalsaModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button className="btn-delete" onClick={() => handleDeleteSalsa(salsa)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

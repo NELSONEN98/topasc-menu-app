@@ -166,6 +166,23 @@ input, select { font-family: 'Inter', sans-serif; }
   background: #EDE4D3;
 }
 
+.admin-table-img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #B8A98C;
+  border: 1px dashed #C9BCA1;
+}
+
+.admin-table-noimg {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #C0392B;
+}
+
 .admin-table-row:hover { background: #FAFAF8; }
 
 .admin-table-cell-name { font-weight: 500; font-size: 13px; color: var(--dark-bg); }
