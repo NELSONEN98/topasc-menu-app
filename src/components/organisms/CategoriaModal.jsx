@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
 export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onSave }) => {
@@ -27,7 +28,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onS
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue =
-      type === 'checkbox' ? checked : name === 'orden' ? parseInt(value) || 1 : value;
+      type === 'checkbox' ? checked : name === 'orden' ? numeroDeInput(value) : value;
 
     setFormData((prev) => ({ ...prev, [name]: newValue }));
   };

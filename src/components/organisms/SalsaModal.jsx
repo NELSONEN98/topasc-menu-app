@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { resizeImage } from '../../utils/resizeImage';
+import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
 export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: 'base',
-    precio: 0,
+    precio: '',
     imagenUrl: '',
     disponible: true,
   });
@@ -19,7 +20,7 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
       setFormData({
         nombre: salsa.nombre || '',
         tipo: salsa.tipo || 'base',
-        precio: salsa.precio || 0,
+        precio: salsa.precio ?? '',
         imagenUrl: salsa.imagenUrl || '',
         disponible: salsa.disponible !== false,
       });
@@ -28,7 +29,7 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
       setFormData({
         nombre: '',
         tipo: 'base',
-        precio: 0,
+        precio: '',
         imagenUrl: '',
         disponible: true,
       });
@@ -39,7 +40,7 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue =
-      type === 'checkbox' ? checked : name === 'precio' ? parseInt(value) || 0 : value;
+      type === 'checkbox' ? checked : name === 'precio' ? numeroDeInput(value) : value;
 
     setFormData((prev) => ({
       ...prev,

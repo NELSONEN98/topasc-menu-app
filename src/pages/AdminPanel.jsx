@@ -6,6 +6,7 @@ import { SalsaModal } from '../components/organisms/SalsaModal';
 import { CategoriaModal } from '../components/organisms/CategoriaModal';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
 import { Pagination } from '../components/molecules/Pagination';
+import { aNumero } from '../utils/numeroDeInput';
 import '../styles/admin-styles.css';
 
 export const AdminPanel = ({ onLogout }) => {
@@ -134,20 +135,21 @@ export const AdminPanel = ({ onLogout }) => {
       }
 
       const isEditing = !!editingCategoria;
+      const orden = aNumero(formData.orden, siguienteOrden);
 
       if (editingCategoria) {
         await actualizarCategoria({
           id: editingCategoria._id,
           campos: {
             nombre: formData.nombre,
-            orden: formData.orden,
+            orden,
             activo: formData.activo,
           },
         });
       } else {
         await crearCategoria({
           nombre: formData.nombre,
-          orden: formData.orden,
+          orden,
         });
       }
 
@@ -195,7 +197,10 @@ export const AdminPanel = ({ onLogout }) => {
         alert('El nombre de la salsa es obligatorio');
         return;
       }
-      if (formData.tipo === 'especial' && formData.precio <= 0) {
+      // Las salsas base son gratis; solo las especiales necesitan precio
+      const precio = formData.tipo === 'base' ? 0 : aNumero(formData.precio);
+
+      if (formData.tipo === 'especial' && precio <= 0) {
         alert('Las salsas especiales deben tener un precio mayor a 0');
         return;
       }
@@ -208,7 +213,7 @@ export const AdminPanel = ({ onLogout }) => {
           campos: {
             nombre: formData.nombre,
             tipo: formData.tipo,
-            precio: formData.tipo === 'base' ? 0 : formData.precio,
+            precio,
             imagenUrl: formData.imagenUrl || undefined,
             disponible: formData.disponible,
           },
@@ -217,7 +222,7 @@ export const AdminPanel = ({ onLogout }) => {
         await crearSalsa({
           nombre: formData.nombre,
           tipo: formData.tipo,
-          precio: formData.tipo === 'base' ? 0 : formData.precio,
+          precio,
           imagenUrl: formData.imagenUrl || undefined,
         });
       }
@@ -243,7 +248,8 @@ export const AdminPanel = ({ onLogout }) => {
         alert('Debes seleccionar una categoría');
         return;
       }
-      if (formData.precio <= 0) {
+      const precio = aNumero(formData.precio);
+      if (precio <= 0) {
         alert('El precio debe ser mayor a 0');
         return;
       }
@@ -256,7 +262,7 @@ export const AdminPanel = ({ onLogout }) => {
           campos: {
             nombre: formData.nombre,
             categoriaId: formData.categoriaId,
-            precio: formData.precio,
+            precio,
             descripcion: formData.descripcion,
             ingredientes: formData.ingredientes,
             imagenUrl: formData.imagenUrl,
@@ -270,7 +276,7 @@ export const AdminPanel = ({ onLogout }) => {
           nombre: formData.nombre,
           descripcion: formData.descripcion,
           ingredientes: formData.ingredientes,
-          precio: formData.precio,
+          precio,
           imagenUrl: formData.imagenUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
           llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,

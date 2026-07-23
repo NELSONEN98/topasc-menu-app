@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { IngredientesInput } from '../molecules/IngredientesInput';
 import { resizeImage } from '../../utils/resizeImage';
+import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
 export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     categoriaId: '',
-    precio: 0,
+    precio: '',
     descripcion: '',
     ingredientes: [],
     imagenUrl: '',
@@ -23,7 +24,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
       setFormData({
         nombre: product.nombre || '',
         categoriaId: product.categoriaId || '',
-        precio: product.precio || 0,
+        precio: product.precio ?? '',
         descripcion: product.descripcion || '',
         ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
@@ -35,7 +36,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
       setFormData({
         nombre: '',
         categoriaId: categorias[0]?._id || '',
-        precio: 0,
+        precio: '',
         descripcion: '',
         ingredientes: [],
         imagenUrl: '',
@@ -48,7 +49,8 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : name === 'precio' ? parseInt(value) || 0 : value;
+    const newValue =
+      type === 'checkbox' ? checked : name === 'precio' ? numeroDeInput(value) : value;
 
     setFormData(prev => ({
       ...prev,
