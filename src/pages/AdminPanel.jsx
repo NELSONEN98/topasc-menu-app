@@ -9,6 +9,11 @@ import { Pagination } from '../components/molecules/Pagination';
 import { aNumero } from '../utils/numeroDeInput';
 import '../styles/admin-styles.css';
 
+// Una sola instancia compartida: `useQuery(...) || []` creaba un array NUEVO
+// en cada render mientras la query estaba cargando, y esa referencia distinta
+// disparaba los useEffect que la tenian como dependencia.
+const SIN_DATOS = [];
+
 export const AdminPanel = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('pedidos');
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,13 +30,13 @@ export const AdminPanel = ({ onLogout }) => {
   const [saveMessage, setSaveMessage] = useState('');
   const ITEMS_PER_PAGE = 8;
 
-  const items = useQuery(api.items.listarMenu) || [];
-  const categorias = useQuery(api.categorias.listar) || [];
-  const salsas = useQuery(api.salsas.listar) || [];
+  const items = useQuery(api.items.listarMenu) ?? SIN_DATOS;
+  const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  const salsas = useQuery(api.salsas.listar) ?? SIN_DATOS;
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);
   const borrarItem = useMutation(api.items.borrar);
-  const todasCategorias = useQuery(api.categorias.listarTodas) || [];
+  const todasCategorias = useQuery(api.categorias.listarTodas) ?? SIN_DATOS;
   const crearCategoria = useMutation(api.categorias.crear);
   const actualizarCategoria = useMutation(api.categorias.actualizar);
   const borrarCategoria = useMutation(api.categorias.borrar);

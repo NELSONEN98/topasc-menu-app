@@ -35,7 +35,9 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
       });
       setImagePreview('');
     }
-  }, [salsa, isOpen]);
+    // Mismo criterio que ProductModal: solo al abrir o al cambiar de salsa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salsa?._id, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

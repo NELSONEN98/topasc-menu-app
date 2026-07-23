@@ -45,7 +45,13 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
       });
       setImagePreview('');
     }
-  }, [product, categorias, isOpen]);
+    // Solo al ABRIR o al cambiar de producto. Nunca por `categorias`:
+    // es una query reactiva de Convex y cada re-emision traia una
+    // referencia nueva, lo que disparaba este efecto y borraba lo que el
+    // usuario estaba escribiendo. El efecto lee `categorias` para elegir
+    // la categoria por defecto, pero no debe reaccionar a sus cambios.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

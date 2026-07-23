@@ -23,7 +23,11 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onS
         activo: true,
       });
     }
-  }, [categoria, siguienteOrden, isOpen]);
+    // Mismo criterio que ProductModal: solo al abrir o al cambiar de
+    // categoria. `siguienteOrden` se deriva de una query reactiva y
+    // reaccionar a el reseteaba el formulario mientras se escribia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoria?._id, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

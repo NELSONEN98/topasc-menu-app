@@ -10,15 +10,19 @@ import { useCart } from '../context/CartContext';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
 
+// Referencia estable mientras las queries cargan: un `[]` nuevo por render
+// rompe cualquier useEffect/useMemo que lo tenga como dependencia.
+const SIN_DATOS = [];
+
 export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const allItems = useQuery(api.items.listarMenu) || [];
-  const allCategorias = useQuery(api.categorias.listar) || [];
-  const salsas = useQuery(api.salsas.listarDisponibles) || [];
+  const allItems = useQuery(api.items.listarMenu) ?? SIN_DATOS;
+  const allCategorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
 
   const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
 
