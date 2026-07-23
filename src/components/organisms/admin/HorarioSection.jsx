@@ -1,47 +1,62 @@
+import { HorarioModal } from '../HorarioModal';
 import { SeccionHeader } from './SeccionHeader';
+import { useHorariosAdmin } from '../../../hooks/useHorariosAdmin';
+import { NOMBRE_DIA, aFormato12h } from '../../../utils/horarios';
 
-// TODO: estos horarios son fijos. La tabla `horariosAtencion` ya existe en
-// el schema de Convex, falta la query/mutation y conectarlos acá.
-const HORARIOS = [
-  { dia: 'Lunes', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
-  { dia: 'Martes', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
-  { dia: 'Miércoles', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
-  { dia: 'Jueves', entrada: '11:00 AM', salida: '11:00 PM', abierto: true },
-  { dia: 'Viernes', entrada: '11:00 AM', salida: '12:00 AM', abierto: true },
-  { dia: 'Sábado', entrada: '12:00 PM', salida: '12:00 AM', abierto: true },
-  { dia: 'Domingo', entrada: '12:00 PM', salida: '10:00 PM', abierto: true },
-];
+export const HorarioSection = () => {
+  const { horarios, resumen, modal, acciones } = useHorariosAdmin();
 
-export const HorarioSection = () => (
-  <div>
-    <SeccionHeader titulo="Horario" resumen="Configura el horario de atención semanal" />
+  return (
+    <div>
+      <SeccionHeader
+        titulo="Horario"
+        resumen={`${resumen.abiertos} días abiertos · ${resumen.cerrados} cerrados`}
+      />
 
-    <div className="horario-container">
-      {HORARIOS.map((horario) => (
-        <div key={horario.dia} className="horario-card">
-          <div className="horario-day">
-            <span className="horario-day-badge" />
-            {horario.dia}
-          </div>
-
-          {horario.abierto ? (
-            <div className="horario-times">
-              <div className="horario-time-row">
-                <span className="horario-time-label">Entrada</span>
-                <span className="horario-time-value">{horario.entrada}</span>
-              </div>
-              <div className="horario-time-row">
-                <span className="horario-time-label">Salida</span>
-                <span className="horario-time-value">{horario.salida}</span>
-              </div>
+      <div className="horario-container">
+        {horarios.map((horario) => (
+          <div key={horario.diaSemana} className="horario-card">
+            <div className="horario-day">
+              <span className="horario-day-badge" />
+              {NOMBRE_DIA[horario.diaSemana]}
             </div>
-          ) : (
-            <div className="horario-closed">Cerrado</div>
-          )}
 
-          <button className="horario-edit">Editar</button>
-        </div>
-      ))}
+            {horario.cerrado ? (
+              <div className="horario-closed">Cerrado</div>
+            ) : (
+              <div className="horario-times">
+                <div className="horario-time-row">
+                  <span className="horario-time-label">Entrada</span>
+                  <span className="horario-time-value">
+                    {aFormato12h(horario.horaApertura)}
+                  </span>
+                </div>
+                <div className="horario-time-row">
+                  <span className="horario-time-label">Salida</span>
+                  <span className="horario-time-value">
+                    {aFormato12h(horario.horaCierre)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <button
+              className="horario-edit"
+              onClick={() => modal.abrirEdicion(horario)}
+              aria-label={`Editar el horario del ${NOMBRE_DIA[horario.diaSemana]}`}
+            >
+              Editar
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <HorarioModal
+        isOpen={modal.abierto}
+        onClose={modal.cerrar}
+        horario={modal.editando}
+        onSave={acciones.guardar}
+      />
     </div>
-  </div>
-);
+  );
+};
