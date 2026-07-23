@@ -26,7 +26,7 @@ const SECCIONES = {
 };
 
 export const AdminPanel = ({ onLogout }) => {
-  const [tabActivo, setTabActivo] = useState('pedidos');
+  const [tabActivo, setTabActivo] = useState('productos');
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   const Seccion = SECCIONES[tabActivo] ?? PedidosSection;

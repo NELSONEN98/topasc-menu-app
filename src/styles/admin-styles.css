@@ -24,7 +24,11 @@ input, select { font-family: 'Inter', sans-serif; }
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 100;
+  /* Por encima del overlay del drawer (120). El navbar crea su propio
+     contexto de apilado, asi que el drawer (que vive adentro) sube con el.
+     Si el navbar quedara por debajo, el overlay taparia los botones del
+     menu y los toques nunca llegarian. */
+  z-index: 140;
 }
 
 .admin-navbar-brand {
@@ -621,7 +625,8 @@ input, select { font-family: 'Inter', sans-serif; }
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 110;
+    /* Debajo del navbar (140): el drawer y la hamburguesa siguen tocables */
+    z-index: 120;
     animation: adminFondo .2s ease-out;
   }
 
