@@ -769,11 +769,15 @@ input, select { font-family: 'Inter', sans-serif; }
     content: none;
   }
 
-  /* Los botones bajan a su propia fila, alineados con el texto */
+  /* Los botones bajan a su propia fila, alineados con el texto.
+     `flex-direction: row` es obligatorio: la regla base los apila en
+     columna para la columna angosta de desktop, y redeclarar `display:
+     flex` NO resetea esa direccion. */
   .admin-table-actions {
     grid-column: 2 / -1;
     grid-row: 3;
     display: flex;
+    flex-direction: row;
     gap: 8px;
     margin-top: 6px;
   }
