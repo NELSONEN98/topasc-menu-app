@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resizeImage } from '../../utils/resizeImage';
 import '../styles/ProductModal.css';
 
 export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
@@ -10,6 +11,9 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
     disponible: true,
   });
 
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageError, setImageError] = useState('');
+
   useEffect(() => {
     if (salsa) {
       setFormData({
@@ -19,6 +23,7 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
         imagenUrl: salsa.imagenUrl || '',
         disponible: salsa.disponible !== false,
       });
+      setImagePreview(salsa.imagenUrl || '');
     } else {
       setFormData({
         nombre: '',
@@ -27,6 +32,7 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
         imagenUrl: '',
         disponible: true,
       });
+      setImagePreview('');
     }
   }, [salsa, isOpen]);
 
@@ -41,6 +47,21 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
       // Las salsas base son gratis siempre
       ...(name === 'tipo' && newValue === 'base' ? { precio: 0 } : {}),
     }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setImageError('');
+      const base64 = await resizeImage(file);
+      setFormData((prev) => ({ ...prev, imagenUrl: base64 }));
+      setImagePreview(base64);
+    } catch (error) {
+      console.error('Error al procesar la imagen:', error);
+      setImageError('No se pudo procesar la imagen. Probá con otro archivo.');
+    }
   };
 
   const handleSubmit = (e) => {
@@ -105,16 +126,48 @@ export const SalsaModal = ({ isOpen, onClose, salsa, onSave }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="salsa-imagenUrl">URL de imagen (opcional)</label>
+            <label htmlFor="salsa-imageFile">Imagen de la salsa (opcional)</label>
             <input
-              id="salsa-imagenUrl"
-              type="url"
-              name="imagenUrl"
-              value={formData.imagenUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/salsa.jpg"
+              id="salsa-imageFile"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
             />
+            <small style={{ fontSize: '12px', color: '#999', marginTop: '6px' }}>
+              Se ajusta automáticamente para subirla liviana.
+            </small>
+            {imageError && (
+              <small style={{ fontSize: '12px', color: '#E11E2B', marginTop: '6px' }}>
+                {imageError}
+              </small>
+            )}
           </div>
+
+          {imagePreview && (
+            <div style={{
+              padding: '16px',
+              background: '#F8F5F0',
+              borderRadius: '8px',
+              textAlign: 'center',
+              marginBottom: '20px',
+            }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Vista previa
+              </label>
+              <img
+                src={imagePreview}
+                alt="preview"
+                style={{
+                  maxWidth: '200px',
+                  maxHeight: '200px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  border: '1px solid #ddd',
+                }}
+                onError={() => setImagePreview('')}
+              />
+            </div>
+          )}
 
           <div className="form-group form-checkbox">
             <label htmlFor="salsa-disponible">

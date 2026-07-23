@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { IngredientesInput } from '../molecules/IngredientesInput';
+import { resizeImage } from '../../utils/resizeImage';
 import '../styles/ProductModal.css';
 
 export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) => {
@@ -7,12 +9,14 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
     categoriaId: '',
     precio: 0,
     descripcion: '',
+    ingredientes: [],
     imagenUrl: '',
     disponible: true,
     llevaSalsas: true,
   });
 
   const [imagePreview, setImagePreview] = useState('');
+  const [imageError, setImageError] = useState('');
 
   useEffect(() => {
     if (product) {
@@ -21,6 +25,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         categoriaId: product.categoriaId || '',
         precio: product.precio || 0,
         descripcion: product.descripcion || '',
+        ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
         llevaSalsas: product.llevaSalsas !== false,
@@ -32,6 +37,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         categoriaId: categorias[0]?._id || '',
         precio: 0,
         descripcion: '',
+        ingredientes: [],
         imagenUrl: '',
         disponible: true,
         llevaSalsas: true,
@@ -48,25 +54,27 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
       ...prev,
       [name]: newValue,
     }));
-
-    if (name === 'imagenUrl') {
-      setImagePreview(value);
-    }
   };
 
-  const handleImageUpload = (e) => {
+  const handleIngredientesChange = (ingredientes) => {
+    setFormData(prev => ({ ...prev, ingredientes }));
+  };
+
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result;
-        setFormData(prev => ({
-          ...prev,
-          imagenUrl: base64,
-        }));
-        setImagePreview(base64);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      setImageError('');
+      const base64 = await resizeImage(file);
+      setFormData(prev => ({
+        ...prev,
+        imagenUrl: base64,
+      }));
+      setImagePreview(base64);
+    } catch (error) {
+      console.error('Error al procesar la imagen:', error);
+      setImageError('No se pudo procesar la imagen. Probá con otro archivo.');
     }
   };
 
@@ -134,39 +142,41 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
           </div>
 
           <div className="form-group">
-            <label htmlFor="descripcion">Descripción / Ingredientes</label>
+            <label htmlFor="descripcion">Descripción</label>
             <textarea
               id="descripcion"
               name="descripcion"
               value={formData.descripcion}
               onChange={handleChange}
-              placeholder="Descripción y ingredientes del producto"
+              placeholder="Cómo se sirve, para cuántos alcanza, qué lo hace especial..."
               rows="3"
             />
           </div>
 
           <div className="form-group">
-            <label>Imagen del Producto</label>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-              <input
-                id="imageFile"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                style={{ flex: 1 }}
-              />
-            </div>
-            <label htmlFor="imagenUrl" style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '8px' }}>
-              O pegá una URL de imagen
-            </label>
-            <input
-              id="imagenUrl"
-              type="url"
-              name="imagenUrl"
-              value={formData.imagenUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
+            <label htmlFor="ingredientes">Ingredientes</label>
+            <IngredientesInput
+              ingredientes={formData.ingredientes}
+              onChange={handleIngredientesChange}
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="imageFile">Imagen del Producto</label>
+            <input
+              id="imageFile"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <small style={{ fontSize: '12px', color: '#999', marginTop: '6px' }}>
+              Se ajusta automáticamente para subirla liviana.
+            </small>
+            {imageError && (
+              <small style={{ fontSize: '12px', color: '#E11E2B', marginTop: '6px' }}>
+                {imageError}
+              </small>
+            )}
           </div>
 
           {imagePreview && (
