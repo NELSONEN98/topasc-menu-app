@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { useNotificacion } from '../../context/NotificacionContext';
 import './TableNumberModal.css';
 
 export const TableNumberModal = ({ onConfirm, onCancel }) => {
   const [tableNumber, setTableNumber] = useState('');
+  const { notificar } = useNotificacion();
 
   const handleConfirm = () => {
     if (!tableNumber.trim()) {
-      alert('Por favor ingresa el número de mesa');
+      notificar.info('Ingresá el número de mesa');
       return;
     }
     onConfirm(tableNumber);

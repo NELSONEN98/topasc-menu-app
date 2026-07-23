@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PaymentSelector } from '../molecules/PaymentSelector';
+import { useNotificacion } from '../../context/NotificacionContext';
 import './TableNumberModal.css';
 import './AddressModal.css';
 
@@ -7,14 +8,15 @@ export const AddressModal = ({ onConfirm, onCancel }) => {
   const [direccion, setDireccion] = useState('');
   const [referencia, setReferencia] = useState('');
   const [metodoPago, setMetodoPago] = useState(null);
+  const { notificar } = useNotificacion();
 
   const handleConfirm = () => {
     if (!direccion.trim()) {
-      alert('Por favor ingresa la dirección de entrega');
+      notificar.info('Ingresá la dirección de entrega');
       return;
     }
     if (!metodoPago) {
-      alert('Por favor elegí el método de pago');
+      notificar.info('Elegí el método de pago');
       return;
     }
     onConfirm({

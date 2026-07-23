@@ -7,6 +7,7 @@ import { CategoriaModal } from '../components/organisms/CategoriaModal';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
 import { Pagination } from '../components/molecules/Pagination';
 import { aNumero } from '../utils/numeroDeInput';
+import { useNotificacion } from '../context/NotificacionContext';
 import '../styles/admin-styles.css';
 
 // Una sola instancia compartida: `useQuery(...) || []` creaba un array NUEVO
@@ -27,7 +28,7 @@ export const AdminPanel = ({ onLogout }) => {
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('');
-  const [saveMessage, setSaveMessage] = useState('');
+  const { notificar, confirmar } = useNotificacion();
   const ITEMS_PER_PAGE = 8;
 
   const items = useQuery(api.items.listarMenu) ?? SIN_DATOS;
@@ -87,32 +88,38 @@ export const AdminPanel = ({ onLogout }) => {
   };
 
   const handleDeleteProduct = async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.nombre}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    const confirmado = await confirmar({
+      titulo: `¿Eliminar "${item.nombre}"?`,
+      mensaje: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
+
     try {
       await borrarItem({ id: item._id });
-      setSaveMessage('✓ Producto eliminado');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito('Producto eliminado');
     } catch (error) {
       console.error('Error al eliminar producto:', error);
-      setSaveMessage('❌ Error al eliminar');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
   const handleDeleteSalsa = async (salsa) => {
-    if (!window.confirm(`¿Eliminar la salsa "${salsa.nombre}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    const confirmado = await confirmar({
+      titulo: `¿Eliminar la salsa "${salsa.nombre}"?`,
+      mensaje: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
+
     try {
       await borrarSalsa({ id: salsa._id });
-      setSaveMessage('✓ Salsa eliminada');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito('Salsa eliminada');
     } catch (error) {
       console.error('Error al eliminar salsa:', error);
-      setSaveMessage('❌ Error al eliminar');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
@@ -135,7 +142,7 @@ export const AdminPanel = ({ onLogout }) => {
   const handleSaveCategoria = async (formData) => {
     try {
       if (!formData.nombre.trim()) {
-        alert('El nombre de la categoría es obligatorio');
+        notificar.info('El nombre de la categoría es obligatorio');
         return;
       }
 
@@ -160,12 +167,10 @@ export const AdminPanel = ({ onLogout }) => {
 
       setCategoriaModalOpen(false);
       setEditingCategoria(null);
-      setSaveMessage(isEditing ? '✓ Categoría actualizada' : '✓ Categoría creada');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito(isEditing ? 'Categoría actualizada' : 'Categoría creada');
     } catch (error) {
       console.error('Error al guardar categoría:', error);
-      setSaveMessage(`❌ ${mensajeDeError(error)}`);
-      setTimeout(() => setSaveMessage(''), 5000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
@@ -173,40 +178,46 @@ export const AdminPanel = ({ onLogout }) => {
     const productos = productosPorCategoria[categoria._id] || 0;
 
     if (productos > 0) {
-      alert(
-        `"${categoria.nombre}" tiene ${productos} producto(s).\n\n` +
-        `Si la borrás, esos productos quedan sin categoría y desaparecen del menú. ` +
-        `Movelos a otra categoría primero, o desactivala para ocultarla sin perder nada.`
-      );
+      await confirmar({
+        titulo: 'No se puede eliminar',
+        mensaje:
+          `"${categoria.nombre}" tiene ${productos} producto(s).\n\n` +
+          `Si la borrás, esos productos quedan sin categoría y desaparecen del menú. ` +
+          `Movelos a otra categoría primero, o desactivala para ocultarla sin perder nada.`,
+        textoConfirmar: 'Entendido',
+        soloAceptar: true,
+      });
       return;
     }
 
-    if (!window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`)) {
-      return;
-    }
+    const confirmado = await confirmar({
+      titulo: `¿Eliminar la categoría "${categoria.nombre}"?`,
+      mensaje: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
 
     try {
       await borrarCategoria({ id: categoria._id });
-      setSaveMessage('✓ Categoría eliminada');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito('Categoría eliminada');
     } catch (error) {
       console.error('Error al eliminar categoría:', error);
-      setSaveMessage(`❌ ${mensajeDeError(error)}`);
-      setTimeout(() => setSaveMessage(''), 5000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
   const handleSaveSalsa = async (formData) => {
     try {
       if (!formData.nombre.trim()) {
-        alert('El nombre de la salsa es obligatorio');
+        notificar.info('El nombre de la salsa es obligatorio');
         return;
       }
       // Las salsas base son gratis; solo las especiales necesitan precio
       const precio = formData.tipo === 'base' ? 0 : aNumero(formData.precio);
 
       if (formData.tipo === 'especial' && precio <= 0) {
-        alert('Las salsas especiales deben tener un precio mayor a 0');
+        notificar.info('Las salsas especiales deben tener un precio mayor a 0');
         return;
       }
 
@@ -234,28 +245,26 @@ export const AdminPanel = ({ onLogout }) => {
 
       setSalsaModalOpen(false);
       setEditingSalsa(null);
-      setSaveMessage(isEditing ? '✓ Salsa actualizada' : '✓ Salsa creada');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito(isEditing ? 'Salsa actualizada' : 'Salsa creada');
     } catch (error) {
       console.error('Error al guardar salsa:', error);
-      setSaveMessage('❌ Error al guardar');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
   const handleSaveProduct = async (formData) => {
     try {
       if (!formData.nombre.trim()) {
-        alert('El nombre del producto es obligatorio');
+        notificar.info('El nombre del producto es obligatorio');
         return;
       }
       if (!formData.categoriaId) {
-        alert('Debes seleccionar una categoría');
+        notificar.info('Elegí una categoría');
         return;
       }
       const precio = aNumero(formData.precio);
       if (precio <= 0) {
-        alert('El precio debe ser mayor a 0');
+        notificar.info('El precio debe ser mayor a 0');
         return;
       }
 
@@ -290,41 +299,15 @@ export const AdminPanel = ({ onLogout }) => {
 
       setModalOpen(false);
       setEditingProduct(null);
-
-      // Mostrar mensaje de éxito
-      setSaveMessage(isEditing ? '✓ Producto actualizado' : '✓ Producto creado');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.exito(isEditing ? 'Producto actualizado' : 'Producto creado');
     } catch (error) {
       console.error('Error al guardar producto:', error);
-      setSaveMessage('❌ Error al guardar');
-      setTimeout(() => setSaveMessage(''), 3000);
+      notificar.error(mensajeDeError(error));
     }
   };
 
   return (
     <div className="admin-shell">
-      {/* Toast de éxito/error */}
-      {saveMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            background: saveMessage.includes('Error') ? '#fee' : '#efe',
-            color: saveMessage.includes('Error') ? '#c33' : '#3a3',
-            padding: '12px 20px',
-            borderRadius: '6px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            zIndex: 2000,
-            fontWeight: '600',
-            fontSize: '14px',
-            animation: 'slideDown .3s ease-out',
-          }}
-        >
-          {saveMessage}
-        </div>
-      )}
-
       {/* Navbar */}
       <nav className="admin-navbar">
         <div className="admin-navbar-brand">

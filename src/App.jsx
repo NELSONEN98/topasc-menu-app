@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-
 import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { CartProvider } from './context/CartContext';
+import { NotificacionProvider } from './context/NotificacionContext';
 import { StatusBar } from './components/organisms/StatusBar';
 import { SplashScreen } from './pages/SplashScreen';
 import { OrderType } from './pages/OrderType';
@@ -95,14 +96,16 @@ const AdminApp = () => {
 export const App = () => {
   return (
     <BrowserRouter>
-      <CartProvider>
-        <Routes>
-          <Route path="/" element={<ClientApp />} />
-          <Route path="/mesa/:codigo" element={<MesaApp />} />
-          <Route path="/admin" element={<AdminApp />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </CartProvider>
+      <NotificacionProvider>
+        <CartProvider>
+          <Routes>
+            <Route path="/" element={<ClientApp />} />
+            <Route path="/mesa/:codigo" element={<MesaApp />} />
+            <Route path="/admin" element={<AdminApp />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </CartProvider>
+      </NotificacionProvider>
     </BrowserRouter>
   );
 };

@@ -1,0 +1,150 @@
+/* ============================================================
+   CONFIRM DIALOG — reemplaza window.confirm
+   Mobile: hoja anclada abajo, botones apilados y anchos.
+   Desktop: tarjeta centrada, botones en linea.
+   ============================================================ */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  /* Mobile: pegado abajo, cerca del pulgar */
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  animation: confirmFondo 0.2s ease-out;
+}
+
+.confirm-dialog {
+  width: 100%;
+  max-width: 26rem;
+  background: #fff;
+  border-radius: 0.875rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.24);
+  animation: confirmEntra 0.25s ease-out;
+  /* Un mensaje largo scrollea adentro, nunca desborda la pantalla */
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.confirm-dialog:focus {
+  outline: none;
+}
+
+.confirm-dialog__titulo {
+  margin: 0;
+  font: 700 1.125rem/1.3 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.confirm-dialog__mensaje {
+  margin: 0.625rem 0 0 0;
+  font: 400 0.875rem/1.5 'Inter', sans-serif;
+  color: #666;
+  /* Respeta los \n de los mensajes largos */
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog__acciones {
+  display: flex;
+  /* Mobile: apilados. La accion principal arriba, al alcance del pulgar */
+  flex-direction: column-reverse;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
+}
+
+.confirm-btn {
+  /* 48px: minimo comodo para tocar con el dedo */
+  min-height: 3rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font: 600 0.9375rem 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background .2s, opacity .2s;
+}
+
+.confirm-btn--cancelar {
+  background: #E0D5C7;
+  color: #241C15;
+}
+
+.confirm-btn--cancelar:hover {
+  background: #D4C5B9;
+}
+
+.confirm-btn--confirmar {
+  background: #FFB81C;
+  color: #241C15;
+}
+
+.confirm-btn--confirmar:hover {
+  background: #FFC933;
+}
+
+.confirm-btn--peligro {
+  background: #E11E2B;
+  color: #fff;
+}
+
+.confirm-btn--peligro:hover {
+  background: #C01820;
+}
+
+@keyframes confirmFondo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes confirmEntra {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   DESKTOP — tarjeta centrada, botones en linea
+   ============================================================ */
+@media (min-width: 640px) {
+  .confirm-overlay {
+    align-items: center;
+    padding-bottom: 1rem;
+  }
+
+  .confirm-dialog__acciones {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .confirm-btn {
+    min-width: 8rem;
+  }
+
+  @keyframes confirmEntra {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-overlay,
+  .confirm-dialog {
+    animation: none;
+  }
+}

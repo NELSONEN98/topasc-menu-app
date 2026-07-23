@@ -9,6 +9,7 @@ import { TableNumberModal } from '../components/organisms/TableNumberModal';
 import { AddressModal } from '../components/organisms/AddressModal';
 import { PickupModal } from '../components/organisms/PickupModal';
 import { useCart, SIN_SALSAS } from '../context/CartContext';
+import { useNotificacion } from '../context/NotificacionContext';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
@@ -16,6 +17,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
   const { cartItems, updateQuantity, removeFromCart, getTotal, clearCart } =
     useCart();
   const crearPedido = useMutation(api.pedidos.crear);
+  const { notificar } = useNotificacion();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableNumber, setTableNumber] = useState('');
@@ -38,7 +40,7 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
-      alert('El carrito está vacío');
+      notificar.info('El carrito está vacío');
       return;
     }
 

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { PaymentSelector } from '../molecules/PaymentSelector';
+import { useNotificacion } from '../../context/NotificacionContext';
 import './TableNumberModal.css';
 import './AddressModal.css';
 
@@ -20,14 +21,15 @@ export const PickupModal = ({ onConfirm, onCancel }) => {
   const [metodoPago, setMetodoPago] = useState(null);
   // Un único código por apertura de la modal
   const codigo = useMemo(() => generarCodigo(), []);
+  const { notificar } = useNotificacion();
 
   const handleConfirm = () => {
     if (!nombre.trim()) {
-      alert('Por favor ingresa tu nombre');
+      notificar.info('Ingresá tu nombre');
       return;
     }
     if (!metodoPago) {
-      alert('Por favor elegí el método de pago');
+      notificar.info('Elegí el método de pago');
       return;
     }
     onConfirm({ nombre: nombre.trim(), codigo, metodoPago });
