@@ -31,7 +31,6 @@ export const crear = mutation({
     nombre: v.string(),
     tipo: v.union(v.literal("base"), v.literal("especial")),
     precio: v.number(),
-    imagenUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("salsas", {
@@ -49,7 +48,6 @@ export const actualizar = mutation({
       nombre: v.optional(v.string()),
       tipo: v.optional(v.union(v.literal("base"), v.literal("especial"))),
       precio: v.optional(v.number()),
-      imagenUrl: v.optional(v.string()),
       disponible: v.optional(v.boolean()),
       activo: v.optional(v.boolean()),
     }),
