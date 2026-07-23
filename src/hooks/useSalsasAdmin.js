@@ -63,7 +63,6 @@ export const useSalsasAdmin = () => {
             nombre: formData.nombre,
             tipo: formData.tipo,
             precio,
-            imagenUrl: formData.imagenUrl || undefined,
             disponible: formData.disponible,
           },
         });
@@ -72,7 +71,6 @@ export const useSalsasAdmin = () => {
           nombre: formData.nombre,
           tipo: formData.tipo,
           precio,
-          imagenUrl: formData.imagenUrl || undefined,
         });
       }
 

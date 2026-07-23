@@ -22,8 +22,16 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
 
   // Si no hay salsas cargadas no bloqueamos la venta
   const requiereSalsa = salsasBase.length > 0;
+
+  // Una salsa especial TAMBIEN cuenta como eleccion: si el cliente esta
+  // pagando por la de la casa, ya eligio salsa. `extrasSeleccionados` es un
+  // estado aparte de `salsasSeleccionadas` (que solo guarda las base), asi que
+  // hay que mirar los dos o el boton queda bloqueado sin motivo.
   const puedeAgregar =
-    !requiereSalsa || salsasSeleccionadas.length > 0 || sinSalsas;
+    !requiereSalsa ||
+    salsasSeleccionadas.length > 0 ||
+    extrasSeleccionados.length > 0 ||
+    sinSalsas;
 
   const precioBase = product.precio ?? product.price;
   const precioExtras = extrasSeleccionados.reduce((sum, s) => sum + s.precio, 0);

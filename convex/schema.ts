@@ -47,12 +47,18 @@ export default defineSchema({
       v.literal("dine-in")
     ),
     estado: v.union(
+      // Flujo real: recibido -> completado. `cancelado` es la salida.
+      v.literal("recibido"),
+      v.literal("completado"),
+      v.literal("cancelado"),
+      // TRANSICIONAL: los estados viejos siguen aca solo para que los pedidos
+      // ya guardados sigan validando. Se borran despues de correr
+      // `npx convex run migraciones:migrarEstados`.
       v.literal("pendiente"),
       v.literal("confirmado"),
       v.literal("en_preparacion"),
       v.literal("listo"),
-      v.literal("entregado"),
-      v.literal("cancelado")
+      v.literal("entregado")
     ),
     mesaId: v.optional(v.id("mesas")),
     mesaNumero: v.optional(v.string()),

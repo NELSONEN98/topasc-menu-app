@@ -2,7 +2,6 @@ import { SalsaModal } from '../SalsaModal';
 import { Pagination } from '../../molecules/Pagination';
 import { SeccionHeader } from './SeccionHeader';
 import { useSalsasAdmin } from '../../../hooks/useSalsasAdmin';
-import { PLACEHOLDER_SALSA } from '../../../config/settings';
 
 export const SalsasSection = () => {
   const { paginadas, pagina, setPagina, totalPaginas, resumen, modal, acciones } =
@@ -19,7 +18,6 @@ export const SalsasSection = () => {
 
       <div className="admin-table-wrapper">
         <div className="admin-table-header admin-table-header-sauces">
-          <div></div>
           <div>Nombre</div>
           <div>Precio</div>
           <div>Estado</div>
@@ -32,12 +30,6 @@ export const SalsasSection = () => {
           ) : (
             paginadas.map((salsa) => (
               <div key={salsa._id} className="admin-table-row admin-table-row-sauces">
-                <img
-                  src={salsa.imagenUrl || PLACEHOLDER_SALSA}
-                  alt={salsa.nombre}
-                  className="admin-table-img"
-                />
-
                 <div className="admin-table-cell-name">
                   {salsa.nombre}
                   {salsa.tipo === 'especial' && (
