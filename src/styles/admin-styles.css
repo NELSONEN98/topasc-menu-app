@@ -691,17 +691,19 @@ input, select { font-family: 'Inter', sans-serif; }
     overflow: hidden;
   }
 
-  /* Cada item ocupa DOS lineas en vez de cinco filas apiladas:
-       [img]  Nombre          Precio   [editar][borrar]
-              Categoría       (toggle)
-     Pasa de ~230px de alto a ~62px. */
+  /* Cada item se lee de arriba abajo:
+       [img]  Nombre              Precio
+              Categoría
+              [Editar]  [Eliminar]
+     El toggle de disponibilidad NO va acá: ya existe dentro del modal de
+     edicion, y repetirlo en la lista solo sumaba altura. */
   .admin-table-row,
   .admin-table-row-sauces {
     display: grid !important;
-    grid-template-columns: 40px minmax(0, 1fr) auto auto !important;
-    grid-template-rows: auto auto;
+    grid-template-columns: 40px minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto;
     align-items: center;
-    gap: 1px 10px !important;
+    gap: 2px 10px !important;
     padding: 10px 12px !important;
     border-bottom: 1px solid #F2ECE3;
   }
@@ -733,7 +735,7 @@ input, select { font-family: 'Inter', sans-serif; }
   }
 
   .admin-table-cell-category {
-    grid-column: 2;
+    grid-column: 2 / -1;
     grid-row: 2;
     font-size: 12px;
     color: #999;
@@ -747,15 +749,14 @@ input, select { font-family: 'Inter', sans-serif; }
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     white-space: nowrap;
   }
 
+  /* El estado se edita desde el modal, no desde la lista */
   .admin-table-cell-status {
-    grid-column: 3;
-    grid-row: 2;
-    justify-self: end;
+    display: none;
   }
 
   /* En una lista densa la etiqueta duplica lo que el dato ya dice:
@@ -768,44 +769,48 @@ input, select { font-family: 'Inter', sans-serif; }
     content: none;
   }
 
+  /* Los botones bajan a su propia fila, alineados con el texto */
   .admin-table-actions {
-    grid-column: 4;
-    grid-row: 1 / 3;
+    grid-column: 2 / -1;
+    grid-row: 3;
     display: flex;
-    gap: 4px;
-    margin-left: 4px;
+    gap: 8px;
+    margin-top: 6px;
   }
 
-  /* Los botones pasan a icono: mismo blanco de toque, un tercio del ancho */
   .btn-edit,
   .btn-delete {
-    width: 40px;
-    min-height: 40px;
-    padding: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    gap: 6px;
+    flex: 1;
+    /* 38px: comodo para el pulgar sin volver a inflar la fila */
+    min-height: 38px;
+    padding: 0 12px !important;
+    font-size: 13px;
   }
 
-  .btn-texto { display: none; }
-  .btn-icono { display: block; line-height: 1; }
+  .btn-icono {
+    display: inline-block;
+    line-height: 1;
+    font-size: 13px;
+  }
 
-  /* Categorías no tiene imagen: el orden va como badge junto al nombre */
+  /* Categorías no tiene imagen: el orden va como badge a la derecha */
   .admin-table-row-categorias {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto auto !important;
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto;
     align-items: center;
-    gap: 1px 10px !important;
+    gap: 2px 10px !important;
     padding: 10px 12px !important;
     border-bottom: 1px solid #F2ECE3;
   }
 
   .admin-table-row-categorias .admin-table-cell-name { grid-column: 1; grid-row: 1; }
-  .admin-table-row-categorias .admin-table-cell-category { grid-column: 1; grid-row: 2; }
-  .admin-table-row-categorias .admin-table-cell-status { grid-column: 2; grid-row: 2; }
-  .admin-table-row-categorias .admin-table-actions { grid-column: 3; grid-row: 1 / 3; }
+  .admin-table-row-categorias .admin-table-cell-category { grid-column: 1 / -1; grid-row: 2; }
+  .admin-table-row-categorias .admin-table-actions { grid-column: 1 / -1; grid-row: 3; }
 
   .admin-table-row-categorias .admin-table-cell-orden {
     grid-column: 2;
