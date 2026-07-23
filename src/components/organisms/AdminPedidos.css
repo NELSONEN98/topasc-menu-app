@@ -53,22 +53,17 @@
   letter-spacing: 0.02em;
 }
 
-.pedido-card__estado--confirmado {
+.pedido-card__estado--recibido {
   background: #E6F0FF;
   color: #1E5FBF;
 }
 
-.pedido-card__estado--en_preparacion {
-  background: #FFF3D6;
-  color: #B8860B;
-}
-
-.pedido-card__estado--listo {
+.pedido-card__estado--completado {
   background: #E3F7E3;
   color: #2E8B2E;
 }
 
-.pedido-card__estado--pendiente {
+.pedido-card__estado--cancelado {
   background: #f0f0f0;
   color: #666;
 }

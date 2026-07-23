@@ -38,39 +38,34 @@ export const crear = mutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("pedidos", {
       ...args,
-      estado: "confirmado",
+      estado: "recibido",
     });
   },
 });
 
-// Estados que el local todavía tiene que atender
-const ESTADOS_ACTIVOS = [
-  "pendiente",
-  "confirmado",
-  "en_preparacion",
-  "listo",
-];
-
-// Query por defecto del admin: SOLO pedidos activos, más nuevos primero.
-// Nunca trae toda la historia — consulta cada estado por su índice y mergea.
+// Query por defecto del admin: los pedidos que el local todavía tiene que
+// atender. Con un solo estado activo alcanza con leer el índice.
 export const listarActivos = query({
   args: {},
   handler: async (ctx) => {
-    const porEstado = await Promise.all(
-      ESTADOS_ACTIVOS.map((estado) =>
-        ctx.db
-          .query("pedidos")
-          .withIndex("por_estado", (q) => q.eq("estado", estado))
-          .collect()
-      )
-    );
-    return porEstado.flat().sort((a, b) => b._creationTime - a._creationTime);
+    return await ctx.db
+      .query("pedidos")
+      .withIndex("por_estado", (q) => q.eq("estado", "recibido"))
+      .order("desc")
+      .collect();
   },
 });
 
-// Historial acotado por estado (entregados/cancelados) sin traer todo.
+// Historial acotado por estado (completados/cancelados) sin traer todo.
 export const listarPorEstado = query({
-  args: { estado: v.string(), limite: v.optional(v.number()) },
+  args: {
+    estado: v.union(
+      v.literal("recibido"),
+      v.literal("completado"),
+      v.literal("cancelado")
+    ),
+    limite: v.optional(v.number()),
+  },
   handler: async (ctx, { estado, limite }) => {
     return await ctx.db
       .query("pedidos")
@@ -84,11 +79,8 @@ export const actualizar = mutation({
   args: {
     id: v.id("pedidos"),
     estado: v.union(
-      v.literal("pendiente"),
-      v.literal("confirmado"),
-      v.literal("en_preparacion"),
-      v.literal("listo"),
-      v.literal("entregado"),
+      v.literal("recibido"),
+      v.literal("completado"),
       v.literal("cancelado")
     ),
   },

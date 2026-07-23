@@ -6,14 +6,31 @@ import { SalsasSection } from '../components/organisms/admin/SalsasSection';
 import { HorarioSection } from '../components/organisms/admin/HorarioSection';
 import { SeccionHeader } from '../components/organisms/admin/SeccionHeader';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
+import { PedidosCompletados } from '../components/organisms/PedidosCompletados';
 import '../styles/admin-styles.css';
 
-const PedidosSection = () => (
-  <div>
-    <SeccionHeader titulo="Pedidos" resumen="Pedidos activos en tiempo real" />
-    <AdminPedidos />
-  </div>
-);
+// Dos vistas sobre lo mismo: las tarjetas son la pantalla de trabajo del local
+// y la tabla es el historial. El boton del header alterna entre las dos.
+const PedidosSection = () => {
+  const [verCompletados, setVerCompletados] = useState(false);
+
+  return (
+    <div>
+      <SeccionHeader
+        titulo="Pedidos"
+        resumen={
+          verCompletados
+            ? 'Historial de pedidos completados'
+            : 'Pedidos activos en tiempo real'
+        }
+        textoAccion={verCompletados ? '← Ver activos' : '📋 Ver completados'}
+        onAccion={() => setVerCompletados((valor) => !valor)}
+      />
+
+      {verCompletados ? <PedidosCompletados /> : <AdminPedidos />}
+    </div>
+  );
+};
 
 // Cada pestaña se resuelve por su id. Agregar una seccion nueva es sumar una
 // entrada acá y otra en TABS — no hay que tocar el render.

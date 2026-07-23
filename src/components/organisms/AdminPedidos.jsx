@@ -1,50 +1,13 @@
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import {
+  TIPO_LABEL,
+  PAGO_LABEL,
+  ESTADO_LABEL,
+  formatearPrecio,
+  formatearHora,
+} from '../../utils/formatoPedido';
 import './AdminPedidos.css';
-
-// Flujo de estados: qué botón mostrar para avanzar cada pedido
-const SIGUIENTE_ESTADO = {
-  confirmado: 'en_preparacion',
-  en_preparacion: 'listo',
-  listo: 'entregado',
-};
-
-const ACCION_LABEL = {
-  en_preparacion: '👨‍🍳 Preparar',
-  listo: '✅ Marcar listo',
-  entregado: '📦 Entregar',
-};
-
-const ESTADO_LABEL = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
-  en_preparacion: 'En preparación',
-  listo: 'Listo',
-};
-
-const TIPO_LABEL = {
-  delivery: '🛵 Domicilio',
-  pickup: '🏃 Recoger',
-  'dine-in': '🪑 En mesa',
-};
-
-const PAGO_LABEL = {
-  efectivo: '💵 Efectivo',
-  transferencia: '📱 Transferencia',
-};
-
-const formatPrice = (price) =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-  }).format(price);
-
-const formatHora = (ts) =>
-  new Date(ts).toLocaleTimeString('es-CO', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 
 export const AdminPedidos = () => {
   const pedidos = useQuery(api.pedidos.listarActivos);
@@ -74,7 +37,6 @@ export const AdminPedidos = () => {
   return (
     <div className="pedidos-grid">
       {pedidos.map((pedido) => {
-        const siguiente = SIGUIENTE_ESTADO[pedido.estado];
         return (
           <div key={pedido._id} className="pedido-card">
             <div className="pedido-card__top">
@@ -82,7 +44,7 @@ export const AdminPedidos = () => {
                 {TIPO_LABEL[pedido.tipoPedido] || pedido.tipoPedido}
               </span>
               <span className="pedido-card__hora">
-                {formatHora(pedido._creationTime)}
+                {formatearHora(pedido._creationTime)}
               </span>
               <span className={`pedido-card__estado pedido-card__estado--${pedido.estado}`}>
                 {ESTADO_LABEL[pedido.estado] || pedido.estado}
@@ -139,7 +101,7 @@ export const AdminPedidos = () => {
 
             <div className="pedido-card__footer">
               <div className="pedido-card__total-wrap">
-                <span className="pedido-card__total">{formatPrice(pedido.total)}</span>
+                <span className="pedido-card__total">{formatearPrecio(pedido.total)}</span>
                 {pedido.metodoPago && (
                   <span className="pedido-card__pago">
                     {PAGO_LABEL[pedido.metodoPago] || pedido.metodoPago}
@@ -153,14 +115,12 @@ export const AdminPedidos = () => {
                 >
                   Cancelar
                 </button>
-                {siguiente && (
-                  <button
-                    className="pedido-btn pedido-btn--next"
-                    onClick={() => cambiarEstado(pedido._id, siguiente)}
-                  >
-                    {ACCION_LABEL[siguiente]}
-                  </button>
-                )}
+                <button
+                  className="pedido-btn pedido-btn--next"
+                  onClick={() => cambiarEstado(pedido._id, 'completado')}
+                >
+                  ✅ Completar
+                </button>
               </div>
             </div>
           </div>
