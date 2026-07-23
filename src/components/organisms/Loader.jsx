@@ -10,6 +10,7 @@ export const Loader = ({ message = 'Cargando...' }) => {
           <circle cx="29" cy="14" r="4" fill="#fff" />
         </svg>
         <p className="loader-title">Topasc</p>
+        <p className="loader-tagline">Una historia que contar</p>
       </div>
       <div className="loader-spinner"></div>
       <p className="loader-caption">{message}</p>

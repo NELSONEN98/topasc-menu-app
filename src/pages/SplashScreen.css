@@ -44,10 +44,19 @@
   animation: textFallBounce 1s ease-out 0.1s both;
 }
 
+.splash-screen__tagline {
+  margin: 1.75rem 0 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #FFE9A8;
+}
+
 .splash-screen__loader {
   width: 2rem;
   height: 2rem;
-  margin: 1.5rem auto 0;
+  margin: 4rem auto 0;
   border: 0.25rem solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
