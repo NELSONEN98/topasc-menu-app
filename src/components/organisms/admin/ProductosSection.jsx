@@ -117,15 +117,27 @@ export const ProductosSection = () => {
                     className={`status-toggle ${item.disponible ? 'active' : ''}`}
                     onClick={() => acciones.alternarDisponible(item)}
                     title={item.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
+                    aria-label={`${item.nombre}: ${item.disponible ? 'disponible' : 'no disponible'}`}
+                    aria-pressed={item.disponible}
                   />
                 </div>
 
                 <div className="admin-table-actions">
-                  <button className="btn-edit" onClick={() => modal.abrirEdicion(item._id)}>
-                    Editar
+                  <button
+                    className="btn-edit"
+                    onClick={() => modal.abrirEdicion(item._id)}
+                    aria-label={`Editar ${item.nombre}`}
+                  >
+                    <span className="btn-texto">Editar</span>
+                    <span className="btn-icono" aria-hidden="true">✏️</span>
                   </button>
-                  <button className="btn-delete" onClick={() => acciones.eliminar(item)}>
-                    Eliminar
+                  <button
+                    className="btn-delete"
+                    onClick={() => acciones.eliminar(item)}
+                    aria-label={`Eliminar ${item.nombre}`}
+                  >
+                    <span className="btn-texto">Eliminar</span>
+                    <span className="btn-icono" aria-hidden="true">🗑</span>
                   </button>
                 </div>
               </div>

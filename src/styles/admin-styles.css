@@ -411,6 +411,10 @@ input, select { font-family: 'Inter', sans-serif; }
   grid-template-columns: 80px 2fr 1fr 1fr 0.8fr !important;
 }
 
+/* En desktop los botones de acción muestran texto; el icono es solo mobile.
+   Va ANTES del media query: si fuera después, lo pisaría por orden de cascada. */
+.btn-icono { display: none; }
+
 /* Badge "Especial" en la tabla de salsas */
 .admin-badge-especial {
   margin-left: 8px;
@@ -677,85 +681,152 @@ input, select { font-family: 'Inter', sans-serif; }
     box-shadow: none;
   }
 
+  /* Lista compacta: filas separadas por linea, no tarjetas sueltas */
   .admin-table-body {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  /* Cada fila pasa a ser una tarjeta autonoma */
-  .admin-table-row,
-  .admin-table-row-sauces,
-  .admin-table-row-categorias {
-    display: grid !important;
-    grid-template-columns: auto 1fr !important;
-    gap: 8px 12px !important;
-    padding: 14px !important;
     background: #fff;
     border: 1px solid var(--border-light);
     border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* Cada item ocupa DOS lineas en vez de cinco filas apiladas:
+       [img]  Nombre          Precio   [editar][borrar]
+              Categoría       (toggle)
+     Pasa de ~230px de alto a ~62px. */
+  .admin-table-row,
+  .admin-table-row-sauces {
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) auto auto !important;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 1px 10px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #F2ECE3;
+  }
+
+  .admin-table-row:last-child,
+  .admin-table-row-sauces:last-child,
+  .admin-table-row-categorias:last-child {
+    border-bottom: none;
   }
 
   .admin-table-img {
-    grid-row: span 2;
-    width: 56px !important;
-    height: 56px !important;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 6px;
   }
 
   .admin-table-cell-name {
-    align-self: center;
-    font-size: 15px;
-  }
-
-  /* Las celdas de datos se etiquetan solas con su data-label */
-  .admin-table-cell-category,
-  .admin-table-cell-price,
-  .admin-table-cell-status,
-  .admin-table-cell-orden {
     grid-column: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 0;
-    border-top: 1px solid #F2ECE3;
+    grid-row: 1;
+    font-size: 14px;
+    font-weight: 600;
+    /* Un nombre largo se corta con puntos suspensivos y no empuja el layout */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
+  .admin-table-cell-category {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 12px;
+    color: #999;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-table-cell-price {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .admin-table-cell-status {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  /* En una lista densa la etiqueta duplica lo que el dato ya dice:
+     el precio lleva $ y la categoria es texto. El toggle se explica
+     por su aria-label, no por texto en pantalla. */
   .admin-table-cell-category::before,
   .admin-table-cell-price::before,
   .admin-table-cell-status::before,
   .admin-table-cell-orden::before {
-    content: attr(data-label);
-    font-size: 12px;
-    font-weight: 600;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-  }
-
-  /* La tabla de categorias no tiene imagen: sus celdas ocupan todo el ancho */
-  .admin-table-row-categorias {
-    grid-template-columns: 1fr !important;
-  }
-
-  .admin-table-row-categorias .admin-table-cell-orden,
-  .admin-table-row-categorias .admin-table-cell-category,
-  .admin-table-row-categorias .admin-table-cell-status,
-  .admin-table-row-categorias .admin-table-actions {
-    grid-column: 1;
+    content: none;
   }
 
   .admin-table-actions {
-    grid-column: 1 / -1;
+    grid-column: 4;
+    grid-row: 1 / 3;
     display: flex;
-    gap: 10px;
-    margin-top: 4px;
+    gap: 4px;
+    margin-left: 4px;
   }
 
+  /* Los botones pasan a icono: mismo blanco de toque, un tercio del ancho */
   .btn-edit,
   .btn-delete {
-    flex: 1;
-    min-height: 44px;
+    width: 40px;
+    min-height: 40px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  .btn-texto { display: none; }
+  .btn-icono { display: block; line-height: 1; }
+
+  /* Categorías no tiene imagen: el orden va como badge junto al nombre */
+  .admin-table-row-categorias {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 1px 10px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #F2ECE3;
+  }
+
+  .admin-table-row-categorias .admin-table-cell-name { grid-column: 1; grid-row: 1; }
+  .admin-table-row-categorias .admin-table-cell-category { grid-column: 1; grid-row: 2; }
+  .admin-table-row-categorias .admin-table-cell-status { grid-column: 2; grid-row: 2; }
+  .admin-table-row-categorias .admin-table-actions { grid-column: 3; grid-row: 1 / 3; }
+
+  .admin-table-row-categorias .admin-table-cell-orden {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #F2ECE3;
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+  }
+
+  .admin-badge-especial {
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 10px;
+  }
+
+  .admin-table-noimg {
+    font-size: 10px;
   }
 }
 

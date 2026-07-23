@@ -61,12 +61,19 @@ export const CategoriasSection = () => {
                           ? 'Clic para ocultar del menú'
                           : 'Clic para mostrar en el menú'
                       }
+                      aria-label={`${categoria.nombre}: ${categoria.activo ? 'visible' : 'oculta'} en el menú`}
+                      aria-pressed={categoria.activo}
                     />
                   </div>
 
                   <div className="admin-table-actions">
-                    <button className="btn-edit" onClick={() => modal.abrirEdicion(categoria)}>
-                      Editar
+                    <button
+                      className="btn-edit"
+                      onClick={() => modal.abrirEdicion(categoria)}
+                      aria-label={`Editar ${categoria.nombre}`}
+                    >
+                      <span className="btn-texto">Editar</span>
+                      <span className="btn-icono" aria-hidden="true">✏️</span>
                     </button>
                     <button
                       className="btn-delete"
@@ -77,8 +84,10 @@ export const CategoriasSection = () => {
                           ? 'Tiene productos: movelos o desactivala'
                           : 'Eliminar categoría'
                       }
+                      aria-label={`Eliminar ${categoria.nombre}`}
                     >
-                      Eliminar
+                      <span className="btn-texto">Eliminar</span>
+                      <span className="btn-icono" aria-hidden="true">🗑</span>
                     </button>
                   </div>
                 </div>

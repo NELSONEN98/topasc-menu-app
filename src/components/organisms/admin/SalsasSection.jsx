@@ -54,15 +54,27 @@ export const SalsasSection = () => {
                     className={`status-toggle ${salsa.disponible ? 'active' : ''}`}
                     onClick={() => acciones.alternarDisponible(salsa)}
                     title={salsa.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
+                    aria-label={`${salsa.nombre}: ${salsa.disponible ? 'disponible' : 'no disponible'}`}
+                    aria-pressed={salsa.disponible}
                   />
                 </div>
 
                 <div className="admin-table-actions">
-                  <button className="btn-edit" onClick={() => modal.abrirEdicion(salsa)}>
-                    Editar
+                  <button
+                    className="btn-edit"
+                    onClick={() => modal.abrirEdicion(salsa)}
+                    aria-label={`Editar ${salsa.nombre}`}
+                  >
+                    <span className="btn-texto">Editar</span>
+                    <span className="btn-icono" aria-hidden="true">✏️</span>
                   </button>
-                  <button className="btn-delete" onClick={() => acciones.eliminar(salsa)}>
-                    Eliminar
+                  <button
+                    className="btn-delete"
+                    onClick={() => acciones.eliminar(salsa)}
+                    aria-label={`Eliminar ${salsa.nombre}`}
+                  >
+                    <span className="btn-texto">Eliminar</span>
+                    <span className="btn-icono" aria-hidden="true">🗑</span>
                   </button>
                 </div>
               </div>
