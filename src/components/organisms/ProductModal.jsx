@@ -102,8 +102,10 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-row">
-            <div className="form-group" style={{ flex: 1 }}>
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Datos básicos</legend>
+
+            <div className="form-group">
               <label htmlFor="nombre">Nombre *</label>
               <input
                 id="nombre"
@@ -116,105 +118,113 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
               />
             </div>
 
-            <div className="form-group" style={{ flex: 1 }}>
-              <label htmlFor="precio">Precio *</label>
-              <input
-                id="precio"
-                type="number"
-                name="precio"
-                value={formData.precio}
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="precio">Precio *</label>
+                <div className="input-con-prefijo">
+                  <span className="input-prefijo" aria-hidden="true">$</span>
+                  <input
+                    id="precio"
+                    type="number"
+                    name="precio"
+                    value={formData.precio}
+                    onChange={handleChange}
+                    placeholder="0"
+                    required
+                    min="0"
+                    inputMode="numeric"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="categoriaId">Categoría *</label>
+                <select
+                  id="categoriaId"
+                  name="categoriaId"
+                  value={formData.categoriaId}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Elegí una categoría</option>
+                  {categorias.map(cat => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Detalle</legend>
+
+            <div className="form-group">
+              <label htmlFor="descripcion">Descripción</label>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                value={formData.descripcion}
                 onChange={handleChange}
-                placeholder="0"
-                required
-                min="0"
+                placeholder="Cómo se sirve, para cuántos alcanza, qué lo hace especial..."
+                rows="3"
               />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="categoriaId">Categoría *</label>
-            <select
-              id="categoriaId"
-              name="categoriaId"
-              value={formData.categoriaId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecciona una categoría</option>
-              {categorias.map(cat => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="descripcion">Descripción</label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleChange}
-              placeholder="Cómo se sirve, para cuántos alcanza, qué lo hace especial..."
-              rows="3"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="ingredientes">Ingredientes</label>
-            <IngredientesInput
-              ingredientes={formData.ingredientes}
-              onChange={handleIngredientesChange}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="imageFile">Imagen del Producto</label>
-            <input
-              id="imageFile"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
-            <small style={{ fontSize: '12px', color: '#999', marginTop: '6px' }}>
-              Se ajusta automáticamente para subirla liviana.
-            </small>
-            {imageError && (
-              <small style={{ fontSize: '12px', color: '#E11E2B', marginTop: '6px' }}>
-                {imageError}
+              <small className="form-ayuda">
+                Texto libre. Los ingredientes van aparte, acá abajo.
               </small>
-            )}
-          </div>
+            </div>
 
-          {imagePreview && (
-            <div style={{
-              padding: '16px',
-              background: '#F8F5F0',
-              borderRadius: '8px',
-              textAlign: 'center',
-              marginBottom: '20px',
-            }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                Vista previa
-              </label>
-              <img
-                src={imagePreview}
-                alt="preview"
-                style={{
-                  maxWidth: '200px',
-                  maxHeight: '200px',
-                  borderRadius: '8px',
-                  objectFit: 'cover',
-                  border: '1px solid #ddd',
-                }}
-                onError={() => setImagePreview('')}
+            <div className="form-group">
+              <label htmlFor="ingredientes">Ingredientes</label>
+              <IngredientesInput
+                ingredientes={formData.ingredientes}
+                onChange={handleIngredientesChange}
               />
             </div>
-          )}
+          </fieldset>
 
-          <div className="form-group form-checkbox">
-            <label htmlFor="disponible">
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Imagen</legend>
+
+            <div className="campo-imagen">
+              <div className="campo-imagen__preview">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Vista previa del producto"
+                    onError={() => setImagePreview('')}
+                  />
+                ) : (
+                  <span className="campo-imagen__vacio" aria-hidden="true">📷</span>
+                )}
+              </div>
+
+              <div className="campo-imagen__control">
+                <label htmlFor="imageFile" className="campo-imagen__boton">
+                  {imagePreview ? 'Cambiar imagen' : 'Subir imagen'}
+                </label>
+                <input
+                  id="imageFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="campo-imagen__input"
+                />
+                <small className="form-ayuda">
+                  Se ajusta automáticamente para subirla liviana.
+                </small>
+                {imageError && (
+                  <small className="form-error">{imageError}</small>
+                )}
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Disponibilidad</legend>
+
+            <label className="opcion-tarjeta" htmlFor="disponible">
               <input
                 id="disponible"
                 type="checkbox"
@@ -222,12 +232,13 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
                 checked={formData.disponible}
                 onChange={handleChange}
               />
-              Disponible
+              <span className="opcion-tarjeta__texto">
+                <strong>Disponible</strong>
+                <small>Se muestra en el menú del cliente.</small>
+              </span>
             </label>
-          </div>
 
-          <div className="form-group form-checkbox">
-            <label htmlFor="llevaSalsas">
+            <label className="opcion-tarjeta" htmlFor="llevaSalsas">
               <input
                 id="llevaSalsas"
                 type="checkbox"
@@ -235,9 +246,12 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
                 checked={formData.llevaSalsas}
                 onChange={handleChange}
               />
-              Lleva salsas (el cliente debe elegirlas al pedir)
+              <span className="opcion-tarjeta__texto">
+                <strong>Lleva salsas</strong>
+                <small>El cliente debe elegirlas al pedir.</small>
+              </span>
             </label>
-          </div>
+          </fieldset>
 
           <div className="modal-actions">
             <button type="button" className="btn-cancel" onClick={onClose}>

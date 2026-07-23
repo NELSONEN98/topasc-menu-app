@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { ProductModal } from '../components/organisms/ProductModal';
@@ -15,8 +15,17 @@ import '../styles/admin-styles.css';
 // disparaba los useEffect que la tenian como dependencia.
 const SIN_DATOS = [];
 
+const TABS = [
+  { id: 'pedidos', icono: '🧾', etiqueta: 'Pedidos' },
+  { id: 'productos', icono: '🍽', etiqueta: 'Productos' },
+  { id: 'categorias', icono: '🗂', etiqueta: 'Categorías' },
+  { id: 'salsas', icono: '🧂', etiqueta: 'Salsas' },
+  { id: 'horario', icono: '🕒', etiqueta: 'Horario' },
+];
+
 export const AdminPanel = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('pedidos');
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [salsaModalOpen, setSalsaModalOpen] = useState(false);
@@ -30,6 +39,30 @@ export const AdminPanel = ({ onLogout }) => {
   const [productStatusFilter, setProductStatusFilter] = useState('');
   const { notificar, confirmar } = useNotificacion();
   const ITEMS_PER_PAGE = 8;
+
+  // El drawer se comporta como un dialogo: Escape lo cierra y el fondo no
+  // scrollea mientras esta abierto.
+  useEffect(() => {
+    if (!menuAbierto) return;
+
+    const alPresionar = (e) => {
+      if (e.key === 'Escape') setMenuAbierto(false);
+    };
+    document.addEventListener('keydown', alPresionar);
+
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', alPresionar);
+      document.body.style.overflow = overflowPrevio;
+    };
+  }, [menuAbierto]);
+
+  const irATab = (id) => {
+    setActiveTab(id);
+    setMenuAbierto(false);
+  };
 
   const items = useQuery(api.items.listarMenu) ?? SIN_DATOS;
   const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
@@ -310,64 +343,56 @@ export const AdminPanel = ({ onLogout }) => {
     <div className="admin-shell">
       {/* Navbar */}
       <nav className="admin-navbar">
+        <button
+          type="button"
+          className={`admin-burger ${menuAbierto ? 'is-open' : ''}`}
+          onClick={() => setMenuAbierto((abierto) => !abierto)}
+          aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={menuAbierto}
+          aria-controls="admin-nav"
+        >
+          <span className="admin-burger__linea" />
+          <span className="admin-burger__linea" />
+          <span className="admin-burger__linea" />
+        </button>
+
         <div className="admin-navbar-brand">
           <span className="admin-navbar-brand-gold">Topasc</span>
         </div>
 
-        <div className="admin-navbar-nav">
-          <button
-            className={`admin-nav-item ${activeTab === 'pedidos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pedidos')}
-          >
-            🧾 Pedidos
-          </button>
-          <button
-            className={`admin-nav-item ${activeTab === 'productos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('productos')}
-          >
-            🍽 Productos
-          </button>
-          <button
-            className={`admin-nav-item ${activeTab === 'categorias' ? 'active' : ''}`}
-            onClick={() => setActiveTab('categorias')}
-          >
-            🗂 Categorías
-          </button>
-          <button
-            className={`admin-nav-item ${activeTab === 'salsas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('salsas')}
-          >
-            🧂 Salsas
-          </button>
-          <button
-            className={`admin-nav-item ${activeTab === 'horario' ? 'active' : ''}`}
-            onClick={() => setActiveTab('horario')}
-          >
-            🕒 Horario
-          </button>
+        <div
+          id="admin-nav"
+          className={`admin-navbar-nav ${menuAbierto ? 'is-open' : ''}`}
+        >
+          {TABS.map(({ id, icono, etiqueta }) => (
+            <button
+              key={id}
+              className={`admin-nav-item ${activeTab === id ? 'active' : ''}`}
+              onClick={() => irATab(id)}
+              aria-current={activeTab === id ? 'page' : undefined}
+            >
+              <span className="admin-nav-item__icono" aria-hidden="true">
+                {icono}
+              </span>
+              {etiqueta}
+            </button>
+          ))}
         </div>
 
         <div className="admin-navbar-actions">
-          <button
-            onClick={onLogout}
-            style={{
-              background: '#E11E2B',
-              color: '#fff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              transition: 'background .2s',
-            }}
-            onMouseOver={(e) => e.target.style.background = '#C01820'}
-            onMouseOut={(e) => e.target.style.background = '#E11E2B'}
-          >
+          <button className="admin-logout" onClick={onLogout}>
             Salir
           </button>
         </div>
       </nav>
+
+      {menuAbierto && (
+        <div
+          className="admin-nav-overlay"
+          onClick={() => setMenuAbierto(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Main Content */}
       <div className="admin-main">
@@ -475,11 +500,13 @@ export const AdminPanel = ({ onLogout }) => {
                         <span className="admin-table-noimg">Falta imagen</span>
                       )}
                     </div>
-                    <div className="admin-table-cell-category">
+                    <div className="admin-table-cell-category" data-label="Categoría">
                       {categoriaMap[item.categoriaId] || 'Sin categoría'}
                     </div>
-                    <div className="admin-table-cell-price">${item.precio.toLocaleString()}</div>
-                    <div className="admin-table-cell-status">
+                    <div className="admin-table-cell-price" data-label="Precio">
+                      ${item.precio.toLocaleString()}
+                    </div>
+                    <div className="admin-table-cell-status" data-label="Estado">
                       <button
                         className={`status-toggle ${item.disponible ? 'active' : ''}`}
                         onClick={async () => {
@@ -552,12 +579,14 @@ export const AdminPanel = ({ onLogout }) => {
 
                   return (
                     <div key={categoria._id} className="admin-table-row admin-table-row-categorias">
-                      <div className="admin-table-cell-orden">{categoria.orden}</div>
+                      <div className="admin-table-cell-orden" data-label="Orden">
+                        {categoria.orden}
+                      </div>
                       <div className="admin-table-cell-name">{categoria.nombre}</div>
-                      <div className="admin-table-cell-category">
+                      <div className="admin-table-cell-category" data-label="Productos">
                         {productos === 0 ? 'Sin productos' : `${productos} producto${productos === 1 ? '' : 's'}`}
                       </div>
-                      <div className="admin-table-cell-status">
+                      <div className="admin-table-cell-status" data-label="Estado">
                         <button
                           className={`status-toggle ${categoria.activo ? 'active' : ''}`}
                           onClick={async () => {
@@ -641,10 +670,10 @@ export const AdminPanel = ({ onLogout }) => {
                         </span>
                       )}
                     </div>
-                    <div className="admin-table-cell-price">
+                    <div className="admin-table-cell-price" data-label="Precio">
                       {salsa.tipo === 'base' ? 'Gratis' : `$${salsa.precio.toLocaleString()}`}
                     </div>
-                    <div className="admin-table-cell-status">
+                    <div className="admin-table-cell-status" data-label="Estado">
                       <button
                         className={`status-toggle ${salsa.disponible ? 'active' : ''}`}
                         onClick={async () => {
