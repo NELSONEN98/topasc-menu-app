@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { ProductModal } from '../components/organisms/ProductModal';
 import { SalsaModal } from '../components/organisms/SalsaModal';
+import { CategoriaModal } from '../components/organisms/CategoriaModal';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
 import { Pagination } from '../components/molecules/Pagination';
 import '../styles/admin-styles.css';
@@ -13,6 +14,8 @@ export const AdminPanel = ({ onLogout }) => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [salsaModalOpen, setSalsaModalOpen] = useState(false);
   const [editingSalsa, setEditingSalsa] = useState(null);
+  const [categoriaModalOpen, setCategoriaModalOpen] = useState(false);
+  const [editingCategoria, setEditingCategoria] = useState(null);
   const [productPage, setProductPage] = useState(1);
   const [salsasPage, setSalsasPage] = useState(1);
   const [productSearch, setProductSearch] = useState('');
@@ -27,6 +30,10 @@ export const AdminPanel = ({ onLogout }) => {
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);
   const borrarItem = useMutation(api.items.borrar);
+  const todasCategorias = useQuery(api.categorias.listarTodas) || [];
+  const crearCategoria = useMutation(api.categorias.crear);
+  const actualizarCategoria = useMutation(api.categorias.actualizar);
+  const borrarCategoria = useMutation(api.categorias.borrar);
   const crearSalsa = useMutation(api.salsas.crear);
   const actualizarSalsa = useMutation(api.salsas.actualizar);
   const borrarSalsa = useMutation(api.salsas.borrar);
@@ -100,6 +107,85 @@ export const AdminPanel = ({ onLogout }) => {
       console.error('Error al eliminar salsa:', error);
       setSaveMessage('❌ Error al eliminar');
       setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  // Convex envuelve el mensaje del throw; nos quedamos con la parte util
+  const mensajeDeError = (error) => {
+    const texto = error?.message || '';
+    const limpio = texto.split('\n')[0].replace(/^.*?Error:\s*/, '');
+    return limpio || 'Error inesperado';
+  };
+
+  const productosPorCategoria = items.reduce((acc, item) => {
+    acc[item.categoriaId] = (acc[item.categoriaId] || 0) + 1;
+    return acc;
+  }, {});
+
+  const siguienteOrden = todasCategorias.length > 0
+    ? Math.max(...todasCategorias.map(c => c.orden || 0)) + 1
+    : 1;
+
+  const handleSaveCategoria = async (formData) => {
+    try {
+      if (!formData.nombre.trim()) {
+        alert('El nombre de la categoría es obligatorio');
+        return;
+      }
+
+      const isEditing = !!editingCategoria;
+
+      if (editingCategoria) {
+        await actualizarCategoria({
+          id: editingCategoria._id,
+          campos: {
+            nombre: formData.nombre,
+            orden: formData.orden,
+            activo: formData.activo,
+          },
+        });
+      } else {
+        await crearCategoria({
+          nombre: formData.nombre,
+          orden: formData.orden,
+        });
+      }
+
+      setCategoriaModalOpen(false);
+      setEditingCategoria(null);
+      setSaveMessage(isEditing ? '✓ Categoría actualizada' : '✓ Categoría creada');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error al guardar categoría:', error);
+      setSaveMessage(`❌ ${mensajeDeError(error)}`);
+      setTimeout(() => setSaveMessage(''), 5000);
+    }
+  };
+
+  const handleDeleteCategoria = async (categoria) => {
+    const productos = productosPorCategoria[categoria._id] || 0;
+
+    if (productos > 0) {
+      alert(
+        `"${categoria.nombre}" tiene ${productos} producto(s).\n\n` +
+        `Si la borrás, esos productos quedan sin categoría y desaparecen del menú. ` +
+        `Movelos a otra categoría primero, o desactivala para ocultarla sin perder nada.`
+      );
+      return;
+    }
+
+    if (!window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`)) {
+      return;
+    }
+
+    try {
+      await borrarCategoria({ id: categoria._id });
+      setSaveMessage('✓ Categoría eliminada');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error al eliminar categoría:', error);
+      setSaveMessage(`❌ ${mensajeDeError(error)}`);
+      setTimeout(() => setSaveMessage(''), 5000);
     }
   };
 
@@ -246,6 +332,12 @@ export const AdminPanel = ({ onLogout }) => {
             onClick={() => setActiveTab('productos')}
           >
             🍽 Productos
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'categorias' ? 'active' : ''}`}
+            onClick={() => setActiveTab('categorias')}
+          >
+            🗂 Categorías
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'salsas' ? 'active' : ''}`}
@@ -430,6 +522,91 @@ export const AdminPanel = ({ onLogout }) => {
           </div>
         )}
 
+        {/* Categorías Section */}
+        {activeTab === 'categorias' && (
+          <div>
+            <div className="admin-section-header">
+              <div>
+                <h1 className="admin-section-title">Categorías</h1>
+                <p className="admin-section-meta">
+                  {todasCategorias.length} categorías · {todasCategorias.filter(c => c.activo).length} activas
+                </p>
+              </div>
+              <button
+                className="btn-add-item"
+                onClick={() => {
+                  setEditingCategoria(null);
+                  setCategoriaModalOpen(true);
+                }}
+              >
+                + Agregar categoría
+              </button>
+            </div>
+
+            <div className="admin-table-wrapper">
+              <div className="admin-table-header admin-table-header-categorias">
+                <div>Orden</div>
+                <div>Nombre</div>
+                <div>Productos</div>
+                <div>Estado</div>
+                <div></div>
+              </div>
+
+              <div className="admin-table-body">
+                {todasCategorias.map(categoria => {
+                  const productos = productosPorCategoria[categoria._id] || 0;
+
+                  return (
+                    <div key={categoria._id} className="admin-table-row admin-table-row-categorias">
+                      <div className="admin-table-cell-orden">{categoria.orden}</div>
+                      <div className="admin-table-cell-name">{categoria.nombre}</div>
+                      <div className="admin-table-cell-category">
+                        {productos === 0 ? 'Sin productos' : `${productos} producto${productos === 1 ? '' : 's'}`}
+                      </div>
+                      <div className="admin-table-cell-status">
+                        <button
+                          className={`status-toggle ${categoria.activo ? 'active' : ''}`}
+                          onClick={async () => {
+                            try {
+                              await actualizarCategoria({
+                                id: categoria._id,
+                                campos: { activo: !categoria.activo },
+                              });
+                            } catch (error) {
+                              console.error('Error al cambiar estado:', error);
+                            }
+                          }}
+                          title={categoria.activo ? 'Clic para ocultar del menú' : 'Clic para mostrar en el menú'}
+                        />
+                      </div>
+                      <div className="admin-table-actions">
+                        <button
+                          className="btn-edit"
+                          onClick={() => {
+                            setEditingCategoria(categoria);
+                            setCategoriaModalOpen(true);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDeleteCategoria(categoria)}
+                          disabled={productos > 0}
+                          title={productos > 0 ? 'Tiene productos: movelos o desactivala' : 'Eliminar categoría'}
+                          style={productos > 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Salsas Section */}
         {activeTab === 'salsas' && (
           <div>
@@ -588,6 +765,18 @@ export const AdminPanel = ({ onLogout }) => {
         product={editingProduct}
         categorias={categorias}
         onSave={handleSaveProduct}
+      />
+
+      {/* Categoría Modal */}
+      <CategoriaModal
+        isOpen={categoriaModalOpen}
+        onClose={() => {
+          setCategoriaModalOpen(false);
+          setEditingCategoria(null);
+        }}
+        categoria={editingCategoria}
+        siguienteOrden={siguienteOrden}
+        onSave={handleSaveCategoria}
       />
 
       {/* Salsa Modal */}
