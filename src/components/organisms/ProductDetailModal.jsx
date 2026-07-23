@@ -13,6 +13,8 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
   // undefined = lleva salsas (default); false = bebidas, postres, etc.
   const llevaSalsas = product.llevaSalsas !== false;
 
+  const ingredientes = product.ingredientes || [];
+
   const salsasBase = llevaSalsas ? salsas.filter((s) => s.tipo === 'base') : [];
   const salsasEspeciales = llevaSalsas
     ? salsas.filter((s) => s.tipo === 'especial')
@@ -96,7 +98,19 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
 
         <div className="detail-body">
           <h2 className="detail-name">{product.nombre || product.name}</h2>
-          <p className="detail-description">{product.descripcion || product.description}</p>
+          {(product.descripcion || product.description) && (
+            <p className="detail-description">{product.descripcion || product.description}</p>
+          )}
+
+          {ingredientes.length > 0 && (
+            <ul className="detail-ingredientes">
+              {ingredientes.map((ingrediente) => (
+                <li key={ingrediente} className="detail-ingrediente">
+                  {ingrediente}
+                </li>
+              ))}
+            </ul>
+          )}
 
           <div className="detail-price">{formatPrice(precioBase)}</div>
 

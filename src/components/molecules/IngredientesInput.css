@@ -1,0 +1,108 @@
+/* ============================================================
+   INGREDIENTES INPUT — chips + entrada por unidad
+   ============================================================ */
+
+.ingredientes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ingredientes-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ingredientes-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 12px;
+  background: #F8F5F0;
+  border: 1px solid #E0D5C7;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #241C15;
+}
+
+.ingredientes-chip__text {
+  line-height: 1.2;
+}
+
+.ingredientes-chip__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #E0D5C7;
+  color: #241C15;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.ingredientes-chip__remove:hover {
+  background: #E11E2B;
+  color: #fff;
+}
+
+.ingredientes-entry {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Chico a proposito: es una entrada por unidad, no un campo de texto libre */
+.ingredientes-input {
+  width: 220px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: border-color .2s;
+}
+
+.ingredientes-input:focus {
+  outline: none;
+  border-color: #E11E2B;
+  box-shadow: 0 0 0 2px rgba(225, 30, 43, 0.1);
+}
+
+.ingredientes-add {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #E0D5C7;
+  color: #241C15;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, opacity .2s;
+}
+
+.ingredientes-add:hover:not(:disabled) {
+  background: #D4C5B9;
+}
+
+.ingredientes-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ingredientes-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}

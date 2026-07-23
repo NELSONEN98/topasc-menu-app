@@ -12,6 +12,8 @@ export default defineSchema({
     categoriaId: v.id("categorias"),
     nombre: v.string(),
     descripcion: v.optional(v.string()),
+    // Lista real, no un string con comas: permite filtrar y renderizar por unidad
+    ingredientes: v.optional(v.array(v.string())),
     precio: v.number(),
     imagenUrl: v.optional(v.string()),
     disponible: v.boolean(),
