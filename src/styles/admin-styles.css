@@ -407,6 +407,44 @@ input, select { font-family: 'Inter', sans-serif; }
   grid-template-columns: 80px 2fr 1fr 1fr 0.8fr !important;
 }
 
+/* Badge "Especial" en la tabla de salsas */
+.admin-badge-especial {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #B8860B;
+  background: #FBF1D6;
+}
+
+/* Estado vacío de las tablas */
+.admin-vacio {
+  margin: 0;
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #999;
+}
+
+/* Botón Editar de las tarjetas de horario */
+.horario-edit {
+  background: #f0f0f0;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark-bg);
+  transition: background .2s;
+}
+
+.horario-edit:hover { background: #e0e0e0; }
+
+/* El buscador ocupa el doble que los selects de filtro */
+.filter-group--ancho { flex: 2; }
+
 /* Tabla de Categorías */
 .admin-table-header-categorias {
   grid-template-columns: 80px 2fr 1.2fr 1fr 0.8fr !important;
