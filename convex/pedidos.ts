@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
 const itemValidator = v.object({
   itemId: v.id("items"),
@@ -13,6 +14,10 @@ const itemValidator = v.object({
   notas: v.optional(v.string()),
 });
 
+// PUBLICA A PROPOSITO: la hace el cliente desde la mesa, sin cuenta ni login.
+// Es la unica escritura abierta del sistema. Si alguna vez hay que limitarla,
+// va con rate limiting o validando la mesa — nunca exigiendo sesion, porque
+// eso romperia el producto entero.
 export const crear = mutation({
   args: {
     tipoPedido: v.union(
@@ -48,6 +53,10 @@ export const crear = mutation({
 export const listarActivos = query({
   args: {},
   handler: async (ctx) => {
+    // Los pedidos traen nombre, telefono y direccion de los clientes: esto no
+    // se expone sin sesion.
+    await requerirAdmin(ctx);
+
     return await ctx.db
       .query("pedidos")
       .withIndex("por_estado", (q) => q.eq("estado", "recibido"))
@@ -67,6 +76,8 @@ export const listarPorEstado = query({
     limite: v.optional(v.number()),
   },
   handler: async (ctx, { estado, limite }) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db
       .query("pedidos")
       .withIndex("por_estado", (q) => q.eq("estado", estado))
@@ -85,6 +96,8 @@ export const actualizar = mutation({
     ),
   },
   handler: async (ctx, { id, estado }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.patch(id, { estado });
   },
 });

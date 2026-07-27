@@ -11,7 +11,8 @@ import { Home } from './pages/Home';
 import { Cart } from './pages/Cart';
 import { Loader } from './components/organisms/Loader';
 import { AdminPanel } from './pages/AdminPanel';
-import { AdminLogin } from './pages/AdminLogin';
+import { Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
+import { SignIn, useClerk } from '@clerk/react';
 import { useCart } from './context/CartContext';
 import './styles/global.css';
 
@@ -85,10 +86,85 @@ const MesaApp = () => {
   return <ClientApp mesa={mesa} />;
 };
 
+const FONDO_ADMIN = {
+  background: '#F2ECE3',
+  minHeight: '100vh',
+  height: '100%',
+  width: '100%',
+};
+
+const CENTRADO = {
+  ...FONDO_ADMIN,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px',
+  boxSizing: 'border-box',
+};
+
+const clerkListo = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+
+// El panel solo se monta con sesion valida. Igual esto es la puerta, no la
+// cerradura: cada funcion de admin revalida la sesion en el servidor
+// (convex/guardias.ts). Aunque alguien fuerce este componente a renderizar,
+// no puede leer ni escribir nada.
+const AdminAutenticado = () => {
+  const { signOut } = useClerk();
+
+  return <AdminPanel onLogout={() => signOut()} />;
+};
+
+const AuthSinConfigurar = () => (
+  <div style={CENTRADO}>
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: '12px',
+        padding: '32px',
+        maxWidth: '420px',
+        textAlign: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      }}
+    >
+      <h1 style={{ fontSize: '18px', margin: '0 0 12px', color: '#241C15' }}>
+        Panel no disponible
+      </h1>
+      <p style={{ fontSize: '14px', color: '#666', margin: 0, lineHeight: 1.5 }}>
+        Falta configurar la autenticación (<code>VITE_CLERK_PUBLISHABLE_KEY</code>).
+        El menú y los pedidos siguen funcionando con normalidad.
+      </p>
+    </div>
+  </div>
+);
+
 const AdminApp = () => {
+  if (!clerkListo) return <AuthSinConfigurar />;
+
+  // Se usan los componentes de Convex y no los de Clerk a proposito: lo que
+  // importa no es que Clerk diga "hay sesion", sino que Convex haya validado
+  // el token. Con los de Clerk el panel se monta un instante antes de que
+  // Convex este listo, y las queries de ese primer render fallan.
   return (
-    <div style={{ background: '#F2ECE3', minHeight: '100vh', height: '100%', width: '100%' }}>
-      <AdminPanel onLogout={() => {}} />
+    <div style={FONDO_ADMIN}>
+      <AuthLoading>
+        <Loader message="Verificando sesión..." />
+      </AuthLoading>
+
+      <Authenticated>
+        <AdminAutenticado />
+      </Authenticated>
+
+      <Unauthenticated>
+        <div style={CENTRADO}>
+          {/*
+            Sin `forceRedirectUrl` Clerk manda a "/" despues del login y el
+            admin termina en el menu del cliente. Se usa la variante `force` y
+            no `fallback` porque este formulario solo existe dentro de /admin:
+            no hay otro destino razonable al que volver.
+          */}
+          <SignIn routing="hash" forceRedirectUrl="/admin" />
+        </div>
+      </Unauthenticated>
     </div>
   );
 };

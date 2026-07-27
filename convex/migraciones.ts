@@ -1,4 +1,5 @@
 import { mutation } from "./_generated/server";
+import { requerirAdmin } from "./guardias";
 
 // Migracion de un solo uso: el flujo de 6 estados se reduce a
 // recibido -> completado, con cancelado como unica salida de emergencia.
@@ -23,6 +24,8 @@ const MAPA_ESTADOS: Record<string, EstadoNuevo> = {
 export const migrarEstados = mutation({
   args: {},
   handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     const pedidos = await ctx.db.query("pedidos").collect();
 
     let migrados = 0;

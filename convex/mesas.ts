@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
 // Token del QR: corto, sin caracteres ambiguos, difícil de adivinar de memoria.
 const generarToken = () => {
@@ -25,9 +26,13 @@ export const porCodigo = query({
   },
 });
 
+// Solo admin: el listado completo permite enumerar todos los codigos de mesa.
+// El cliente nunca lo necesita — el suyo ya lo trae en la URL del QR.
 export const listar = query({
   args: {},
   handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db.query("mesas").collect();
   },
 });
@@ -38,6 +43,8 @@ export const crear = mutation({
     codigo: v.optional(v.string()),
   },
   handler: async (ctx, { numero, codigo }) => {
+    await requerirAdmin(ctx);
+
     // Genera un token único si no se pasó uno
     let token = codigo ?? generarToken();
     let existente = await ctx.db
@@ -70,6 +77,8 @@ export const actualizar = mutation({
     }),
   },
   handler: async (ctx, { id, campos }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.patch(id, campos);
   },
 });

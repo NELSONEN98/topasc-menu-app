@@ -1,6 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
+// Publica: las categorias activas arman el menu que ve el cliente.
 export const listar = query({
   args: {},
   handler: async (ctx) => {
@@ -16,6 +18,8 @@ export const listar = query({
 export const listarTodas = query({
   args: {},
   handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db
       .query("categorias")
       .order("asc", (q) => q.field("orden"))
@@ -42,6 +46,8 @@ export const crear = mutation({
     orden: v.number(),
   },
   handler: async (ctx, args) => {
+    await requerirAdmin(ctx);
+
     const nombre = args.nombre.trim();
 
     if (nombre === "") {
@@ -69,6 +75,8 @@ export const actualizar = mutation({
     }),
   },
   handler: async (ctx, { id, campos }) => {
+    await requerirAdmin(ctx);
+
     if (campos.nombre !== undefined) {
       const nombre = campos.nombre.trim();
 
@@ -98,6 +106,8 @@ export const actualizar = mutation({
 export const borrar = mutation({
   args: { id: v.id("categorias") },
   handler: async (ctx, { id }) => {
+    await requerirAdmin(ctx);
+
     const productos = await ctx.db
       .query("items")
       .withIndex("por_categoria", (q) => q.eq("categoriaId", id))
@@ -147,6 +157,8 @@ const clave = (nombre: string) => nombre.trim().toLowerCase();
 export const sincronizarMenu = mutation({
   args: {},
   handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     const existentes = await ctx.db.query("categorias").collect();
     const porNombre = new Map(existentes.map((cat) => [clave(cat.nombre), cat]));
 

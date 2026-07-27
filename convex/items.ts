@@ -1,6 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
+// Publica: es el menu que ve el cliente al escanear el QR.
 export const listarMenu = query({
   args: {},
   handler: async (ctx) => {
@@ -23,6 +25,8 @@ export const crear = mutation({
     disponible: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db.insert("items", {
       ...args,
       disponible: args.disponible ?? true,
@@ -47,6 +51,8 @@ export const actualizar = mutation({
     }),
   },
   handler: async (ctx, { id, campos }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.patch(id, campos);
   },
 });
@@ -54,6 +60,8 @@ export const actualizar = mutation({
 export const borrar = mutation({
   args: { id: v.id("items") },
   handler: async (ctx, { id }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.delete(id);
   },
 });

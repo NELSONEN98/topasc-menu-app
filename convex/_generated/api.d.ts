@@ -9,6 +9,7 @@
  */
 
 import type * as categorias from "../categorias.js";
+import type * as guardias from "../guardias.js";
 import type * as horarios from "../horarios.js";
 import type * as items from "../items.js";
 import type * as mesas from "../mesas.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   categorias: typeof categorias;
+  guardias: typeof guardias;
   horarios: typeof horarios;
   items: typeof items;
   mesas: typeof mesas;

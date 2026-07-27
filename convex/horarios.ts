@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
 // `diaSemana` sigue la convencion de Date.getDay(): 0 = Domingo ... 6 = Sabado.
 // Las horas se guardan en 24h ("23:00") porque es el formato que usa
@@ -55,6 +56,8 @@ export const guardarDia = mutation({
     cerrado: v.boolean(),
   },
   handler: async (ctx, { diaSemana, horaApertura, horaCierre, cerrado }) => {
+    await requerirAdmin(ctx);
+
     if (!Number.isInteger(diaSemana) || diaSemana < 0 || diaSemana > 6) {
       throw new Error("El dia de la semana debe ser un entero entre 0 y 6");
     }

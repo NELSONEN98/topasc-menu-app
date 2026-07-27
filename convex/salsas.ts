@@ -1,6 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requerirAdmin } from "./guardias";
 
+// Publica: son las salsas que el cliente elige al armar el pedido.
 export const listarDisponibles = query({
   args: {},
   handler: async (ctx) => {
@@ -16,9 +18,12 @@ export const listarDisponibles = query({
   },
 });
 
+// Solo admin: incluye las no disponibles, que el cliente no tiene por que ver.
 export const listar = query({
   args: {},
   handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db
       .query("salsas")
       .filter((q) => q.eq(q.field("activo"), true))
@@ -33,6 +38,8 @@ export const crear = mutation({
     precio: v.number(),
   },
   handler: async (ctx, args) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db.insert("salsas", {
       ...args,
       disponible: true,
@@ -53,6 +60,8 @@ export const actualizar = mutation({
     }),
   },
   handler: async (ctx, { id, campos }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.patch(id, campos);
   },
 });
@@ -60,6 +69,8 @@ export const actualizar = mutation({
 export const borrar = mutation({
   args: { id: v.id("salsas") },
   handler: async (ctx, { id }) => {
+    await requerirAdmin(ctx);
+
     await ctx.db.delete(id);
   },
 });
