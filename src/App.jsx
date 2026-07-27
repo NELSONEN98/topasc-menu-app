@@ -160,12 +160,19 @@ const AdminApp = () => {
       <Unauthenticated>
         <div style={CENTRADO}>
           {/*
-            Sin `forceRedirectUrl` Clerk manda a "/" despues del login y el
-            admin termina en el menu del cliente. Se usa la variante `force` y
-            no `fallback` porque este formulario solo existe dentro de /admin:
-            no hay otro destino razonable al que volver.
+            Clerk manda a "/" por defecto en TODOS sus flujos, y cada uno se
+            configura por separado: login, registro y cierre de sesion (este
+            ultimo va en signOut, mas arriba). Sin esto el admin termina en el
+            menu del cliente.
+
+            Se usa `force` y no `fallback` porque este formulario solo existe
+            dentro de /admin: no hay otro destino razonable al que volver.
           */}
-          <SignIn routing="hash" forceRedirectUrl="/admin" />
+          <SignIn
+            routing="hash"
+            forceRedirectUrl="/admin"
+            signUpForceRedirectUrl="/admin"
+          />
         </div>
       </Unauthenticated>
     </div>
