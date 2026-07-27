@@ -12,3 +12,6 @@ local_cache/
 
 # Generado por `npm run qr`
 qr-mesas.html
+
+# Generado por `npm run qr`
+qr/

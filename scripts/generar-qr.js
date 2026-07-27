@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import sharp from "sharp";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { execSync } from "node:child_process";
@@ -21,6 +22,10 @@ const BASE_URL = "https://topasc-menu-app.vercel.app/";
 const BASE = BASE_URL.trim().replace(/\/+$/, "");
 
 const SALIDA = path.join(__dirname, "..", "qr-mesas.html");
+
+// Carpeta de PNG sueltos, uno por mesa. Es lo que se le manda al cliente: un
+// HTML no se reenvia por WhatsApp, una imagen si.
+const SALIDA_PNG = path.join(__dirname, "..", "qr");
 
 // Si BASE_URL sigue con el placeholder generamos igual, para poder ver el
 // diseño, pero marcamos el HTML de forma que sea imposible imprimirlo por
@@ -82,6 +87,48 @@ const opcionesQR = {
   color: { dark: "#000000", light: "#ffffff" },
 };
 
+// --- PNG individual por mesa -----------------------------------------------
+// Lienzo 1000x1240: titulo arriba, QR de 800px al medio, codigo abajo. El
+// numero va DENTRO de la imagen y no solo en el nombre del archivo: cinco QR
+// impresos son indistinguibles a simple vista, y pegar el de la mesa 2 en la 4
+// manda los pedidos a la mesa equivocada.
+const LIENZO = { ancho: 1000, alto: 1240 };
+const QR_PX = 800;
+
+const escapar = (t) =>
+  String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+async function generarPng({ numero, codigo, url }) {
+  const qr = await QRCode.toBuffer(url, {
+    errorCorrectionLevel: "H",
+    margin: 1,
+    width: QR_PX,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+
+  const fondo = `<svg width="${LIENZO.ancho}" height="${LIENZO.alto}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${LIENZO.ancho}" height="${LIENZO.alto}" fill="#ffffff"/>
+  <text x="500" y="120" text-anchor="middle" fill="#241C15"
+        font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="bold">Mesa ${escapar(
+          numero
+        )}</text>
+  <text x="500" y="1075" text-anchor="middle" fill="#241C15"
+        font-family="Consolas, monospace" font-size="58" font-weight="bold"
+        letter-spacing="10">${escapar(codigo)}</text>
+  <text x="500" y="1150" text-anchor="middle" fill="#666666"
+        font-family="Arial, Helvetica, sans-serif" font-size="30">Escanea para ver el menú y pedir</text>
+</svg>`;
+
+  const destino = path.join(SALIDA_PNG, `mesa-${numero}-${codigo}.png`);
+
+  await sharp(Buffer.from(fondo))
+    .composite([{ input: qr, top: 175, left: (LIENZO.ancho - QR_PX) / 2 }])
+    .png()
+    .toFile(destino);
+
+  return destino;
+}
+
 function tarjeta({ numero, codigo, url, svg }) {
   return `      <article class="mesa">
         <div class="mesa__num">Mesa ${numero}</div>
@@ -99,12 +146,19 @@ async function generar() {
     process.exit(1);
   }
 
+  await fs.mkdir(SALIDA_PNG, { recursive: true });
+
   const tarjetas = [];
+  const pngs = [];
   for (const mesa of mesas) {
     const url = `${BASE}/mesa/${mesa.codigo}`;
     const svg = await QRCode.toString(url, opcionesQR);
     tarjetas.push(tarjeta({ numero: mesa.numero, codigo: mesa.codigo, url, svg }));
-    console.log(`  QR mesa ${mesa.numero}  ->  ${url}`);
+
+    const png = await generarPng({ numero: mesa.numero, codigo: mesa.codigo, url });
+    pngs.push(png);
+
+    console.log(`  mesa ${mesa.numero}  ->  ${url}`);
   }
 
   const aviso = SIN_CONFIGURAR
@@ -223,7 +277,7 @@ async function generar() {
 </head>
 <body>
 ${aviso}    <h1>Broaster Topasc</h1>
-    <p class="sub">Escaneá el código de tu mesa para ver el menú y pedir</p>
+    <p class="sub">Escanea el código de tu mesa para ver el menú y pedir</p>
 
     <div class="hoja">
 ${tarjetas.join("\n")}
@@ -238,12 +292,14 @@ ${tarjetas.join("\n")}
 `;
 
   await fs.writeFile(SALIDA, html, "utf8");
-  return { mesas, salida: SALIDA };
+  return { mesas, salida: SALIDA, pngs };
 }
 
 generar()
-  .then(({ mesas, salida }) => {
-    console.log(`\n✓ ${mesas.length} QR generados en ${salida}`);
+  .then(({ mesas, salida, pngs }) => {
+    console.log(`\n✓ ${mesas.length} PNG en ${SALIDA_PNG}`);
+    for (const p of pngs) console.log(`    ${path.basename(p)}`);
+    console.log(`\n✓ hoja imprimible en ${salida}`);
     if (SIN_CONFIGURAR) {
       console.log(
         "\n⚠  BASE_URL todavia dice CAMBIAME: el HTML salio marcado como NO IMPRIMIR.\n" +
