@@ -1,10 +1,15 @@
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 
 /**
- * Lista de emails habilitados para administrar. Se configura del lado del
- * servidor, no en el codigo:
+ * Identidades habilitadas para administrar. Se configura del lado del
+ * servidor, no en el codigo. Acepta emails y/o user IDs de Clerk:
  *
- *   npx convex env set --prod ADMIN_EMAILS "vos@mail.com,marcela@mail.com"
+ *   npx convex env set --prod ADMIN_EMAILS "vos@mail.com,user_2abc123..."
+ *
+ * Se admiten las dos formas porque Clerk NO garantiza el claim `email`: los
+ * campos que devuelve getUserIdentity dependen de como esten configurados los
+ * claims de la integracion. El `subject` (el user ID) si esta siempre. El
+ * email es mas legible; el user ID es el que nunca falta.
  *
  * Si esta vacia NO PASA NADIE. Es a proposito: un sistema de autorizacion que
  * cuando no esta configurado deja entrar a todos no protege nada. El costo de
@@ -12,7 +17,7 @@ import type { QueryCtx, MutationCtx } from "./_generated/server";
  */
 const ADMINS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
-  .map((email) => email.trim().toLowerCase())
+  .map((entrada) => entrada.trim().toLowerCase())
   .filter(Boolean);
 
 /**
@@ -48,11 +53,23 @@ export async function requerirAdmin(ctx: QueryCtx | MutationCtx) {
   }
 
   const email = identidad.email?.trim().toLowerCase();
+  const userId = identidad.subject?.trim().toLowerCase();
 
-  // Clerk no garantiza el claim `email`: depende de como esten configurados
-  // los claims de la integracion. Si la allowlist esta activa y el token no
-  // trae email, se rechaza. Fallar cerrado: ante la duda, no se pasa.
-  if (!email || !ADMINS.includes(email)) {
+  const habilitado =
+    (email !== undefined && ADMINS.includes(email)) ||
+    (userId !== undefined && ADMINS.includes(userId));
+
+  if (!habilitado) {
+    // Sin este log no hay forma de saber por que rebota una cuenta: el cliente
+    // solo recibe un "Server Error" generico —Convex oculta los mensajes a
+    // proposito— y quedan indistinguibles "no estas en la lista" y "el token
+    // no trae el dato con el que te busco".
+    console.warn(
+      `[auth] rechazado. email=${email ?? "(sin claim email)"} subject=${
+        identidad.subject ?? "(sin subject)"
+      } | habilitados=${ADMINS.length}`
+    );
+
     throw new Error("No autorizado: esta cuenta no tiene permisos de administración.");
   }
 

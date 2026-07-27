@@ -17,7 +17,9 @@ const SIN_DATOS = [];
 export const useProductosAdmin = () => {
   const { notificar, confirmar } = useNotificacion();
 
-  const items = useQuery(api.items.listarMenu) ?? SIN_DATOS;
+  // listarTodos y no listarMenu: el panel tiene que ver tambien los productos
+  // apagados, que es desde donde se vuelven a encender.
+  const items = useQuery(api.items.listarTodos) ?? SIN_DATOS;
   const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);

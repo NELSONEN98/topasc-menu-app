@@ -17,7 +17,9 @@ export const useCategoriasAdmin = () => {
   const categorias = useQuery(api.categorias.listarTodas) ?? SIN_DATOS;
   // Convex deduplica suscripciones identicas, asi que pedir los items aca
   // no agrega trafico y mantiene el hook autosuficiente.
-  const items = useQuery(api.items.listarMenu) ?? SIN_DATOS;
+  // listarTodos: para contar productos por categoria hay que incluir los
+  // apagados, o el conteo miente y una categoria parece vacia sin estarlo.
+  const items = useQuery(api.items.listarTodos) ?? SIN_DATOS;
   const crearCategoria = useMutation(api.categorias.crear);
   const actualizarCategoria = useMutation(api.categorias.actualizar);
   const borrarCategoria = useMutation(api.categorias.borrar);

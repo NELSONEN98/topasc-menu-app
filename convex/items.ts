@@ -3,9 +3,33 @@ import { v } from "convex/values";
 import { requerirAdmin } from "./guardias";
 
 // Publica: es el menu que ve el cliente al escanear el QR.
+//
+// Filtra por `disponible` ademas de `activo`. Son dos cosas distintas:
+//   activo     = el producto existe en la carta
+//   disponible = hoy se puede pedir (es lo que apaga el switch del admin)
+//
+// Si esta query mirara solo `activo`, apagar el switch pintaria el producto
+// de gris en el panel y el cliente lo seguiria viendo y pidiendo.
 export const listarMenu = query({
   args: {},
   handler: async (ctx) => {
+    return await ctx.db
+      .query("items")
+      .filter((q) =>
+        q.and(q.eq(q.field("activo"), true), q.eq(q.field("disponible"), true))
+      )
+      .collect();
+  },
+});
+
+// Solo admin: trae tambien los no disponibles. El panel los necesita para
+// poder volver a activarlos — si usara `listarMenu`, apagar un producto lo
+// haria desaparecer de la lista y no habria forma de encenderlo de nuevo.
+export const listarTodos = query({
+  args: {},
+  handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
     return await ctx.db
       .query("items")
       .filter((q) => q.eq(q.field("activo"), true))
