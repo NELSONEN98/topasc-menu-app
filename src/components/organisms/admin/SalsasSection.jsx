@@ -58,7 +58,6 @@ export const SalsasSection = () => {
                     aria-label={`Editar ${salsa.nombre}`}
                   >
                     <span className="btn-texto">Editar</span>
-                    <span className="btn-icono" aria-hidden="true">✏️</span>
                   </button>
                   <button
                     className="btn-delete"
@@ -66,7 +65,6 @@ export const SalsasSection = () => {
                     aria-label={`Eliminar ${salsa.nombre}`}
                   >
                     <span className="btn-texto">Eliminar</span>
-                    <span className="btn-icono" aria-hidden="true">🗑</span>
                   </button>
                 </div>
               </div>

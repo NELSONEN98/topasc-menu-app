@@ -413,7 +413,6 @@ input, select { font-family: 'Inter', sans-serif; }
 
 /* En desktop los botones de acción muestran texto; el icono es solo mobile.
    Va ANTES del media query: si fuera después, lo pisaría por orden de cascada. */
-.btn-icono { display: none; }
 
 /* Badge "Especial" en la tabla de salsas */
 .admin-badge-especial {
@@ -653,12 +652,6 @@ input, select { font-family: 'Inter', sans-serif; }
     border-bottom: none;
   }
 
-  .admin-nav-item__icono {
-    font-size: 17px;
-    width: 22px;
-    text-align: center;
-  }
-
   .admin-nav-overlay {
     display: block;
     position: fixed;
@@ -839,12 +832,6 @@ input, select { font-family: 'Inter', sans-serif; }
     /* 38px: comodo para el pulgar sin volver a inflar la fila */
     min-height: 38px;
     padding: 0 12px !important;
-    font-size: 13px;
-  }
-
-  .btn-icono {
-    display: inline-block;
-    line-height: 1;
     font-size: 13px;
   }
 

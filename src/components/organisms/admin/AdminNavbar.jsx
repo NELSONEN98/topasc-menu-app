@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
 export const TABS = [
-  { id: 'pedidos', icono: '🧾', etiqueta: 'Pedidos' },
-  { id: 'productos', icono: '🍽', etiqueta: 'Productos' },
-  { id: 'categorias', icono: '🗂', etiqueta: 'Categorías' },
-  { id: 'salsas', icono: '🧂', etiqueta: 'Salsas' },
-  { id: 'horario', icono: '🕒', etiqueta: 'Horario' },
+  { id: 'pedidos', etiqueta: 'Pedidos' },
+  { id: 'productos', etiqueta: 'Productos' },
+  { id: 'categorias', etiqueta: 'Categorías' },
+  { id: 'salsas', etiqueta: 'Salsas' },
+  { id: 'horario', etiqueta: 'Horario' },
 ];
 
 export const AdminNavbar = ({ tabActivo, onCambiarTab, menuAbierto, onToggleMenu, onLogout }) => {
@@ -49,16 +49,13 @@ export const AdminNavbar = ({ tabActivo, onCambiarTab, menuAbierto, onToggleMenu
         </div>
 
         <div id="admin-nav" className={`admin-navbar-nav ${menuAbierto ? 'is-open' : ''}`}>
-          {TABS.map(({ id, icono, etiqueta }) => (
+          {TABS.map(({ id, etiqueta }) => (
             <button
               key={id}
               className={`admin-nav-item ${tabActivo === id ? 'active' : ''}`}
               onClick={() => onCambiarTab(id)}
               aria-current={tabActivo === id ? 'page' : undefined}
             >
-              <span className="admin-nav-item__icono" aria-hidden="true">
-                {icono}
-              </span>
               {etiqueta}
             </button>
           ))}

@@ -73,7 +73,6 @@ export const CategoriasSection = () => {
                       aria-label={`Editar ${categoria.nombre}`}
                     >
                       <span className="btn-texto">Editar</span>
-                      <span className="btn-icono" aria-hidden="true">✏️</span>
                     </button>
                     <button
                       className="btn-delete"
@@ -87,7 +86,6 @@ export const CategoriasSection = () => {
                       aria-label={`Eliminar ${categoria.nombre}`}
                     >
                       <span className="btn-texto">Eliminar</span>
-                      <span className="btn-icono" aria-hidden="true">🗑</span>
                     </button>
                   </div>
                 </div>

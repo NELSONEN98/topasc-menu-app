@@ -129,7 +129,6 @@ export const ProductosSection = () => {
                     aria-label={`Editar ${item.nombre}`}
                   >
                     <span className="btn-texto">Editar</span>
-                    <span className="btn-icono" aria-hidden="true">✏️</span>
                   </button>
                   <button
                     className="btn-delete"
@@ -137,7 +136,6 @@ export const ProductosSection = () => {
                     aria-label={`Eliminar ${item.nombre}`}
                   >
                     <span className="btn-texto">Eliminar</span>
-                    <span className="btn-icono" aria-hidden="true">🗑</span>
                   </button>
                 </div>
               </div>
