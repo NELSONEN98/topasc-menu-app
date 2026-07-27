@@ -111,7 +111,10 @@ const clerkListo = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const AdminAutenticado = () => {
   const { signOut } = useClerk();
 
-  return <AdminPanel onLogout={() => signOut()} />;
+  // Sin `redirectUrl`, Clerk manda a "/" al cerrar sesion y el admin termina
+  // en el menu del cliente. Se vuelve a /admin: como ya no hay sesion, ahi lo
+  // recibe el formulario de login, que es lo esperable despues de salir.
+  return <AdminPanel onLogout={() => signOut({ redirectUrl: '/admin' })} />;
 };
 
 const AuthSinConfigurar = () => (
