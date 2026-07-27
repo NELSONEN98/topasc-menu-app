@@ -9,3 +9,6 @@ dist/
 .vscode/
 .idea/
 local_cache/
+
+# Generado por `npm run qr`
+qr-mesas.html
