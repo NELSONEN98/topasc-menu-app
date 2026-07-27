@@ -21,6 +21,24 @@ const ADMINS = (process.env.ADMIN_EMAILS ?? "")
   .filter(Boolean);
 
 /**
+ * Modo abierto: cualquier sesion valida administra, sin allowlist.
+ *
+ *   npx convex env set --prod ADMIN_ABIERTO true
+ *
+ * Con esto la pregunta "¿quien administra?" la responde enteramente Clerk:
+ * tener cuenta es ser admin. Va de la mano de como este configurado el
+ * registro alla — si esta abierto, cualquiera que se registre administra.
+ *
+ * Es una variable aparte y no la ausencia de ADMIN_EMAILS a proposito:
+ * abrir el panel tiene que ser un acto deliberado, nunca la consecuencia de
+ * olvidarse de configurar algo. Para volver a la allowlist alcanza con
+ * borrarla (`npx convex env remove --prod ADMIN_ABIERTO`): ADMIN_EMAILS
+ * sigue cargada y vuelve a aplicarse sola.
+ */
+const MODO_ABIERTO =
+  (process.env.ADMIN_ABIERTO ?? "").trim().toLowerCase() === "true";
+
+/**
  * Exige una sesion valida —y, si hay allowlist, que sea una cuenta habilitada.
  *
  * Convex expone cada query y cada mutation como un endpoint publico: el
@@ -40,6 +58,11 @@ export async function requerirAdmin(ctx: QueryCtx | MutationCtx) {
 
   if (identidad === null) {
     throw new Error("No autorizado: iniciá sesión para realizar esta acción.");
+  }
+
+  // Ventana de onboarding: alcanza con tener sesion. Ver MODO_ABIERTO.
+  if (MODO_ABIERTO) {
+    return identidad;
   }
 
   // Falla cerrado: sin allowlist no entra nadie. Si Clerk permite registro
