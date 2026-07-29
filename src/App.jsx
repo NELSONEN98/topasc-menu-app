@@ -63,7 +63,11 @@ const ClientApp = ({ mesa = null }) => {
         {currentPage === 'sede-select' ? (
           <SedeSelect onSelectSede={handleSelectSede} />
         ) : currentPage === 'order-type' ? (
-          <OrderType onSelectType={handleSelectType} />
+          <OrderType
+            onSelectType={handleSelectType}
+            sede={sede}
+            onChangeSede={() => setCurrentPage('sede-select')}
+          />
         ) : currentPage === 'home' ? (
           <Home
             onNavigateToCart={() => setCurrentPage('cart')}

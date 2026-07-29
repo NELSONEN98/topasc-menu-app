@@ -17,7 +17,7 @@ const PickupIcon = () => (
   </svg>
 );
 
-export const OrderType = ({ onSelectType }) => {
+export const OrderType = ({ onSelectType, sede = null, onChangeSede }) => {
   // 'dine-in' ya no se elige acá: se entra automáticamente por el QR de la mesa
   const orderTypes = [
     {
@@ -37,6 +37,21 @@ export const OrderType = ({ onSelectType }) => {
   return (
     <div className="order-type">
       <Hero />
+
+      {sede && (
+        <div className="order-type__sede-banner">
+          <span>
+            Pides desde: <strong>{sede.nombre}</strong>
+          </span>
+          <button
+            type="button"
+            className="order-type__sede-change"
+            onClick={onChangeSede}
+          >
+            Cambiar
+          </button>
+        </div>
+      )}
 
       <div className="order-type__header">
         <p className="order-type__subtitle">¿Cómo prefieres tu orden?</p>
