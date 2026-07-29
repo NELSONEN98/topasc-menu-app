@@ -32,6 +32,15 @@ export default defineSchema({
     activo: v.boolean(),
   }),
 
+  sedes: defineTable({
+    nombre: v.string(),
+    // Numero de WhatsApp al que llegan los pedidos de esta sede (sin +, sin
+    // espacios). Por ahora las dos sedes usan el mismo numero de pruebas;
+    // cuando cada local tenga el suyo, se edita aca sin tocar codigo.
+    whatsapp: v.string(),
+    activo: v.boolean(),
+  }),
+
   mesas: defineTable({
     // codigo = token del QR (no legible, va en la URL /mesa/:codigo)
     codigo: v.string(),

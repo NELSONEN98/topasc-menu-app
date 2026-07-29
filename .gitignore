@@ -15,3 +15,8 @@ qr-mesas.html
 
 # Generado por `npm run qr`
 qr/
+
+# Variantes de logo sin usar: solo logo-no-bg.png esta commiteado
+public/img/logo.png
+public/img/logo-jpeg.jpeg
+public/img/loader-logo.png

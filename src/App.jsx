@@ -6,6 +6,7 @@ import { CartProvider } from './context/CartContext';
 import { NotificacionProvider } from './context/NotificacionContext';
 import { StatusBar } from './components/organisms/StatusBar';
 import { SplashScreen } from './pages/SplashScreen';
+import { SedeSelect } from './pages/SedeSelect';
 import { OrderType } from './pages/OrderType';
 import { Home } from './pages/Home';
 import { Cart } from './pages/Cart';
@@ -17,15 +18,28 @@ import { useCart } from './context/CartContext';
 import './styles/global.css';
 
 // mesa: cuando viene por QR, el pedido queda "clavado" a esa mesa —
-// se saltea la elección de tipo de orden y el modal de número de mesa.
+// se saltea la eleccion de sede y de tipo de orden: quien escanea el QR ya
+// esta parado en un local especifico, no tiene sentido preguntarle cual.
+//
+// NOTA: las mesas todavia no tienen una sede asociada en el schema. Con una
+// sola sucursal esto no importaba; con dos, un pedido por QR usa el WhatsApp
+// de pruebas por defecto (ver Cart.jsx) sin importar en que local este la
+// mesa. El dia que haya un numero real por sede, mesas va a necesitar su
+// propio campo `sedeId` para que el pedido llegue al local correcto.
 const ClientApp = ({ mesa = null }) => {
   const { clearCart } = useCart();
   const lockedToTable = !!mesa;
   const [showSplash, setSplash] = useState(!lockedToTable);
   const [currentPage, setCurrentPage] = useState(
-    lockedToTable ? 'home' : 'order-type'
+    lockedToTable ? 'home' : 'sede-select'
   );
+  const [sede, setSede] = useState(null);
   const [orderType, setOrderType] = useState(lockedToTable ? 'dine-in' : null);
+
+  const handleSelectSede = (sedeElegida) => {
+    setSede(sedeElegida);
+    setCurrentPage('order-type');
+  };
 
   const handleSelectType = (type) => {
     clearCart();
@@ -46,7 +60,9 @@ const ClientApp = ({ mesa = null }) => {
     <div className="phone-shell">
       <StatusBar />
       <div className="scroll-area">
-        {currentPage === 'order-type' ? (
+        {currentPage === 'sede-select' ? (
+          <SedeSelect onSelectSede={handleSelectSede} />
+        ) : currentPage === 'order-type' ? (
           <OrderType onSelectType={handleSelectType} />
         ) : currentPage === 'home' ? (
           <Home
@@ -61,6 +77,7 @@ const ClientApp = ({ mesa = null }) => {
             onNavigateBack={lockedToTable ? undefined : handleNavigateBack}
             orderType={orderType}
             mesa={mesa}
+            sede={sede}
           />
         )}
       </div>

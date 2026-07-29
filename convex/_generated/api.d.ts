@@ -16,6 +16,7 @@ import type * as mesas from "../mesas.js";
 import type * as migraciones from "../migraciones.js";
 import type * as pedidos from "../pedidos.js";
 import type * as salsas from "../salsas.js";
+import type * as sedes from "../sedes.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   migraciones: typeof migraciones;
   pedidos: typeof pedidos;
   salsas: typeof salsas;
+  sedes: typeof sedes;
 }>;
 
 /**

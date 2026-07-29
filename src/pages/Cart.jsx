@@ -13,7 +13,12 @@ import { useNotificacion } from '../context/NotificacionContext';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
-export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) => {
+export const Cart = ({
+  onNavigateToHome,
+  orderType = 'delivery',
+  mesa = null,
+  sede = null,
+}) => {
   const { cartItems, updateQuantity, removeFromCart, getTotal, clearCart } =
     useCart();
   const crearPedido = useMutation(api.pedidos.crear);
@@ -114,7 +119,12 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
       console.error('No se pudo guardar el pedido en Convex:', e)
     );
 
-    let message = `Hola, quisiera hacer un pedido por ${formatPrice(total)}. Detalles:\n${cartItems
+    // Se aclara la sede en el propio texto: mientras las dos compartan el
+    // mismo numero de WhatsApp de pruebas, es la unica forma de saber para
+    // cual de los dos locales es el pedido.
+    const encabezadoSede = sede ? `Pedido para ${sede.nombre}\n\n` : '';
+
+    let message = `${encabezadoSede}Hola, quisiera hacer un pedido por ${formatPrice(total)}. Detalles:\n${cartItems
       .map((item) => {
         let line = `- ${item.name} x${item.quantity}`;
         if (item.salsas?.length > 0)
@@ -149,7 +159,10 @@ export const Cart = ({ onNavigateToHome, orderType = 'delivery', mesa = null }) 
       message += `\nPago: ${pagoLabel}`;
     }
 
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    // sede?.whatsapp: numero propio del local elegido. Sin sede (pedido por
+    // QR, ver la nota en App.jsx) cae al numero de pruebas de settings.js.
+    const numeroWhatsapp = sede?.whatsapp || WHATSAPP_NUMBER;
+    const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(message)}`;
 
     setShowConfirmation(false);
     setTableNumber('');

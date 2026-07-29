@@ -12,8 +12,14 @@
   gap: 3rem;
 }
 
+.loader-logo {
+  width: 6rem;
+  height: 6rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.35));
+}
+
 .loader-title-wrap {
-  position: relative;
   display: inline-block;
 }
 
@@ -24,13 +30,6 @@
   color: #fff;
   text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
   text-align: center;
-}
-
-.loader-crest {
-  position: absolute;
-  top: -0.8125rem;
-  right: -0.0625rem;
-  transform: rotate(20deg);
 }
 
 .loader-tagline {
@@ -69,6 +68,11 @@
    RESPONSIVE
    ============================================================ */
 @media (min-width: 768px) {
+  .loader-logo {
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+
   .loader-title {
     font-size: 3.25rem;
   }
