@@ -1,20 +1,16 @@
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Hero } from '../components/organisms/Hero';
-import { Loader } from '../components/organisms/Loader';
 import './SedeSelect.css';
 
+// Mismo patron que Home.jsx: mientras la query carga, se ve una lista vacia
+// por un instante en vez de un loader de pantalla completa aparte. El Splash
+// que ya se vio antes de llegar aca cumple ese rol — un segundo loader
+// pisandole los talones se ve como una pantalla duplicada.
 const SIN_DATOS = [];
 
 export const SedeSelect = ({ onSelectSede }) => {
-  const sedes = useQuery(api.sedes.listar);
-
-  // undefined = la query todavia no respondio. Sin esto, en el primer render
-  // `sedes` seria `[]` y el cliente veria "no hay sedes" por una fraccion de
-  // segundo antes de que carguen — un falso vacio, no un vacio real.
-  if (sedes === undefined) {
-    return <Loader message="Cargando sedes..." />;
-  }
+  const sedes = useQuery(api.sedes.listar) ?? SIN_DATOS;
 
   return (
     <div className="sede-select">
@@ -25,7 +21,7 @@ export const SedeSelect = ({ onSelectSede }) => {
       </div>
 
       <div className="sede-select__buttons">
-        {(sedes ?? SIN_DATOS).map((sede) => (
+        {sedes.map((sede) => (
           <button
             key={sede._id}
             className="sede-select__btn"
