@@ -32,7 +32,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  /* dvh y no solo vh: 100vh en un celular real se calcula sobre la altura
+     MAXIMA posible del viewport, sin contar la barra del navegador — deja un
+     sobrante invisible que #root reparte arriba y abajo al centrar, tapando
+     justo la franja de arriba (el status-bar). dvh sigue la altura VISIBLE
+     real en cada momento. Se declara vh primero como fallback para navegadores
+     viejos que no soportan dvh. */
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100%;
   width: 100%;
 }
@@ -44,13 +51,22 @@ body {
   background: linear-gradient(135deg, #FBF6EE 0%, #fff 100%);
 }
 
+/*
+ * En movil (base, sin media query) llena la pantalla real del dispositivo:
+ * width/height fijos aca eran el bug — calibrados para UN modelo puntual
+ * (844px de alto), asi que en cualquier telefono con otra altura de
+ * viewport, #root centraba este bloque y el sobrante empujaba la franja de
+ * arriba (el status-bar) fuera de lo visible. El tamaño de "maqueta de
+ * telefono" con sombra solo tiene sentido como elemento decorativo en
+ * pantallas grandes: por eso se mueve a la media query de desktop, abajo.
+ */
 .phone-shell {
-  width: 24.375rem;
-  height: 52.75rem;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   border-radius: 0;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 1.875rem 3.75rem rgba(0, 0, 0, 0.25);
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -111,9 +127,8 @@ body {
    ============================================================ */
 @media (min-width: 768px) {
   .phone-shell {
-    width: 100%;
-    height: auto;
-    border-radius: 0;
-    box-shadow: none;
+    width: 24.375rem;
+    height: 52.75rem;
+    box-shadow: 0 1.875rem 3.75rem rgba(0, 0, 0, 0.25);
   }
 }
