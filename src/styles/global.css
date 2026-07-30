@@ -3,7 +3,8 @@
    ============================================================ */
 
 html {
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   margin: 0;
   padding: 0;
 }
@@ -23,7 +24,8 @@ body {
   background: #FBF6EE;
   color: #241C15;
   overflow-x: hidden;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   margin: 0;
   padding: 0;
 }
@@ -32,15 +34,24 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* dvh y no solo vh: 100vh en un celular real se calcula sobre la altura
-     MAXIMA posible del viewport, sin contar la barra del navegador — deja un
-     sobrante invisible que #root reparte arriba y abajo al centrar, tapando
-     justo la franja de arriba (el status-bar). dvh sigue la altura VISIBLE
-     real en cada momento. Se declara vh primero como fallback para navegadores
-     viejos que no soportan dvh. */
-  min-height: 100vh;
-  min-height: 100dvh;
-  height: 100%;
+  /*
+   * Un solo height en dvh, no "min-height: dvh" + "height: 100%". Esas dos
+   * declaraciones mezcladas fueron el bug: height:100% encadenado desde
+   * body/html se comporta como el viewport ESTATICO (mas grande, sin
+   * descontar la barra del navegador), y una vez que hay un `height`
+   * definido, gana por sobre el `min-height` aunque sea mas chico. Entonces
+   * #root quedaba con la altura grande de siempre mientras .phone-shell (el
+   * hijo) si media 100dvh de verdad — padre mas alto que el hijo, y
+   * align-items:center repartia ese sobrante arriba y abajo, tapando la
+   * franja de arriba con una franja blanca.
+   *
+   * Con un unico `height` en dvh (misma unidad y mismo mecanismo que
+   * .phone-shell) padre e hijo miden exactamente lo mismo: no sobra nada
+   * para repartir. Se declara vh primero como fallback para navegadores
+   * que no soportan dvh.
+   */
+  height: 100vh;
+  height: 100dvh;
   width: 100%;
 }
 
