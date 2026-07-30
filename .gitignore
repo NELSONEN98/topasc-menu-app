@@ -16,7 +16,10 @@ qr-mesas.html
 # Generado por `npm run qr`
 qr/
 
-# Variantes de logo sin usar: solo logo-no-bg.png esta commiteado
+# Solo logo-no-bg.webp esta commiteado. El .png original queda como fuente
+# de alta resolucion por si hace falta reexportar, y las otras variantes
+# nunca se usaron.
+public/img/logo-no-bg.png
 public/img/logo.png
 public/img/logo-jpeg.jpeg
 public/img/loader-logo.png

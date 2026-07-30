@@ -17,7 +17,7 @@ export const SplashScreen = ({ onComplete }) => {
       <div className="splash-screen__content">
         <img
           className="splash-screen__logo"
-          src="/img/logo-no-bg.png"
+          src="/img/logo-no-bg.webp"
           alt="Topasc"
           width="200"
           height="200"

@@ -10,7 +10,7 @@ export const Loader = ({ message = 'Cargando...', showLogo = true }) => {
       {showLogo && (
         <img
           className="loader-logo"
-          src="/img/logo-no-bg.png"
+          src="/img/logo-no-bg.webp"
           alt="Topasc"
           width="200"
           height="200"
