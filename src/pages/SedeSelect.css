@@ -32,11 +32,16 @@
      botones en las dos pantallas. */
   gap: 0.8rem;
   flex: 1;
-  justify-content: center;
-  /* Mismo truco que .order-type__buttons: el padding inferior extra corre
-     el centro de gravedad hacia arriba, sin dejar de estar centrados en el
-     espacio que les queda. */
-  padding: 1.5rem 1.125rem 30vh;
+  /*
+   * flex-start y no center + padding-bottom en vh: centrar contenido que
+   * mide MAS que su propia caja hace que la caja "de sobre" por arriba —
+   * en un telefono con menos alto disponible que el que se asumio, eso
+   * empujaba los botones a superponerse con el header de arriba. flex-start
+   * ancla el primer boton al techo de su caja: nunca puede desbordar hacia
+   * arriba, sea cual sea la altura real del dispositivo.
+   */
+  justify-content: flex-start;
+  padding: 1.5rem 1.125rem;
   overflow-y: auto;
 }
 
