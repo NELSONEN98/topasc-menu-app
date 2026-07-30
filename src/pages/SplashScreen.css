@@ -55,12 +55,14 @@
 }
 
 .splash-screen__tagline {
-  margin: 1.75rem 0 0 0;
+  /* Margen chico y pegado al titulo: se lee como su subtitulo, no como un
+     elemento aparte mas cerca del spinner. */
+  margin: 0.25rem 0 0 0;
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.5px;
-  color: #FFE9A8;
+  color: #fff;
 }
 
 .splash-screen__loader {
