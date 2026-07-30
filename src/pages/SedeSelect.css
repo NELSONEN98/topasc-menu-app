@@ -28,11 +28,10 @@
 .sede-select__buttons {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  /* Mismo gap que .order-type__buttons: misma ritmica de espaciado entre
+     botones en las dos pantallas. */
+  gap: 0.8rem;
   flex: 1;
-  /* center y no space-evenly: space-evenly repartia el espacio sobrante
-     arriba, entre medio y abajo, y con pocas sedes eso se sentia como
-     demasiado margen. center los agrupa juntos, sin ese aire de mas. */
   justify-content: center;
   padding: 1.5rem 1.125rem;
   overflow-y: auto;
@@ -42,8 +41,14 @@
   background: #E11E2B;
   color: #fff;
   border: none;
+  /* Mismo padding y border-radius que .order-type__btn. Eso solo no alcanza:
+     ese boton apila icono + texto + descripcion (tres elementos), y este
+     solo tiene el nombre de la sede (uno). Con igual padding y menos
+     contenido adentro, la caja final saldria mas baja. El min-height
+     compensa esa diferencia para que terminen midiendo lo mismo. */
   border-radius: 1rem;
-  padding: 2.75rem 1.2rem;
+  padding: 1.6rem 1.2rem;
+  min-height: 8.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -81,8 +86,9 @@
   }
 
   .sede-select__btn {
-    padding: 3.5rem 1.6rem;
+    padding: 2rem 1.6rem;
     border-radius: 1.2rem;
+    min-height: 10rem;
   }
 
   .sede-select__label {
