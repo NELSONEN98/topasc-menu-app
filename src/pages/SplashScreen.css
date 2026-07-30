@@ -23,8 +23,8 @@
 
 .splash-screen__logo-full {
   display: block;
-  width: 12rem;
-  height: 12rem;
+  width: 18rem;
+  height: 18rem;
   margin: 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.3));
