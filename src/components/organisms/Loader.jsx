@@ -7,19 +7,19 @@ import './Loader.css';
 export const Loader = ({ message = 'Cargando...', showLogo = true }) => {
   return (
     <div className="loader-screen">
+      {/*
+        Una sola imagen con "Topasc" y "una historia que contar" ya
+        dibujados adentro, en vez de logo + titulo + tagline sueltos.
+      */}
       {showLogo && (
         <img
-          className="loader-logo"
-          src="/img/logo-no-bg.webp"
-          alt="Topasc"
-          width="200"
-          height="200"
+          className="loader-logo-full"
+          src="/img/loader-logo.webp"
+          alt="Topasc — una historia que contar"
+          width="600"
+          height="600"
         />
       )}
-      <div className="loader-title-wrap">
-        <p className="loader-title">Topasc</p>
-        <p className="loader-tagline">Una historia que contar</p>
-      </div>
       <div className="loader-spinner"></div>
       <p className="loader-caption">{message}</p>
     </div>

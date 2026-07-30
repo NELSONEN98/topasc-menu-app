@@ -12,34 +12,11 @@
   gap: 3rem;
 }
 
-.loader-logo {
+.loader-logo-full {
   width: 12rem;
   height: 12rem;
   object-fit: contain;
   filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.35));
-}
-
-.loader-title-wrap {
-  display: inline-block;
-}
-
-.loader-title {
-  margin: 0;
-  font: 400 2.875rem / 0.95 'Luckiest Guy', cursive;
-  letter-spacing: 0.5px;
-  color: #fff;
-  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
-  text-align: center;
-}
-
-.loader-tagline {
-  /* Margen chico y pegado al titulo: se lee como su subtitulo, no como un
-     elemento aparte mas cerca del spinner. */
-  margin: 0.25rem 0 0;
-  font: 700 0.9375rem/1.2 'Inter', sans-serif;
-  letter-spacing: 0.5px;
-  color: #fff;
-  text-align: center;
 }
 
 .loader-spinner {
@@ -70,17 +47,9 @@
    RESPONSIVE
    ============================================================ */
 @media (min-width: 768px) {
-  .loader-logo {
+  .loader-logo-full {
     width: 15rem;
     height: 15rem;
-  }
-
-  .loader-title {
-    font-size: 3.25rem;
-  }
-
-  .loader-tagline {
-    font-size: 1.0625rem;
   }
 
   .loader-spinner {

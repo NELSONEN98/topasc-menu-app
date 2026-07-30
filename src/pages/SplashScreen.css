@@ -21,7 +21,7 @@
   position: relative;
 }
 
-.splash-screen__logo {
+.splash-screen__logo-full {
   display: block;
   width: 12rem;
   height: 12rem;
@@ -29,40 +29,6 @@
   object-fit: contain;
   filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.3));
   animation: textFallBounce 1s ease-out 0s;
-}
-
-.splash-screen__title {
-  margin: 1.25rem 0 0;
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 3.5rem;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  color: #fff;
-  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
-  line-height: 0.9;
-  animation: textFallBounce 1s ease-out 0s;
-}
-
-.splash-screen__subtitle {
-  margin: 0.5rem 0 0 0;
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 2.5rem;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  color: #fff;
-  text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
-  animation: textFallBounce 1s ease-out 0.1s both;
-}
-
-.splash-screen__tagline {
-  /* Margen chico y pegado al titulo: se lee como su subtitulo, no como un
-     elemento aparte mas cerca del spinner. */
-  margin: 0.25rem 0 0 0;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #fff;
 }
 
 .splash-screen__loader {

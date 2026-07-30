@@ -15,15 +15,18 @@ export const SplashScreen = ({ onComplete }) => {
   return (
     <div className={`splash-screen ${isExiting ? 'splash-screen--exit' : ''}`}>
       <div className="splash-screen__content">
+        {/*
+          Una sola imagen con "Topasc" y "una historia que contar" ya
+          dibujados adentro, en vez de logo + h1 + p sueltos. Reemplaza a los
+          tres elementos anteriores.
+        */}
         <img
-          className="splash-screen__logo"
-          src="/img/logo-no-bg.webp"
-          alt="Topasc"
-          width="200"
-          height="200"
+          className="splash-screen__logo-full"
+          src="/img/loader-logo.webp"
+          alt="Topasc — una historia que contar"
+          width="600"
+          height="600"
         />
-        <h1 className="splash-screen__title">Topasc</h1>
-        <p className="splash-screen__tagline">Una historia que contar</p>
         <div className="splash-screen__loader"></div>
       </div>
     </div>
