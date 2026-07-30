@@ -112,6 +112,26 @@
 }
 
 /* ============================================================
+   LOADING — spinner chico mientras cargan items/categorias
+   (@keyframes spin ya esta definido en global.css)
+   ============================================================ */
+.home__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.home__loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 0.1875rem solid #F0E6D6;
+  border-top-color: #E11E2B;
+  animation: spin 0.9s linear infinite;
+}
+
+/* ============================================================
    PAGINATION
    ============================================================ */
 .home__pagination {

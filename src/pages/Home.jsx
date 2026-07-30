@@ -20,8 +20,16 @@ export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const allItems = useQuery(api.items.listarMenu) ?? SIN_DATOS;
-  const allCategorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  // Sin el `?? SIN_DATOS` todavia en estos dos: hace falta distinguir
+  // "no llego la respuesta" (undefined) de "llego y esta vacio" ([]) para
+  // saber si corresponde el spinner. Con el fallback en esta misma linea,
+  // esa distincion se pierde antes de poder usarla.
+  const allItemsCargando = useQuery(api.items.listarMenu);
+  const allCategoriasCargando = useQuery(api.categorias.listar);
+  const cargando = allItemsCargando === undefined || allCategoriasCargando === undefined;
+
+  const allItems = allItemsCargando ?? SIN_DATOS;
+  const allCategorias = allCategoriasCargando ?? SIN_DATOS;
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
 
   const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
@@ -72,9 +80,9 @@ export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
 
       <div className="home__products-wrapper">
         <div className="home__products">
-          {allItems === undefined ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
-              Cargando menú...
+          {cargando ? (
+            <div className="home__loading">
+              <div className="home__loading-spinner" />
             </div>
           ) : (
             <ProductGrid
