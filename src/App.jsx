@@ -171,7 +171,7 @@ const AdminApp = () => {
   return (
     <div style={FONDO_ADMIN}>
       <AuthLoading>
-        <Loader message="Verificando sesión..." />
+        <Loader message="Verificando sesión..." showLogo={false} />
       </AuthLoading>
 
       <Authenticated>
