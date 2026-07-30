@@ -13,8 +13,8 @@
 }
 
 .loader-logo-full {
-  width: 18rem;
-  height: 18rem;
+  width: 23.4rem;
+  height: 23.4rem;
   object-fit: contain;
   filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.35));
 }
@@ -48,8 +48,8 @@
    ============================================================ */
 @media (min-width: 768px) {
   .loader-logo-full {
-    width: 22.5rem;
-    height: 22.5rem;
+    width: 29.25rem;
+    height: 29.25rem;
   }
 
   .loader-spinner {
