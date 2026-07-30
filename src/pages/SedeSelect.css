@@ -28,20 +28,20 @@
 .sede-select__buttons {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.6rem;
   flex: 1;
-  /* space-evenly y no center: con pocas sedes, "center" las junta en un
-     bloque compacto a la mitad de la pantalla. space-evenly reparte el
-     espacio sobrante arriba, entre medio y abajo por igual. */
-  justify-content: space-evenly;
+  /* center y no space-evenly: space-evenly repartia el espacio sobrante
+     arriba, entre medio y abajo, y con pocas sedes eso se sentia como
+     demasiado margen. center los agrupa juntos, sin ese aire de mas. */
+  justify-content: center;
   padding: 1.5rem 1.125rem;
   overflow-y: auto;
 }
 
 .sede-select__btn {
-  background: #fff;
-  color: #E11E2B;
-  border: 0.1875rem solid #E11E2B;
+  background: #E11E2B;
+  color: #fff;
+  border: none;
   border-radius: 1rem;
   padding: 2.75rem 1.2rem;
   cursor: pointer;
@@ -49,27 +49,26 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0.375rem 0.75rem rgba(225, 30, 43, 0.2);
   font-family: 'Poppins', sans-serif;
 }
 
 .sede-select__btn:hover {
-  background: rgba(225, 30, 43, 0.06);
+  background: #c41825;
   transform: translateY(-0.25rem);
-  box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.5rem 1.25rem rgba(225, 30, 43, 0.3);
 }
 
 .sede-select__btn:active {
-  background: rgba(225, 30, 43, 0.12);
   transform: translateY(0);
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0.25rem 0.5rem rgba(225, 30, 43, 0.2);
 }
 
 .sede-select__label {
   font-family: 'Poppins', sans-serif;
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #E11E2B;
+  color: #fff;
   text-align: center;
 }
 
