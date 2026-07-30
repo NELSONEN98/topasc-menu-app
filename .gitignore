@@ -16,13 +16,15 @@ qr-mesas.html
 # Generado por `npm run qr`
 qr/
 
-# Solo loader-logo.webp esta commiteado (logo+titulo+tagline en una sola
-# imagen, usado en Splash/Loader). Los .png quedan como fuente de alta
-# resolucion por si hace falta reexportar; logo-no-bg.webp quedo sin uso
-# cuando se reemplazo por loader-logo.webp, y las demas variantes nunca
-# se usaron.
+# Solo loader-logo-v2.webp esta commiteado (logo+titulo+tagline, ahora con
+# fondo transparente, usado en Splash/Loader). Los .png quedan como fuente
+# de alta resolucion por si hace falta reexportar. loader-logo.webp y
+# logo-no-bg.webp quedaron sin uso al pasar a la v2 con transparencia; las
+# demas variantes nunca se usaron.
 public/img/logo-no-bg.png
 public/img/logo-no-bg.webp
 public/img/logo.png
 public/img/logo-jpeg.jpeg
 public/img/loader-logo.png
+public/img/loader-logo.webp
+public/img/loader-logo-v2.png
