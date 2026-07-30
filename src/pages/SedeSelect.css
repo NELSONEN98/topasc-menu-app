@@ -33,7 +33,10 @@
   gap: 0.8rem;
   flex: 1;
   justify-content: center;
-  padding: 1.5rem 1.125rem;
+  /* Mismo truco que .order-type__buttons: el padding inferior extra corre
+     el centro de gravedad hacia arriba, sin dejar de estar centrados en el
+     espacio que les queda. */
+  padding: 1.5rem 1.125rem 30vh;
   overflow-y: auto;
 }
 
