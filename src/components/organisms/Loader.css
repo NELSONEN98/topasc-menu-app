@@ -3,7 +3,12 @@
    ============================================================ */
 
 .loader-screen {
+  /* flex:1 alcanza cuando el padre inmediato es un flex container (el caso
+     de MesaApp/AdminApp). Home lo monta dentro de .scroll-area, que NO es
+     flex — ahi flex:1 no tiene efecto y el fondo rojo solo ocuparia la
+     altura de su contenido. min-height:100% cubre ese caso tambien. */
   flex: 1;
+  min-height: 100%;
   background: #E11E2B;
   display: flex;
   flex-direction: column;

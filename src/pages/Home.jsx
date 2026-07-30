@@ -6,6 +6,7 @@ import { CartBar } from '../components/organisms/CartBar';
 import { BackButton } from '../components/atoms/BackButton';
 import { ProductGrid } from '../components/organisms/ProductGrid';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
+import { Loader } from '../components/organisms/Loader';
 import { useCart } from '../context/CartContext';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
@@ -20,9 +21,21 @@ export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const allItems = useQuery(api.items.listarMenu) ?? SIN_DATOS;
-  const allCategorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  // Sin el `?? SIN_DATOS` todavia: hace falta distinguir "no llego la
+  // respuesta" (undefined) de "llego y esta vacio" ([]) para decidir si se
+  // muestra el loader. Con el fallback puesto en esta misma linea, como
+  // estaba antes, esa distincion se pierde y el chequeo de mas abajo queda
+  // muerto — nunca ve un undefined.
+  const allItemsCargando = useQuery(api.items.listarMenu);
+  const allCategoriasCargando = useQuery(api.categorias.listar);
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
+
+  if (allItemsCargando === undefined || allCategoriasCargando === undefined) {
+    return <Loader message="Cargando menú..." />;
+  }
+
+  const allItems = allItemsCargando;
+  const allCategorias = allCategoriasCargando;
 
   const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
 
@@ -72,16 +85,10 @@ export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
 
       <div className="home__products-wrapper">
         <div className="home__products">
-          {allItems === undefined ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
-              Cargando menú...
-            </div>
-          ) : (
-            <ProductGrid
-              products={filteredProducts}
-              onProductClick={setSelectedProduct}
-            />
-          )}
+          <ProductGrid
+            products={filteredProducts}
+            onProductClick={setSelectedProduct}
+          />
 
           {totalPages > 1 && (
             <div className="home__pagination">
