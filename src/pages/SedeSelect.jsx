@@ -28,6 +28,9 @@ export const SedeSelect = ({ onSelectSede }) => {
             onClick={() => onSelectSede(sede)}
           >
             <span className="sede-select__label">{sede.nombre}</span>
+            {sede.direccion && (
+              <span className="sede-select__direccion">{sede.direccion}</span>
+            )}
           </button>
         ))}
       </div>

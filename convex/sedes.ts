@@ -21,8 +21,16 @@ export const listar = query({
 const WHATSAPP_PRUEBA = "573206873870";
 
 const SEDES = [
-  { nombre: "Sede Dalia", whatsapp: WHATSAPP_PRUEBA },
-  { nombre: "Sede Manzanares", whatsapp: WHATSAPP_PRUEBA },
+  {
+    nombre: "Sede Dalia",
+    whatsapp: WHATSAPP_PRUEBA,
+    direccion: "Carrera 8 # 18-203",
+  },
+  {
+    nombre: "Sede Manzanares",
+    whatsapp: WHATSAPP_PRUEBA,
+    direccion: "Carrera 30 oeste # 11-112 sector 13",
+  },
 ];
 
 /**
@@ -51,7 +59,11 @@ export const sincronizar = internalMutation({
       const actual = porNombre.get(sede.nombre);
 
       if (actual) {
-        await ctx.db.patch(actual._id, { whatsapp: sede.whatsapp, activo: true });
+        await ctx.db.patch(actual._id, {
+          whatsapp: sede.whatsapp,
+          direccion: sede.direccion,
+          activo: true,
+        });
         actualizadas.push(sede.nombre);
       } else {
         await ctx.db.insert("sedes", { ...sede, activo: true });

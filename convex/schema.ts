@@ -38,6 +38,10 @@ export default defineSchema({
     // espacios). Por ahora las dos sedes usan el mismo numero de pruebas;
     // cuando cada local tenga el suyo, se edita aca sin tocar codigo.
     whatsapp: v.string(),
+    // Opcional y no v.string(): la tabla ya tenia filas en produccion antes
+    // de que existiera este campo. Si fuera obligatorio, el deploy del
+    // schema fallaria porque esos documentos no lo cumplen.
+    direccion: v.optional(v.string()),
     activo: v.boolean(),
   }),
 
