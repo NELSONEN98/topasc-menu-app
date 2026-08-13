@@ -12,7 +12,7 @@
 
 .sede-select__header {
   text-align: center;
-  padding: 1.5rem 1.125rem 1rem;
+  padding: 1.125rem 1.125rem 0.875rem;
   background: #fff;
   border-bottom: 0.0625rem solid #F0E6D6;
 }
@@ -28,9 +28,13 @@
 .sede-select__buttons {
   display: flex;
   flex-direction: column;
-  /* Mismo gap que .order-type__buttons: misma ritmica de espaciado entre
-     botones en las dos pantallas. */
-  gap: 0.8rem;
+  /*
+   * Gap mas chico que el de .order-type__buttons (0.8rem) a proposito: esa
+   * pantalla muestra 3 botones fijos, esta muestra uno POR SEDE. Al pasar de
+   * dos sedes a tres, cada rem que se gaste entre botones es un rem que le
+   * falta al ultimo para entrar en pantalla.
+   */
+  gap: 0.6rem;
   flex: 1;
   /*
    * flex-start y no center + padding-bottom en vh: centrar contenido que
@@ -41,7 +45,10 @@
    * arriba, sea cual sea la altura real del dispositivo.
    */
   justify-content: flex-start;
-  padding: 1.5rem 1.125rem;
+  padding: 1rem 1.125rem;
+  /* Red de seguridad, no la solucion: los tamanos de abajo estan calculados
+     para que TRES sedes entren sin scrollear. Si algun dia hay una cuarta,
+     esto degrada a scroll en vez de romper el layout. */
   overflow-y: auto;
 }
 
@@ -49,14 +56,24 @@
   background: #E11E2B;
   color: #fff;
   border: none;
-  /* Mismo padding y border-radius que .order-type__btn. Eso solo no alcanza:
-     ese boton apila icono + texto + descripcion (tres elementos), y este
-     solo tiene el nombre de la sede (uno). Con igual padding y menos
-     contenido adentro, la caja final saldria mas baja. El min-height
-     compensa esa diferencia para que terminen midiendo lo mismo. */
+  /*
+   * Este boton ya NO iguala la altura de .order-type__btn, y es a proposito.
+   * Antes el min-height era 8.5rem justamente para empatarle: ese boton apila
+   * icono + texto + descripcion, este solo nombre + direccion, asi que sin
+   * min-height quedaba mas bajo.
+   *
+   * Con dos sedes esa simetria salia gratis. Con tres ya no: son botones por
+   * SEDE, no una cantidad fija, y a 8.5rem los tres mas el hero mas el header
+   * pedian ~741px de alto — mas de lo que da un telefono chico. Entre que las
+   * dos pantallas midan igual y que el cliente vea todas las sedes sin
+   * scrollear, gana lo segundo.
+   *
+   * min-height y no height: si una direccion larga se va a dos lineas, el
+   * boton crece en vez de recortar el texto.
+   */
   border-radius: 1rem;
-  padding: 1.6rem 1.2rem;
-  min-height: 8.5rem;
+  padding: 1rem 1.2rem;
+  min-height: 6rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -104,10 +121,13 @@
     padding: 3rem 2rem;
   }
 
+  /* En desktop sobra alto, asi que los botones respiran mas que en mobile —
+     pero igual mas bajos que antes: tres cajas de 10rem se veian como tres
+     paredes, no como una lista de opciones. */
   .sede-select__btn {
-    padding: 2rem 1.6rem;
+    padding: 1.4rem 1.6rem;
     border-radius: 1.2rem;
-    min-height: 10rem;
+    min-height: 7rem;
   }
 
   .sede-select__label {
