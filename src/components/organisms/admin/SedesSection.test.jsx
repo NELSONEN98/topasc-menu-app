@@ -21,6 +21,7 @@ const SEDES = [
     nombre: 'Sede Dalia',
     direccion: 'Carrera 8 # 18-203',
     whatsapp: '573206873870',
+    costoDomicilio: 8000,
     activo: true,
   },
   {
@@ -66,6 +67,27 @@ describe('SedesSection', () => {
     // No puede desaparecer de la tabla solo porque le falte un campo opcional.
     expect(screen.getByText('Sede Morichal')).toBeInTheDocument();
     expect(screen.getByText('Sin dirección')).toBeInTheDocument();
+  });
+
+  test('muestra el costo de domicilio de cada sede', () => {
+    montar();
+
+    // Regex sobre los digitos y no el string exacto: Intl.NumberFormat
+    // intercala un espacio entre el simbolo y el numero, y como se formatea
+    // depende de la version de ICU del entorno. Fijar "$ 8.000" haria fallar
+    // el test en otra maquina por una razon que no es la que se esta probando.
+    expect(screen.getByText(/8\.000/)).toBeInTheDocument();
+    // Morichal no lo tiene cargado: usa el de respaldo de la app.
+    expect(screen.getByText('Por defecto')).toBeInTheDocument();
+  });
+
+  test('un domicilio en cero se lee "Gratis", no "Por defecto"', () => {
+    vi.clearAllMocks();
+    responderQueries([{ ...SEDES[0], costoDomicilio: 0 }]);
+    montar();
+
+    expect(screen.getByText('Gratis')).toBeInTheDocument();
+    expect(screen.queryByText('Por defecto')).not.toBeInTheDocument();
   });
 
   test('el resumen cuenta el total y cuantas estan activas', () => {

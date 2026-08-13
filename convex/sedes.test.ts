@@ -122,6 +122,47 @@ describe("sedes.crear — validaciones", () => {
     expect(sedes[0].whatsapp).toBe("573206873870");
   });
 
+  test("le agrega el codigo de pais a un numero local", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "320 687 3870",
+    });
+
+    const sedes = await t.query(api.sedes.listar, {});
+
+    // Sin el 57, wa.me arma un link que no rutea a nadie — y falla en
+    // silencio: la sede se guarda bien y los pedidos no llegan nunca.
+    expect(sedes[0].whatsapp).toBe("573206873870");
+  });
+
+  test("rechaza un numero que no es ni local ni completo", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      comoAdmin(t).mutation(api.sedes.crear, {
+        nombre: "Sede Trucha",
+        whatsapp: "320687",
+      })
+    ).rejects.toThrow(/no parece un numero colombiano/);
+  });
+
+  test("al actualizar tambien completa el codigo de pais", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573206873870",
+    });
+
+    await comoAdmin(t).mutation(api.sedes.actualizar, {
+      id,
+      campos: { whatsapp: "301 555 4433" },
+    });
+
+    const sedes = await t.query(api.sedes.listar, {});
+    expect(sedes[0].whatsapp).toBe("573015554433");
+  });
+
   test("una direccion vacia se guarda ausente, no como string vacio", async () => {
     const t = convexTest(schema, modules);
     await comoAdmin(t).mutation(api.sedes.crear, {
@@ -147,6 +188,135 @@ describe("sedes.crear — validaciones", () => {
     const sedes = await t.query(api.sedes.listar, {});
 
     expect(sedes[0].activo).toBe(true);
+  });
+});
+
+describe("sedes — costo de domicilio", () => {
+  test("se guarda el costo que se le indica", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Morichal",
+      whatsapp: "573000000001",
+      costoDomicilio: 15000,
+    });
+
+    const [sede] = await t.query(api.sedes.listar, {});
+    expect(sede.costoDomicilio).toBe(15000);
+  });
+
+  test("CERO es un valor valido y significa envio gratis", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+      costoDomicilio: 0,
+    });
+
+    const [sede] = await t.query(api.sedes.listar, {});
+
+    // Si en algun lado se leyera con `||` en vez de `??`, este 0 se
+    // interpretaria como "sin configurar" y el cliente terminaria pagando un
+    // envio que el local decidio regalar.
+    expect(sede.costoDomicilio).toBe(0);
+  });
+
+  test("sin costo queda ausente: se usa el valor de respaldo de la app", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+    });
+
+    const [sede] = await t.query(api.sedes.listar, {});
+    expect(sede.costoDomicilio).toBeUndefined();
+  });
+
+  test("rechaza un costo negativo al crear", async () => {
+    const t = convexTest(schema, modules);
+
+    // Un domicilio negativo le SUMARIA plata al carrito del cliente.
+    await expect(
+      comoAdmin(t).mutation(api.sedes.crear, {
+        nombre: "Sede Trucha",
+        whatsapp: "573000000001",
+        costoDomicilio: -5000,
+      })
+    ).rejects.toThrow(/no puede ser negativo/);
+  });
+
+  test("rechaza un costo negativo al actualizar", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+    });
+
+    await expect(
+      comoAdmin(t).mutation(api.sedes.actualizar, {
+        id,
+        campos: { costoDomicilio: -1 },
+      })
+    ).rejects.toThrow(/no puede ser negativo/);
+  });
+
+  test("vaciar el costo lo BORRA y la sede vuelve al valor de respaldo", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+      costoDomicilio: 8000,
+    });
+
+    // El admin borra el campo en el formulario para volver al valor por
+    // defecto de la app.
+    await comoAdmin(t).mutation(api.sedes.actualizar, {
+      id,
+      campos: { costoDomicilio: null },
+    });
+
+    const [sede] = await t.query(api.sedes.listar, {});
+    expect(sede.costoDomicilio).toBeUndefined();
+  });
+
+  test("se puede cambiar el costo de una sede ya creada", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+      costoDomicilio: 10000,
+    });
+
+    await comoAdmin(t).mutation(api.sedes.actualizar, {
+      id,
+      campos: { costoDomicilio: 12000 },
+    });
+
+    const [sede] = await t.query(api.sedes.listar, {});
+    expect(sede.costoDomicilio).toBe(12000);
+  });
+
+  test("cada sede puede cobrar distinto", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Dalia",
+      whatsapp: "573000000001",
+      costoDomicilio: 8000,
+    });
+    await comoAdmin(t).mutation(api.sedes.crear, {
+      nombre: "Sede Morichal",
+      whatsapp: "573000000002",
+      costoDomicilio: 14000,
+    });
+
+    // El motivo de que esto viva en la sede y no en una constante: el reparto
+    // de cada local cubre distancias distintas.
+    const sedes = await t.query(api.sedes.listar, {});
+    const porNombre = Object.fromEntries(
+      sedes.map((s) => [s.nombre, s.costoDomicilio])
+    );
+
+    expect(porNombre["Sede Dalia"]).toBe(8000);
+    expect(porNombre["Sede Morichal"]).toBe(14000);
   });
 });
 

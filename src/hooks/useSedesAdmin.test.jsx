@@ -24,8 +24,11 @@ const SEDE_VALIDA = {
   nombre: 'Sede Morichal',
   direccion: 'Calle 1 # 2-3',
   whatsapp: '573206873870',
+  costoDomicilio: '',
   activo: true,
 };
+
+const costoEnviado = () => mutacionMock.mock.calls[0][0].costoDomicilio;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -76,6 +79,76 @@ describe('useSedesAdmin.guardar — validaciones', () => {
     });
 
     expect(mutacionMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useSedesAdmin — costo de domicilio', () => {
+  test('el campo vacio se manda undefined, no cero', async () => {
+    const { result } = montar();
+
+    await act(async () => {
+      await result.current.acciones.guardar({ ...SEDE_VALIDA, costoDomicilio: '' });
+    });
+
+    // Vacio significa "no lo configuro, usen el de respaldo". Mandarlo como 0
+    // le regalaria el envio a todos los clientes de esa sede.
+    expect(costoEnviado()).toBeUndefined();
+  });
+
+  test('el cero se manda como cero: es envio gratis', async () => {
+    const { result } = montar();
+
+    await act(async () => {
+      await result.current.acciones.guardar({ ...SEDE_VALIDA, costoDomicilio: 0 });
+    });
+
+    expect(costoEnviado()).toBe(0);
+  });
+
+  test('un monto se manda como numero', async () => {
+    const { result } = montar();
+
+    await act(async () => {
+      await result.current.acciones.guardar({ ...SEDE_VALIDA, costoDomicilio: 12000 });
+    });
+
+    expect(costoEnviado()).toBe(12000);
+  });
+
+  test('al EDITAR, vaciar el campo manda null y no undefined', async () => {
+    const { result } = montar();
+
+    await act(async () => {
+      result.current.modal.abrirEdicion({
+        _id: 'sede_dalia',
+        nombre: 'Sede Dalia',
+        whatsapp: '573206873870',
+        costoDomicilio: 8000,
+      });
+    });
+
+    await act(async () => {
+      await result.current.acciones.guardar({ ...SEDE_VALIDA, costoDomicilio: '' });
+    });
+
+    /*
+     * Convex OMITE los campos de objeto que valen undefined al serializar los
+     * argumentos. Si mandaramos undefined, el patch nunca se enteraria de que
+     * hay que borrar y la sede seguiria cobrando los 8000 que el admin cree
+     * haber quitado. `null` es la señal explicita de borrado.
+     */
+    expect(mutacionMock.mock.calls[0][0].campos.costoDomicilio).toBeNull();
+  });
+
+  test('un costo negativo no se guarda', async () => {
+    const { result } = montar();
+
+    await act(async () => {
+      await result.current.acciones.guardar({ ...SEDE_VALIDA, costoDomicilio: -1 });
+    });
+
+    expect(mutacionMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/no puede ser negativo/i)).toBeInTheDocument();
   });
 });
 
