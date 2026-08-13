@@ -74,6 +74,7 @@ const ClientApp = ({ mesa = null }) => {
             onNavigateBack={lockedToTable ? undefined : handleNavigateBack}
             orderType={orderType}
             mesa={mesa}
+            sede={sede}
           />
         ) : (
           <Cart

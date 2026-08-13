@@ -51,6 +51,17 @@ export const AdminPedidos = () => {
               </span>
             </div>
 
+            {/*
+              Con tres locales, de que sede es el pedido es lo primero que el
+              admin necesita saber, asi que va en su propia linea y no apretado
+              en la fila de arriba. Los pedidos anteriores a este campo (y los
+              que entran por QR) no lo traen: ahi no se dibuja nada, en vez de
+              mostrar un "Sin sede" que no aporta.
+            */}
+            {pedido.sedeNombre && (
+              <div className="pedido-card__sede">📍 {pedido.sedeNombre}</div>
+            )}
+
             <div className="pedido-card__cliente">
               {pedido.tipoPedido === 'pickup' && (
                 <>

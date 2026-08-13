@@ -21,6 +21,11 @@ export const useProductosAdmin = () => {
   // apagados, que es desde donde se vuelven a encender.
   const items = useQuery(api.items.listarTodos) ?? SIN_DATOS;
   const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  // listarTodas y no listar: si una sede se desactiva desde la pestana Sedes,
+  // con `listar` desapareceria de los checkboxes del producto pero seguiria
+  // guardada en su `sedeIds`, invisible e imposible de sacar. El admin tiene
+  // que ver todo lo que el producto tiene marcado, prendido o apagado.
+  const sedes = useQuery(api.sedes.listarTodas) ?? SIN_DATOS;
   const crearItem = useMutation(api.items.crear);
   const actualizarItem = useMutation(api.items.actualizar);
   const borrarItem = useMutation(api.items.borrar);
@@ -102,6 +107,14 @@ export const useProductosAdmin = () => {
       notificar.info('El precio debe ser mayor a 0');
       return;
     }
+    // Se corta aca a proposito: sin sedes el plato no aparece en ningun menu,
+    // pero ademas el server interpreta un array vacio como "todas las sedes"
+    // (por los items previos al campo). O sea que guardar sin marcar nada
+    // lograria justo lo contrario de lo que el admin cree estar haciendo.
+    if (!formData.sedeIds?.length) {
+      notificar.info('Elegí al menos una sede');
+      return;
+    }
 
     const editandoAhora = !!editando;
 
@@ -118,6 +131,7 @@ export const useProductosAdmin = () => {
             imagenUrl: formData.imagenUrl,
             disponible: formData.disponible,
             llevaSalsas: formData.llevaSalsas,
+            sedeIds: formData.sedeIds,
           },
         });
       } else {
@@ -130,6 +144,7 @@ export const useProductosAdmin = () => {
           imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
           llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,
+          sedeIds: formData.sedeIds,
         });
       }
 
@@ -173,6 +188,7 @@ export const useProductosAdmin = () => {
 
   return {
     categorias,
+    sedes,
     categoriaMap,
     paginados,
     pagina,

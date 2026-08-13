@@ -461,18 +461,56 @@ input, select { font-family: 'Inter', sans-serif; }
   grid-template-columns: 80px 2fr 1.2fr 1fr 0.8fr !important;
 }
 
+/* Tabla de Sedes: Nombre | Direccion | WhatsApp | Productos | Estado | acciones */
+.admin-table-header-sedes {
+  grid-template-columns: 1.6fr 2fr 1.3fr 1.2fr 1fr 0.8fr !important;
+}
+
+.admin-table-row-sedes {
+  grid-template-columns: 1.6fr 2fr 1.3fr 1.2fr 1fr 0.8fr !important;
+}
+
+/* Direccion y Productos se ven igual que .admin-table-cell-category, pero con
+   clase propia cada una por el mismo motivo que las celdas de pedidos: en
+   mobile la posicion en la grilla se asigna POR CLASE, y dos celdas que
+   comparten clase caen en el mismo lugar y se superponen. */
+.admin-table-cell-direccion,
+.admin-table-cell-productos {
+  font-size: 12px;
+  color: #666;
+  min-width: 0;
+}
+
+/* Tabular para que los numeros no bailen de fila en fila */
+.admin-table-cell-whatsapp {
+  font: 500 12px 'Inter', sans-serif;
+  color: #666;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
 .admin-table-cell-orden {
   font: 600 13px 'Inter', sans-serif;
   color: #999;
 }
 
-/* Tabla de Pedidos completados (historial) */
+/* Tabla de Pedidos completados (historial).
+   Sede va segunda, pegada a la fecha: es la columna por la que se lee el
+   historial cuando hay varios locales ("cuanto hizo cada uno"). */
 .admin-table-header-pedidos {
-  grid-template-columns: 90px 1.2fr 2fr 1fr 1.2fr 1fr !important;
+  grid-template-columns: 90px 1.2fr 1.2fr 2fr 1fr 1.2fr 1fr !important;
 }
 
 .admin-table-row-pedidos {
-  grid-template-columns: 90px 1.2fr 2fr 1fr 1.2fr 1fr !important;
+  grid-template-columns: 90px 1.2fr 1.2fr 2fr 1fr 1.2fr 1fr !important;
+}
+
+.admin-table-cell-sede {
+  font: 600 12px 'Inter', sans-serif;
+  color: #8A6212;
+  /* min-width para que un nombre largo de sede no ensanche la columna y
+     desarme el resto de la grilla */
+  min-width: 0;
 }
 
 /* La fecha va en dos lineas: dia arriba, hora abajo en gris */
@@ -700,6 +738,7 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-header,
   .admin-table-header-sauces,
   .admin-table-header-categorias,
+  .admin-table-header-sedes,
   .admin-table-header-pedidos {
     display: none !important;
   }
@@ -862,6 +901,35 @@ input, select { font-family: 'Inter', sans-serif; }
     color: #999;
   }
 
+  /* Sedes en mobile. Seis columnas no entran en un celular, asi que cada sede
+     se lee de arriba abajo:
+       Sede Dalia                    [switch]
+       Carrera 8 # 18-203
+       573206873870          3 productos
+       [Editar]  [Eliminar]
+     Se ubica TODA celda explicitamente: una sola sin posicion la reparte el
+     auto-placement de CSS Grid y termina donde no corresponde. */
+  .admin-table-row-sedes {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto auto;
+    align-items: center;
+    gap: 2px 10px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #F2ECE3;
+  }
+
+  .admin-table-row-sedes:last-child {
+    border-bottom: none;
+  }
+
+  .admin-table-row-sedes .admin-table-cell-name { grid-column: 1; grid-row: 1; }
+  .admin-table-row-sedes .admin-table-cell-status { grid-column: 2; grid-row: 1; justify-self: end; }
+  .admin-table-row-sedes .admin-table-cell-direccion { grid-column: 1 / -1; grid-row: 2; }
+  .admin-table-row-sedes .admin-table-cell-whatsapp { grid-column: 1; grid-row: 3; }
+  .admin-table-row-sedes .admin-table-cell-productos { grid-column: 2; grid-row: 3; justify-self: end; }
+  .admin-table-row-sedes .admin-table-actions { grid-column: 1 / -1; grid-row: 4; }
+
   .admin-badge-especial {
     margin-left: 6px;
     padding: 1px 6px;
@@ -872,16 +940,19 @@ input, select { font-family: 'Inter', sans-serif; }
     font-size: 10px;
   }
 
-  /* Historial de pedidos en mobile. Seis columnas no entran en un celular,
+  /* Historial de pedidos en mobile. Siete columnas no entran en un celular,
      asi que cada pedido se lee de arriba abajo:
        Destino                Total
        12/03 14:30 · 🛵 Domicilio
        3 items · 💵 Efectivo
-     La fecha pasa a una sola linea porque ya no compite por ancho. */
+       📍 Sede Dalia
+     La fecha pasa a una sola linea porque ya no compite por ancho. La sede va
+     ultima y a lo ancho: es el dato que se repite entre pedidos del mismo
+     local, asi que arriba de todo solo agregaria ruido. */
   .admin-table-row-pedidos {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto;
     align-items: center;
     gap: 2px 10px !important;
     padding: 10px 12px !important;
@@ -898,6 +969,7 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-row-pedidos .admin-table-cell-tipo { grid-column: 2; grid-row: 2; justify-self: end; }
   .admin-table-row-pedidos .admin-table-cell-items { grid-column: 1; grid-row: 3; }
   .admin-table-row-pedidos .admin-table-cell-pago { grid-column: 2; grid-row: 3; justify-self: end; }
+  .admin-table-row-pedidos .admin-table-cell-sede { grid-column: 1 / -1; grid-row: 4; }
 
   .admin-table-row-pedidos .admin-table-cell-fecha {
     flex-direction: row;

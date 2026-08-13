@@ -14,7 +14,12 @@ import './Home.css';
 // rompe cualquier useEffect/useMemo que lo tenga como dependencia.
 const SIN_DATOS = [];
 
-export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
+export const Home = ({
+  onNavigateToCart,
+  onNavigateBack,
+  mesa = null,
+  sede = null,
+}) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,7 +29,11 @@ export const Home = ({ onNavigateToCart, onNavigateBack, mesa = null }) => {
   // "no llego la respuesta" (undefined) de "llego y esta vacio" ([]) para
   // saber si corresponde el spinner. Con el fallback en esta misma linea,
   // esa distincion se pierde antes de poder usarla.
-  const allItemsCargando = useQuery(api.items.listarMenu);
+  // Sin sede (entrada por QR) el argumento va undefined y el server devuelve
+  // el menu completo, en vez de dejar al cliente con la grilla vacia.
+  const allItemsCargando = useQuery(api.items.listarMenu, {
+    sedeId: sede?._id,
+  });
   const allCategoriasCargando = useQuery(api.categorias.listar);
   const cargando = allItemsCargando === undefined || allCategoriasCargando === undefined;
 

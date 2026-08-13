@@ -77,6 +77,17 @@
   flex-wrap: wrap;
 }
 
+/* align-self para que la chapita mida lo que dice y no toda la fila: la
+   tarjeta es flex column, sin esto el fondo se estira de punta a punta. */
+.pedido-card__sede {
+  align-self: flex-start;
+  font: 600 0.75rem 'Inter', sans-serif;
+  color: #8A6212;
+  background: #FFF4D6;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
 .pedido-card__codigo {
   font: 700 0.75rem 'Poppins', sans-serif;
   color: #E11E2B;

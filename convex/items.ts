@@ -10,15 +10,31 @@ import { requerirAdmin } from "./guardias";
 //
 // Si esta query mirara solo `activo`, apagar el switch pintaria el producto
 // de gris en el panel y el cliente lo seguiria viendo y pidiendo.
+//
+// `sedeId` opcional y no obligatorio: el flujo por QR llega sin sede (las
+// mesas todavia no la tienen, ver App.jsx). Sin sede se devuelve el menu
+// completo — es preferible mostrar de mas que dejar la pantalla en blanco.
 export const listarMenu = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db
+  args: { sedeId: v.optional(v.id("sedes")) },
+  handler: async (ctx, { sedeId }) => {
+    const items = await ctx.db
       .query("items")
       .filter((q) =>
         q.and(q.eq(q.field("activo"), true), q.eq(q.field("disponible"), true))
       )
       .collect();
+
+    if (!sedeId) return items;
+
+    // El filtro por sede va en JS y no en el `.filter()` de arriba porque
+    // Convex no sabe preguntar "este array contiene X". No es un problema: el
+    // menu son decenas de items, no miles, y ya estan todos en memoria.
+    //
+    // Sin sedeIds (o vacio) = item anterior a este campo: se muestra en todas
+    // las sedes hasta que el admin lo edite. Ver la nota en schema.ts.
+    return items.filter(
+      (item) => !item.sedeIds?.length || item.sedeIds.includes(sedeId)
+    );
   },
 });
 
@@ -47,6 +63,7 @@ export const crear = mutation({
     imagenUrl: v.optional(v.string()),
     llevaSalsas: v.optional(v.boolean()),
     disponible: v.optional(v.boolean()),
+    sedeIds: v.optional(v.array(v.id("sedes"))),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -72,6 +89,7 @@ export const actualizar = mutation({
       disponible: v.optional(v.boolean()),
       activo: v.optional(v.boolean()),
       llevaSalsas: v.optional(v.boolean()),
+      sedeIds: v.optional(v.array(v.id("sedes"))),
     }),
   },
   handler: async (ctx, { id, campos }) => {

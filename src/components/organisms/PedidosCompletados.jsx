@@ -32,6 +32,7 @@ export const PedidosCompletados = () => {
     <div className="admin-table-wrapper">
       <div className="admin-table-header admin-table-header-pedidos">
         <div>Fecha</div>
+        <div>Sede</div>
         <div>Tipo</div>
         <div>Destino</div>
         <div>Ítems</div>
@@ -49,6 +50,16 @@ export const PedidosCompletados = () => {
               <span className="pedido-fecha__hora">
                 {formatearHora(pedido._creationTime)}
               </span>
+            </div>
+
+            {/*
+              Se dibuja siempre, con guion si falta: en una tabla la celda no
+              puede desaparecer sin correr toda la fila. Falta en los pedidos
+              anteriores a este campo y en los que entran por QR (las mesas
+              todavia no guardan sede).
+            */}
+            <div className="admin-table-cell-sede" data-label="Sede">
+              {pedido.sedeNombre ? `📍 ${pedido.sedeNombre}` : '—'}
             </div>
 
             <div className="admin-table-cell-tipo" data-label="Tipo">

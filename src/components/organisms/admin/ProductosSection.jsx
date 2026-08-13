@@ -8,6 +8,7 @@ const sinImagen = (item) => !item.imagenUrl || item.imagenUrl.trim() === '';
 export const ProductosSection = () => {
   const {
     categorias,
+    sedes,
     categoriaMap,
     paginados,
     pagina,
@@ -151,6 +152,7 @@ export const ProductosSection = () => {
         onClose={modal.cerrar}
         product={modal.editando}
         categorias={categorias}
+        sedes={sedes}
         onSave={acciones.guardar}
       />
     </div>

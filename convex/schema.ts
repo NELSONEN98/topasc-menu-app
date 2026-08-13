@@ -20,6 +20,20 @@ export default defineSchema({
     activo: v.boolean(),
     // undefined = lleva salsas (default); false = bebidas, postres, etc.
     llevaSalsas: v.optional(v.boolean()),
+    // En que sedes se vende este plato. Un plato = una fila, marcada en varias
+    // sedes: asi el precio y la imagen (que va en base64 dentro del documento)
+    // no se duplican por local.
+    //
+    // Optional a proposito, por lo mismo que `direccion` mas abajo: los items
+    // que ya existen en produccion no tienen el campo y un v.array() a secas
+    // haria fallar el deploy del schema.
+    //
+    // undefined o [] = se ve en TODAS las sedes. Es el default seguro: los
+    // items viejos siguen apareciendo hasta que alguien los edite, y el flujo
+    // por QR (que todavia no sabe en que sede esta, ver App.jsx) nunca se
+    // queda con un menu vacio. El admin no puede guardar un plato sin sedes,
+    // asi que un array vacio solo puede venir de datos previos a este campo.
+    sedeIds: v.optional(v.array(v.id("sedes"))),
   }).index("por_categoria", ["categoriaId"]),
 
   salsas: defineTable({
@@ -73,6 +87,16 @@ export default defineSchema({
       v.literal("listo"),
       v.literal("entregado")
     ),
+    // Mismo par que mesaId/mesaNumero de abajo: el id sirve para cruzar datos,
+    // el nombre es un snapshot. Si manana renombran o dan de baja una sede, el
+    // pedido historico tiene que seguir diciendo a que local fue — un join
+    // contra `sedes` devolveria el nombre de hoy, o nada.
+    //
+    // Optional por dos motivos: los pedidos que ya estan en produccion no lo
+    // tienen (un campo obligatorio haria fallar el deploy del schema), y el
+    // pedido por QR todavia llega sin sede porque las mesas no la guardan.
+    sedeId: v.optional(v.id("sedes")),
+    sedeNombre: v.optional(v.string()),
     mesaId: v.optional(v.id("mesas")),
     mesaNumero: v.optional(v.string()),
     clienteNombre: v.optional(v.string()),

@@ -106,6 +106,10 @@ export const Cart = ({
     crearPedido({
       tipoPedido: orderType,
       total,
+      // Sin sede (pedido por QR) los dos van undefined y Convex los omite: el
+      // pedido queda guardado igual, solo que sin local asociado.
+      sedeId: sede?._id,
+      sedeNombre: sede?.nombre,
       costoDomicilio: orderType === 'delivery' ? deliveryFee : undefined,
       clienteNombre: pickup?.nombre,
       codigoRetiro: pickup?.codigo,

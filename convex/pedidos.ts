@@ -30,6 +30,11 @@ export const crear = mutation({
     codigoRetiro: v.optional(v.string()),
     direccionEntrega: v.optional(v.string()),
     direccionReferencia: v.optional(v.string()),
+    // sedeNombre viaja desde el cliente y no se resuelve aca leyendo la sede
+    // por id: es un snapshot, tiene que quedar congelado el nombre con el que
+    // se hizo el pedido. Ver la nota en schema.ts.
+    sedeId: v.optional(v.id("sedes")),
+    sedeNombre: v.optional(v.string()),
     mesaId: v.optional(v.id("mesas")),
     mesaNumero: v.optional(v.string()),
     costoDomicilio: v.optional(v.number()),

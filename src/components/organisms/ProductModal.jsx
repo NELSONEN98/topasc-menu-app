@@ -4,7 +4,18 @@ import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
-export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) => {
+// Referencia estable para el fallback: un `[]` nuevo por render no sirve como
+// default de una prop que se lee dentro de un efecto.
+const SIN_DATOS = [];
+
+export const ProductModal = ({
+  isOpen,
+  onClose,
+  product,
+  categorias,
+  sedes = SIN_DATOS,
+  onSave,
+}) => {
   const [formData, setFormData] = useState({
     nombre: '',
     categoriaId: '',
@@ -14,12 +25,20 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
     imagenUrl: '',
     disponible: true,
     llevaSalsas: true,
+    sedeIds: [],
   });
 
   const [imagePreview, setImagePreview] = useState('');
   const [imageError, setImageError] = useState('');
 
   useEffect(() => {
+    // Todas las sedes marcadas por defecto: la mayoria de los platos se venden
+    // en todos los locales, y es mas rapido destildar una que tildar tres.
+    // Un producto viejo sin `sedeIds` hoy se ve en todas las sedes, asi que
+    // mostrarlas todas tildadas no cambia su comportamiento — solo lo deja
+    // explicito la proxima vez que se guarde.
+    const todasLasSedes = sedes.map((s) => s._id);
+
     if (product) {
       setFormData({
         nombre: product.nombre || '',
@@ -30,6 +49,7 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
         llevaSalsas: product.llevaSalsas !== false,
+        sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
       });
       setImagePreview(product.imagenUrl || '');
     } else {
@@ -42,16 +62,39 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
         imagenUrl: '',
         disponible: true,
         llevaSalsas: true,
+        sedeIds: todasLasSedes,
       });
       setImagePreview('');
     }
-    // Solo al ABRIR o al cambiar de producto. Nunca por `categorias`:
-    // es una query reactiva de Convex y cada re-emision traia una
+    // Solo al ABRIR o al cambiar de producto. Nunca por `categorias` ni por
+    // `sedes`: son queries reactivas de Convex y cada re-emision traia una
     // referencia nueva, lo que disparaba este efecto y borraba lo que el
-    // usuario estaba escribiendo. El efecto lee `categorias` para elegir
-    // la categoria por defecto, pero no debe reaccionar a sus cambios.
+    // usuario estaba escribiendo. El efecto las lee para elegir los valores
+    // por defecto, pero no debe reaccionar a sus cambios.
+    //
+    // `sedes.length` SI va como dependencia, y es distinto: es un numero, no
+    // una referencia, asi que una re-emision con las mismas sedes no lo mueve.
+    // Hace falta porque si el modal se abre antes de que la query resuelva,
+    // `todasLasSedes` sale vacio y los checkboxes quedan todos destildados —
+    // en una edicion eso hace que un plato que se vende en las tres sedes
+    // parezca no venderse en ninguna, y guardarlo asi lo sacaria de dos
+    // locales. Cambiar de 0 a 3 tiene que volver a marcar los defaults.
+    //
+    // Que se dispare a mitad de una edicion y borre el formulario no es un
+    // riesgo real: para eso tendria que aparecer o desaparecer una sede, y las
+    // sedes solo se tocan con `sedes:sincronizar`, que es una internalMutation
+    // que se corre por CLI. Desde la app no hay forma de cambiar ese numero.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product?._id, isOpen]);
+  }, [product?._id, isOpen, sedes.length]);
+
+  const alternarSede = (sedeId) => {
+    setFormData((prev) => ({
+      ...prev,
+      sedeIds: prev.sedeIds.includes(sedeId)
+        ? prev.sedeIds.filter((id) => id !== sedeId)
+        : [...prev.sedeIds, sedeId],
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -155,6 +198,41 @@ export const ProductModal = ({ isOpen, onClose, product, categorias, onSave }) =
                 </select>
               </div>
             </div>
+          </fieldset>
+
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Sedes</legend>
+
+            {sedes.map((sede) => (
+              <label
+                key={sede._id}
+                className="opcion-tarjeta"
+                htmlFor={`sede-${sede._id}`}
+              >
+                <input
+                  id={`sede-${sede._id}`}
+                  type="checkbox"
+                  checked={formData.sedeIds.includes(sede._id)}
+                  onChange={() => alternarSede(sede._id)}
+                />
+                <span className="opcion-tarjeta__texto">
+                  <strong>{sede.nombre}</strong>
+                  {/* Una sede apagada se sigue mostrando (ver la nota en
+                      useProductosAdmin), pero avisando: si no, el admin la
+                      marca creyendo que el plato se va a ver ahi. */}
+                  <small>
+                    {sede.activo
+                      ? sede.direccion || 'Se vende en este local.'
+                      : 'Sede desactivada: hoy el cliente no puede elegirla.'}
+                  </small>
+                </span>
+              </label>
+            ))}
+
+            <small className="form-ayuda">
+              El plato solo aparece en el menú de las sedes marcadas. Tiene que
+              estar en al menos una.
+            </small>
           </fieldset>
 
           <fieldset className="form-seccion">
