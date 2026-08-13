@@ -125,6 +125,128 @@ describe("mesas.crear", () => {
   });
 });
 
+describe("mesas — el numero es unico POR SEDE", () => {
+  test("rechaza dos mesas con el mismo numero en el mismo local", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia });
+
+    // El mozo no sabria a cual llevarle el pedido, y en el historial los dos
+    // dirian "Mesa 1" de la misma sede.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia })
+    ).rejects.toThrow(/Ya existe una mesa 1 en esa sede/);
+  });
+
+  test("PERMITE el mismo numero en sedes distintas", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    const morichal = await crearSede(t, "Sede Morichal", "573222222222");
+
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia });
+
+    // Cada local numera sus mesas 1..N: "Mesa 1" en dos locales son dos mesas
+    // distintas y legitimas.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: morichal })
+    ).resolves.toBeDefined();
+  });
+
+  test("ignora espacios y mayusculas al comparar", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "Terraza", sedeId: dalia });
+
+    // Sin normalizar, dos etiquetas que la gente lee igual entrarian como
+    // distintas.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.crear, { numero: "  terraza  ", sedeId: dalia })
+    ).rejects.toThrow(/Ya existe una mesa/);
+  });
+
+  test("dos mesas sin sede con el mismo numero tambien chocan", async () => {
+    const t = convexTest(schema, modules);
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1" });
+
+    // Son las anteriores al campo: dos sin asignar con el mismo numero tambien
+    // serian indistinguibles.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.crear, { numero: "1" })
+    ).rejects.toThrow(/Ya existe una mesa/);
+  });
+
+  test("al editar, rechaza tomar el numero de otra mesa de su sede", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia });
+    const id = await comoAdmin(t).mutation(api.mesas.crear, { numero: "2", sedeId: dalia });
+
+    await expect(
+      comoAdmin(t).mutation(api.mesas.actualizar, { id, campos: { numero: "1" } })
+    ).rejects.toThrow(/Ya existe una mesa 1 en esa sede/);
+  });
+
+  test("una mesa no choca consigo misma al guardarse sin cambios", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    const id = await comoAdmin(t).mutation(api.mesas.crear, { numero: "5", sedeId: dalia });
+
+    // Si el chequeo no se ignorara a si mismo, editar solo el estado seria
+    // imposible.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.actualizar, {
+        id,
+        campos: { numero: "5", activo: false },
+      })
+    ).resolves.not.toThrow();
+  });
+
+  test("MOVER una mesa a un local que ya tiene ese numero se rechaza", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    const morichal = await crearSede(t, "Sede Morichal", "573222222222");
+
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia });
+    const id = await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: morichal });
+
+    // El numero no cambia, pero el duplicado se crea igual: la guarda tiene que
+    // mirar como va a QUEDAR la mesa, no lo que se esta mandando.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.actualizar, { id, campos: { sedeId: dalia } })
+    ).rejects.toThrow(/Ya existe una mesa 1 en esa sede/);
+  });
+
+  test("mover a un local donde ese numero esta libre funciona", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    const morichal = await crearSede(t, "Sede Morichal", "573222222222");
+
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "1", sedeId: dalia });
+    const id = await comoAdmin(t).mutation(api.mesas.crear, { numero: "7", sedeId: morichal });
+
+    await comoAdmin(t).mutation(api.mesas.actualizar, { id, campos: { sedeId: dalia } });
+
+    const mesa = await t.run(async (ctx) => await ctx.db.get(id));
+    expect(mesa!.sedeId).toBe(dalia);
+  });
+
+  test("asignarle sede a una mesa vieja falla si ese numero ya existe alla", async () => {
+    const t = convexTest(schema, modules);
+    const dalia = await crearSede(t, "Sede Dalia", "573111111111");
+    await comoAdmin(t).mutation(api.mesas.crear, { numero: "3", sedeId: dalia });
+
+    const vieja = await t.run(async (ctx) =>
+      await ctx.db.insert("mesas", { numero: "3", codigo: "VIEJA1", activo: true })
+    );
+
+    // Es el caso real: las mesas de produccion no tienen sede y hay que
+    // asignarselas una por una.
+    await expect(
+      comoAdmin(t).mutation(api.mesas.actualizar, { id: vieja, campos: { sedeId: dalia } })
+    ).rejects.toThrow(/Ya existe una mesa 3 en esa sede/);
+  });
+});
+
 describe("mesas.actualizar", () => {
   test("permite mover una mesa de sede", async () => {
     const t = convexTest(schema, modules);

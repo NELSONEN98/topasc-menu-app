@@ -58,6 +58,42 @@ export const listar = query({
   },
 });
 
+/**
+ * ¿Ya hay otra mesa con ese numero EN ESA SEDE?
+ *
+ * El numero es unico por sede, no globalmente: cada local numera sus mesas
+ * 1..N, asi que "Mesa 1" en Dalia y "Mesa 1" en Morichal son dos mesas
+ * distintas y legitimas. Lo que no puede haber son dos "Mesa 1" en el mismo
+ * local: el mozo no sabria a cual llevarle el pedido, y en el historial los dos
+ * pedidos dirian "Mesa 1" de la misma sede sin forma de distinguirlos.
+ *
+ * Se compara sin espacios ni mayusculas porque el numero es un string libre
+ * ("5", " 5", "Terraza", "terraza"): sin normalizar, dos etiquetas que la gente
+ * lee igual entrarian como distintas.
+ *
+ * Las mesas sin sede cuentan como su propio grupo. Son las anteriores al campo,
+ * y dos sin asignar con el mismo numero tambien serian indistinguibles.
+ *
+ * Sin withIndex: no hay indice por (sedeId, numero) y no vale la pena crearlo
+ * para una tabla de decenas de filas.
+ */
+const mesaRepetida = async (
+  ctx: any,
+  numero: string,
+  sedeId: string | undefined,
+  ignorarId?: string
+) => {
+  const todas = await ctx.db.query("mesas").collect();
+  const buscado = numero.trim().toLowerCase();
+
+  return todas.some(
+    (mesa: any) =>
+      mesa._id !== ignorarId &&
+      mesa.sedeId === sedeId &&
+      mesa.numero.trim().toLowerCase() === buscado
+  );
+};
+
 export const crear = mutation({
   args: {
     numero: v.string(),
@@ -69,6 +105,9 @@ export const crear = mutation({
 
     if (numero.trim() === "") {
       throw new Error("El numero de la mesa no puede estar vacio");
+    }
+    if (await mesaRepetida(ctx, numero, sedeId)) {
+      throw new Error(`Ya existe una mesa ${numero.trim()} en esa sede`);
     }
 
     // Genera un token único si no se pasó uno
@@ -116,6 +155,27 @@ export const actualizar = mutation({
 
     if (campos.numero !== undefined && campos.numero.trim() === "") {
       throw new Error("El numero de la mesa no puede estar vacio");
+    }
+
+    /*
+     * El choque se evalua sobre como va a QUEDAR la mesa, no sobre lo que se
+     * esta mandando. Es un patch parcial: puede venir solo el numero, solo la
+     * sede, o las dos. Y MOVER una mesa de local tambien choca — pasar la mesa
+     * 1 de Morichal a Dalia cuando Dalia ya tiene una mesa 1 crea el duplicado
+     * sin que el numero haya cambiado.
+     */
+    const actual = await ctx.db.get(id);
+    if (actual === null) {
+      throw new Error("La mesa que se quiere editar ya no existe");
+    }
+
+    const numeroFinal =
+      campos.numero !== undefined ? campos.numero.trim() : actual.numero;
+    const sedeFinal =
+      campos.sedeId !== undefined ? campos.sedeId : actual.sedeId;
+
+    if (await mesaRepetida(ctx, numeroFinal, sedeFinal, id)) {
+      throw new Error(`Ya existe una mesa ${numeroFinal} en esa sede`);
     }
 
     await ctx.db.patch(id, {

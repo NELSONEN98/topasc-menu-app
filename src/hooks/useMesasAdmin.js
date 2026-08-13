@@ -73,6 +73,32 @@ export const useMesasAdmin = () => {
       return;
     }
 
+    /*
+     * Espejo de la guarda de la mutation. Aca es UX; la que protege los datos
+     * es la del servidor.
+     *
+     * Y el espejo no es opcional: en produccion Convex OCULTA los mensajes de
+     * error del servidor (ver guardias.ts), asi que sin esto el admin recibiria
+     * un "Server Error" pelado sin saber que el numero ya existe en ese local.
+     *
+     * Se compara contra como va a QUEDAR la mesa: mover una mesa de local
+     * tambien choca, aunque el numero no cambie.
+     */
+    const buscado = formData.numero.trim().toLowerCase();
+    const repetida = mesas.some(
+      (m) =>
+        m._id !== editando?._id &&
+        m.sedeId === formData.sedeId &&
+        m.numero.trim().toLowerCase() === buscado
+    );
+
+    if (repetida) {
+      notificar.info(
+        `Ya existe una mesa ${formData.numero.trim()} en ${sedeMap[formData.sedeId] ?? 'esa sede'}`
+      );
+      return;
+    }
+
     const editandoAhora = !!editando;
 
     try {
