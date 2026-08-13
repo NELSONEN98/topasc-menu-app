@@ -1,9 +1,18 @@
 import { SedeModal } from '../SedeModal';
 import { SeccionHeader } from './SeccionHeader';
 import { useSedesAdmin } from '../../../hooks/useSedesAdmin';
+import { formatearPrecio } from '../../../utils/formatoPedido';
 
 const textoProductos = (cantidad) =>
   cantidad === 0 ? 'Sin productos' : `${cantidad} producto${cantidad === 1 ? '' : 's'}`;
+
+// Los tres estados del costo de domicilio son distintos y hay que poder
+// distinguirlos de un vistazo: sin configurar, gratis, o un monto.
+const textoDomicilio = (costo) => {
+  if (costo === undefined || costo === null) return 'Por defecto';
+  if (costo === 0) return 'Gratis';
+  return formatearPrecio(costo);
+};
 
 export const SedesSection = () => {
   const { sedes, productosPorSede, resumen, modal, acciones } = useSedesAdmin();
@@ -22,6 +31,7 @@ export const SedesSection = () => {
           <div>Nombre</div>
           <div>Dirección</div>
           <div>WhatsApp</div>
+          <div>Domicilio</div>
           <div>Productos</div>
           <div>Estado</div>
           <div></div>
@@ -47,6 +57,10 @@ export const SedesSection = () => {
 
                   <div className="admin-table-cell-whatsapp" data-label="WhatsApp">
                     {sede.whatsapp}
+                  </div>
+
+                  <div className="admin-table-cell-domicilio" data-label="Domicilio">
+                    {textoDomicilio(sede.costoDomicilio)}
                   </div>
 
                   <div className="admin-table-cell-productos" data-label="Productos">

@@ -39,7 +39,21 @@ export const Cart = ({
     }).format(price);
   };
 
-  const deliveryFee = DELIVERY_FEES[orderType] || 0;
+  /*
+   * El domicilio lo pone la sede. `??` y NO `||`: un envio gratis se guarda
+   * como 0, y con `||` ese 0 se leeria como "sin configurar" y terminaria
+   * cobrando el valor de respaldo. Seria cobrarle a un cliente un envio que
+   * el local decidio regalar.
+   *
+   * Solo aplica a delivery: recoger y comer en el local nunca tienen costo de
+   * envio. Antes esto salia de DELIVERY_FEES[orderType], que para 'dine-in'
+   * ni siquiera acertaba la clave (el objeto la tiene como `dineIn`) y caia al
+   * `|| 0` de casualidad.
+   */
+  const deliveryFee =
+    orderType === 'delivery'
+      ? sede?.costoDomicilio ?? DELIVERY_FEES.delivery
+      : 0;
   const subtotal = getTotal();
   const total = subtotal + deliveryFee;
 

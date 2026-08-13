@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { numeroDeInput } from '../../utils/numeroDeInput';
+import { normalizarWhatsapp } from '../../utils/whatsapp';
 import '../styles/ProductModal.css';
 
 export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
@@ -6,6 +8,7 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
     nombre: '',
     direccion: '',
     whatsapp: '',
+    costoDomicilio: '',
     activo: true,
   });
 
@@ -16,6 +19,9 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
         // `direccion` es optional en el schema: una sede puede no tenerla.
         direccion: sede.direccion || '',
         whatsapp: sede.whatsapp || '',
+        // `?? ''` y no `|| ''`: un domicilio gratis vale 0, y con `||` ese 0
+        // se veria como campo vacio y al guardar volveria al valor de respaldo.
+        costoDomicilio: sede.costoDomicilio ?? '',
         activo: sede.activo !== false,
       });
     } else {
@@ -23,6 +29,7 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
         nombre: '',
         direccion: '',
         whatsapp: '',
+        costoDomicilio: '',
         activo: true,
       });
     }
@@ -34,17 +41,26 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    // numeroDeInput mantiene "" como estado propio: vacio NO es cero. Sin eso
+    // el campo no se puede borrar (backspace -> "" -> NaN -> vuelve a 0).
+    const nuevoValor =
+      type === 'checkbox'
+        ? checked
+        : name === 'costoDomicilio'
+          ? numeroDeInput(value)
+          : value;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: nuevoValor }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
   };
+
+  // Se recalcula en cada render y no en un useMemo: es una regex sobre un
+  // string de doce caracteres, memoizarlo cuesta mas que hacerlo.
+  const previewWhatsapp = normalizarWhatsapp(formData.whatsapp);
 
   if (!isOpen) return null;
 
@@ -103,9 +119,46 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
               inputMode="numeric"
               required
             />
+            {/* Vista previa en vivo de como va a quedar guardado. Sin esto,
+                que el sistema agregue el 57 solo seria magia invisible: el
+                admin escribe una cosa, se guarda otra, y nunca se entera. */}
             <small className="form-ayuda">
-              Número al que llegan los pedidos de esta sede, con código de país
-              y sin el +. Se guardan solo los dígitos.
+              {previewWhatsapp.numero ? (
+                <>
+                  Se va a guardar como{' '}
+                  <strong className="form-ayuda__dato">
+                    {previewWhatsapp.numero}
+                  </strong>
+                  . Es el número al que llegan los pedidos de esta sede.
+                </>
+              ) : (
+                <>
+                  Número al que llegan los pedidos de esta sede. Podés escribirlo
+                  con espacios o con +57: se limpia solo.
+                </>
+              )}
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="sede-costoDomicilio">Costo de domicilio</label>
+            <div className="input-con-prefijo">
+              <span className="input-prefijo" aria-hidden="true">$</span>
+              <input
+                id="sede-costoDomicilio"
+                type="number"
+                name="costoDomicilio"
+                value={formData.costoDomicilio}
+                onChange={handleChange}
+                placeholder="10000"
+                min="0"
+                inputMode="numeric"
+              />
+            </div>
+            <small className="form-ayuda">
+              Lo que cobra esta sede por llevar el pedido. Poné <strong>0</strong> si
+              el envío es gratis. Si lo dejás vacío se usa el valor por defecto
+              de la app.
             </small>
           </div>
 

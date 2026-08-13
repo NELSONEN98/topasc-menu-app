@@ -56,6 +56,18 @@ export default defineSchema({
     // de que existiera este campo. Si fuera obligatorio, el deploy del
     // schema fallaria porque esos documentos no lo cumplen.
     direccion: v.optional(v.string()),
+    // Lo que cobra ESTA sede por llevar el pedido. Va por sede y no en una
+    // constante global porque el reparto desde cada local cubre distancias
+    // distintas: un unico valor obliga a cobrarle de mas a unos o de menos a
+    // otros, todos los dias.
+    //
+    // Optional por las sedes que ya estan en produccion. Ausente = se usa el
+    // valor de respaldo de src/config/settings.js.
+    //
+    // Ojo: 0 es un valor VALIDO y significa envio gratis. Todo lo que lo lea
+    // tiene que usar `??` y nunca `||`, o un envio gratis se leeria como "no
+    // configurado" y terminaria cobrando el de respaldo.
+    costoDomicilio: v.optional(v.number()),
     activo: v.boolean(),
   }),
 
@@ -64,6 +76,15 @@ export default defineSchema({
     codigo: v.string(),
     // numero = etiqueta legible para el local ("5", "Mesa VIP")
     numero: v.string(),
+    // En que local esta parada esta mesa. Sin esto, un pedido por QR no sabe
+    // a que sede pertenece y arrastra tres problemas de una: el WhatsApp cae
+    // al numero de respaldo de settings.js (o sea, al local equivocado), el
+    // menu no se filtra (el cliente pide algo que ahi no se vende) y el
+    // pedido queda fuera del reporte de ventas por sede.
+    //
+    // Optional porque las mesas que ya estan en produccion no lo tienen; un
+    // campo obligatorio haria fallar el deploy del schema.
+    sedeId: v.optional(v.id("sedes")),
     activo: v.boolean(),
   }).index("por_codigo", ["codigo"]),
 
@@ -130,6 +151,19 @@ export default defineSchema({
 
   horariosAtencion: defineTable({
     diaSemana: v.number(),
+    // De que sede es este horario. AUSENTE = horario GENERAL: el que hereda
+    // toda sede que no tenga el suyo propio para ese dia.
+    //
+    // Se modela como herencia y no como "cada sede carga sus 7 dias" por dos
+    // razones. Una, los horarios que ya estan cargados en produccion no tienen
+    // sede: si `listar` los ignorara, cada local caeria al horario de fabrica y
+    // le estariamos cambiando el horario al negocio sin avisar. Y dos, lo
+    // normal es que los tres locales abran igual y uno solo tenga una
+    // excepcion: obligar a cargar 21 filas para expresar una diferencia es
+    // pedirle al admin que repita 20 veces lo mismo.
+    //
+    // La fila es unica por el par (sedeId, diaSemana), no por diaSemana solo.
+    sedeId: v.optional(v.id("sedes")),
     horaApertura: v.optional(v.string()),
     horaCierre: v.optional(v.string()),
     cerrado: v.boolean(),

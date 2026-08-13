@@ -38,23 +38,77 @@ const nombreRepetido = async (ctx: any, nombre: string, ignorarId?: string) => {
   );
 };
 
-// wa.me solo acepta digitos: un numero con +, espacios o guiones arma un link
-// roto y el pedido no llega a ningun lado. Se normaliza en el servidor y no en
-// el formulario porque el front es una sugerencia — la mutation es publica a
-// nivel de codigo y tiene que defenderse sola.
-const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+/*
+ * wa.me solo acepta digitos y exige el numero internacional COMPLETO. Un numero
+ * con +, espacios o guiones arma un link roto; uno sin codigo de pais arma un
+ * link que no rutea a nadie. Las dos cosas fallan en silencio: la sede se
+ * guarda bien, el panel la muestra bien, y los pedidos no llegan nunca.
+ *
+ * Se normaliza en el SERVIDOR y no solo en el formulario porque el front es una
+ * sugerencia: la mutation es alcanzable sin pasar por el panel.
+ *
+ * El negocio es 100% colombiano (decision explicita), asi que a un numero local
+ * se le antepone el 57 en vez de rechazarlo.
+ *
+ * Esta logica esta duplicada en src/utils/whatsapp.js. No es un descuido:
+ * Convex bundlea solo la carpeta convex/, asi que no hay forma de compartir el
+ * modulo. La copia del front es para avisarle al admin ANTES de mandar —
+ * ademas en produccion Convex oculta los mensajes de error del servidor (ver
+ * guardias.ts), asi que el mensaje util tiene que salir de alla. Esta, la del
+ * servidor, es la que manda sobre los datos.
+ */
+const CODIGO_PAIS = "57";
+const LARGO_LOCAL = 10;
+const LARGO_COMPLETO = 12;
+
+const normalizarWhatsapp = (valor: string) => {
+  // Ceros iniciales: "00" es el prefijo internacional de marcado y un "0"
+  // suelto el de larga distancia nacional. Ninguno va en un link de wa.me.
+  const digitos = valor.replace(/\D/g, "").replace(/^0+/, "");
+
+  if (digitos === "") {
+    throw new Error(
+      "El WhatsApp de la sede no puede estar vacio: es el numero al que " +
+        "llegan sus pedidos"
+    );
+  }
+
+  if (digitos.length === LARGO_COMPLETO && digitos.startsWith(CODIGO_PAIS)) {
+    return digitos;
+  }
+
+  if (digitos.length === LARGO_LOCAL) {
+    return CODIGO_PAIS + digitos;
+  }
+
+  throw new Error(
+    `"${valor}" no parece un numero colombiano: van 10 digitos o 12 con el ` +
+      `codigo de pais`
+  );
+};
+
+// Un domicilio negativo le sumaria plata al carrito en vez de restarsela.
+// Se valida aca y no solo en el formulario porque la mutation es alcanzable
+// sin pasar por el panel.
+const validarCostoDomicilio = (costo: number | null | undefined) => {
+  if (costo === undefined || costo === null) return;
+
+  if (!Number.isFinite(costo) || costo < 0) {
+    throw new Error("El costo de domicilio no puede ser negativo");
+  }
+};
 
 export const crear = mutation({
   args: {
     nombre: v.string(),
     direccion: v.optional(v.string()),
     whatsapp: v.string(),
+    costoDomicilio: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
 
     const nombre = args.nombre.trim();
-    const whatsapp = soloDigitos(args.whatsapp);
     const direccion = args.direccion?.trim();
 
     if (nombre === "") {
@@ -63,16 +117,17 @@ export const crear = mutation({
     if (await nombreRepetido(ctx, nombre)) {
       throw new Error(`Ya existe una sede llamada "${nombre}"`);
     }
-    if (whatsapp === "") {
-      throw new Error(
-        "El WhatsApp de la sede no puede estar vacio: es el numero al que " +
-          "llegan sus pedidos"
-      );
-    }
+
+    validarCostoDomicilio(args.costoDomicilio);
+
+    // Va ultimo porque lanza solo: el chequeo de vacio que estaba aca abajo
+    // quedaria muerto, `normalizarWhatsapp` corta antes.
+    const whatsapp = normalizarWhatsapp(args.whatsapp);
 
     return await ctx.db.insert("sedes", {
       nombre,
       whatsapp,
+      costoDomicilio: args.costoDomicilio,
       // Si viene vacia se guarda ausente y no como "": el schema la declara
       // optional, y un string vacio haria que el front dibuje una linea de
       // direccion en blanco debajo del nombre.
@@ -89,11 +144,24 @@ export const actualizar = mutation({
       nombre: v.optional(v.string()),
       direccion: v.optional(v.string()),
       whatsapp: v.optional(v.string()),
+      /*
+       * `null` es el "borralo" explicito, y hace falta que sea un valor real y
+       * no `undefined`: al serializar los argumentos, Convex OMITE los campos
+       * de objeto que valen undefined. O sea que mandar `costoDomicilio:
+       * undefined` para vaciarlo no llega como "vacialo", llega como "no lo
+       * menciones" — y el patch deja el valor viejo intacto. La sede seguiria
+       * cobrando un domicilio que el admin cree haber borrado.
+       *
+       * `null` si viaja, y el handler lo traduce al `undefined` que borra.
+       */
+      costoDomicilio: v.optional(v.union(v.number(), v.null())),
       activo: v.optional(v.boolean()),
     }),
   },
   handler: async (ctx, { id, campos }) => {
     await requerirAdmin(ctx);
+
+    validarCostoDomicilio(campos.costoDomicilio);
 
     const parche: Record<string, unknown> = { ...campos };
 
@@ -110,22 +178,23 @@ export const actualizar = mutation({
     }
 
     if (campos.whatsapp !== undefined) {
-      const whatsapp = soloDigitos(campos.whatsapp);
-
-      if (whatsapp === "") {
-        throw new Error(
-          "El WhatsApp de la sede no puede estar vacio: es el numero al que " +
-            "llegan sus pedidos"
-        );
-      }
-      parche.whatsapp = whatsapp;
+      parche.whatsapp = normalizarWhatsapp(campos.whatsapp);
     }
 
     // Vaciar el campo de direccion en el formulario tiene que BORRAR la
     // direccion, no guardar "". En Convex, patchear con undefined elimina el
     // campo, que es justo lo que se busca aca.
+    //
+    // Aca alcanza con el string vacio como senal porque "" SI sobrevive la
+    // serializacion; el costo de domicilio, al ser numero, necesita `null`.
     if (campos.direccion !== undefined) {
       parche.direccion = campos.direccion.trim() || undefined;
+    }
+
+    // null (borralo) -> undefined, que es lo que hace que patch elimine el
+    // campo y la sede vuelva al valor de respaldo de la app.
+    if (campos.costoDomicilio === null) {
+      parche.costoDomicilio = undefined;
     }
 
     await ctx.db.patch(id, parche);

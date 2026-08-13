@@ -3,6 +3,8 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useNotificacion } from '../context/NotificacionContext';
 import { mensajeDeError } from '../utils/mensajeDeError';
+import { aNumero } from '../utils/numeroDeInput';
+import { normalizarWhatsapp } from '../utils/whatsapp';
 
 const SIN_DATOS = [];
 
@@ -60,10 +62,34 @@ export const useSedesAdmin = () => {
       notificar.info('El nombre de la sede es obligatorio');
       return;
     }
-    // Espejo de la validacion de la mutation. Aca es UX (avisar antes de
-    // mandar); la que protege los datos es la del servidor.
-    if (!formData.whatsapp.replace(/\D/g, '')) {
-      notificar.info('El WhatsApp de la sede es obligatorio');
+    /*
+     * Espejo de la validacion de la mutation. Aca es UX; la que protege los
+     * datos es la del servidor.
+     *
+     * Y el espejo no es opcional: en produccion Convex OCULTA los mensajes de
+     * error del servidor (ver guardias.ts), asi que si esto no validara, el
+     * admin recibiria un "Server Error" pelado sin saber que le falta el
+     * codigo de pais.
+     */
+    const { error: errorWhatsapp } = normalizarWhatsapp(formData.whatsapp);
+    if (errorWhatsapp) {
+      notificar.info(errorWhatsapp);
+      return;
+    }
+
+    /*
+     * Vacio y cero son cosas distintas y no se pueden aplastar:
+     *   ''  = "no lo configuro, usen el de respaldo"  -> undefined
+     *   0   = "el envio de esta sede es gratis"       -> 0
+     * Por eso el chequeo explicito contra '' en vez de un `aNumero` a secas.
+     */
+    const costoDomicilio =
+      formData.costoDomicilio === '' || formData.costoDomicilio === undefined
+        ? undefined
+        : aNumero(formData.costoDomicilio);
+
+    if (costoDomicilio !== undefined && costoDomicilio < 0) {
+      notificar.info('El costo de domicilio no puede ser negativo');
       return;
     }
 
@@ -77,6 +103,11 @@ export const useSedesAdmin = () => {
             nombre: formData.nombre,
             direccion: formData.direccion,
             whatsapp: formData.whatsapp,
+            // `?? null` y no `costoDomicilio` a secas: Convex omite los campos
+            // undefined al serializar, asi que vaciar el input no llegaria como
+            // "borralo" sino como "no lo menciones", y el valor viejo quedaria
+            // intacto. `null` es la señal explicita de borrado.
+            costoDomicilio: costoDomicilio ?? null,
             activo: formData.activo,
           },
         });
@@ -85,6 +116,7 @@ export const useSedesAdmin = () => {
           nombre: formData.nombre,
           direccion: formData.direccion,
           whatsapp: formData.whatsapp,
+          costoDomicilio,
         });
       }
 

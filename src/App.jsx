@@ -21,11 +21,13 @@ import './styles/global.css';
 // se saltea la eleccion de sede y de tipo de orden: quien escanea el QR ya
 // esta parado en un local especifico, no tiene sentido preguntarle cual.
 //
-// NOTA: las mesas todavia no tienen una sede asociada en el schema. Con una
-// sola sucursal esto no importaba; con dos, un pedido por QR usa el WhatsApp
-// de pruebas por defecto (ver Cart.jsx) sin importar en que local este la
-// mesa. El dia que haya un numero real por sede, mesas va a necesitar su
-// propio campo `sedeId` para que el pedido llegue al local correcto.
+// La sede sale de la propia mesa (`mesas:porCodigo` la resuelve y la devuelve
+// junto con ella). Escanear el QR equivale a haber elegido esa sede a mano:
+// el menu se filtra por ese local y el pedido va a SU WhatsApp.
+//
+// Una mesa sin sede —las que se crearon antes de que existiera el campo—
+// arranca en null, igual que antes: menu completo y numero de respaldo. Se
+// arregla asignandole la sede desde la pestana Mesas del panel.
 const ClientApp = ({ mesa = null }) => {
   const { clearCart } = useCart();
   const lockedToTable = !!mesa;
@@ -33,7 +35,7 @@ const ClientApp = ({ mesa = null }) => {
   const [currentPage, setCurrentPage] = useState(
     lockedToTable ? 'home' : 'sede-select'
   );
-  const [sede, setSede] = useState(null);
+  const [sede, setSede] = useState(mesa?.sede ?? null);
   const [orderType, setOrderType] = useState(lockedToTable ? 'dine-in' : null);
 
   const handleSelectSede = (sedeElegida) => {
@@ -58,7 +60,7 @@ const ClientApp = ({ mesa = null }) => {
 
   return (
     <div className="phone-shell">
-      <StatusBar />
+      <StatusBar sede={sede} />
       <div className="scroll-area">
         {currentPage === 'sede-select' ? (
           <SedeSelect onSelectSede={handleSelectSede} />

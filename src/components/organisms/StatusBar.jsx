@@ -7,8 +7,11 @@ import './StatusBar.css';
 const rangoAbierto = (apertura, cierre) =>
   `Abierto ${aFormato12h(apertura)} - ${aFormato12h(cierre)}`;
 
-export const StatusBar = () => {
-  const horarios = useQuery(api.horarios.listar);
+export const StatusBar = ({ sede = null }) => {
+  // Sin sede elegida (pantalla de seleccion) se muestra el horario general:
+  // todavia no sabemos de que local estariamos hablando. Al elegir una, la
+  // barra pasa a mostrar el horario de ESE local.
+  const horarios = useQuery(api.horarios.listar, { sedeId: sede?._id });
 
   // El dia se resuelve con la hora local del navegador a proposito: Convex
   // corre en UTC y en Colombia (UTC-5) a partir de las 19:00 el servidor ya

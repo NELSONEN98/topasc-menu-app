@@ -10,11 +10,14 @@ export const BUSINESS_HOURS = {
   closeTime: '22:00',
 };
 
-// Valor de domicilio por tipo de orden
+// Domicilio de RESPALDO. El valor real lo pone cada sede desde el panel
+// (`sedes.costoDomicilio`), porque el reparto de cada local cubre distancias
+// distintas. Esto solo se usa si la sede todavia no lo tiene cargado.
+//
+// Recoger y comer en el local nunca pagan envio: eso ya no vive en este objeto
+// sino en la condicion de Cart.jsx, que es donde se decide.
 export const DELIVERY_FEES = {
   delivery: 10000,      // Domicilio: $10.000
-  pickup: 0,            // Recoger: gratis
-  dineIn: 0,            // Pedir a la mesa: gratis
 };
 
 // Moneda y formato
@@ -26,6 +29,23 @@ export const CURRENCY = {
 
 // Nombre del negocio
 export const BUSINESS_NAME = 'Topasc';
+
+/*
+ * Dominio al que apuntan los QR de las mesas.
+ *
+ * UN QR IMPRESO APUNTA ACA PARA SIEMPRE. Poner el dominio propio (topasc.com),
+ * no la URL del hosting: si algun dia se migra de Vercel, el papel pegado en la
+ * mesa tiene que seguir funcionando.
+ *
+ * Vive aca y no en el script de QR para que haya UNA sola fuente de verdad: el
+ * panel y `npm run qr` generan el mismo codigo. Si cada uno tuviera la suya,
+ * alcanzaria con que alguien cambie una para terminar con dos tandas de
+ * stickers apuntando a dominios distintos, y eso no se arregla en el papel.
+ *
+ * A proposito NO se usa `window.location.origin`: el admin puede estar entrando
+ * desde una URL de preview de Vercel, y esa URL quedaria impresa.
+ */
+export const QR_BASE_URL = 'https://topasc-menu-app.vercel.app';
 
 // Número de WhatsApp para contacto (sin +, sin espacios)
 export const WHATSAPP_NUMBER = '573206873870';

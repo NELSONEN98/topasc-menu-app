@@ -306,6 +306,49 @@ input, select { font-family: 'Inter', sans-serif; }
   color: #555;
 }
 
+/* Mismo cuerpo que .btn-edit pero en el dorado de la marca: es la accion que
+   mas se va a usar de esa fila y conviene que se encuentre sin leer. */
+.btn-qr {
+  background: var(--primary-gold);
+  color: var(--dark-bg);
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-qr:hover { background: #FFC933; }
+
+/* La tarjeta se muestra a tamaño reducido: el PNG real mide 1000x1320 y sin
+   tope desbordaria el modal. */
+.qr-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #F8F5F0;
+}
+
+.qr-preview__img {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.qr-preview__cargando { font-size: 13px; color: #999; margin: 0; }
+.qr-preview__error { font-size: 13px; color: #C0392B; margin: 0; }
+
 .btn-edit {
   background: #E8E8E8;
   color: #555;
@@ -449,6 +492,78 @@ input, select { font-family: 'Inter', sans-serif; }
 
 .horario-edit:hover { background: #e0e0e0; }
 
+/* Los dos botones de la tarjeta comparten fila; "Volver al general" solo
+   aparece si esa sede se desengancho ese dia, asi que la fila a veces tiene
+   uno solo y a veces dos. */
+.horario-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.horario-acciones .horario-edit { flex: 1; }
+
+.horario-restaurar {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border-light);
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  transition: background .2s, color .2s;
+}
+
+.horario-restaurar:hover { background: #F8F5F0; color: var(--dark-bg); }
+
+/* Marca el dia que todavia sigue al horario base. Sin esto, un dia heredado y
+   uno configurado a mano con la misma hora se ven exactamente igual. */
+.horario-badge-general {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F2ECE3;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8A7B63;
+}
+
+.horario-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.horario-selector label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.horario-selector select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: var(--dark-bg);
+  cursor: pointer;
+}
+
+/* Variante informativa del aviso: el rojo de .admin-aviso avisa de un
+   problema, y esto es una explicacion, no una alarma. */
+.admin-aviso--neutro {
+  border-left-color: #C9BCA1;
+  background: #F8F5F0;
+  color: #6B5E4A;
+}
+
 /* El buscador ocupa el doble que los selects de filtro */
 .filter-group--ancho { flex: 2; }
 
@@ -461,13 +576,21 @@ input, select { font-family: 'Inter', sans-serif; }
   grid-template-columns: 80px 2fr 1.2fr 1fr 0.8fr !important;
 }
 
-/* Tabla de Sedes: Nombre | Direccion | WhatsApp | Productos | Estado | acciones */
+/* Tabla de Sedes: Nombre | Direccion | WhatsApp | Domicilio | Productos | Estado | acciones */
 .admin-table-header-sedes {
-  grid-template-columns: 1.6fr 2fr 1.3fr 1.2fr 1fr 0.8fr !important;
+  grid-template-columns: 1.5fr 1.8fr 1.3fr 1fr 1.1fr 0.9fr 0.8fr !important;
 }
 
 .admin-table-row-sedes {
-  grid-template-columns: 1.6fr 2fr 1.3fr 1.2fr 1fr 0.8fr !important;
+  grid-template-columns: 1.5fr 1.8fr 1.3fr 1fr 1.1fr 0.9fr 0.8fr !important;
+}
+
+/* Tabular para poder comparar montos entre filas de un vistazo */
+.admin-table-cell-domicilio {
+  font: 600 12px 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #666;
+  min-width: 0;
 }
 
 /* Direccion y Productos se ven igual que .admin-table-cell-category, pero con
@@ -479,6 +602,48 @@ input, select { font-family: 'Inter', sans-serif; }
   font-size: 12px;
   color: #666;
   min-width: 0;
+}
+
+/* Tabla de Mesas: Mesa | Sede | Codigo QR | Estado | acciones */
+.admin-table-header-mesas {
+  grid-template-columns: 1.2fr 2fr 1.4fr 1fr 0.8fr !important;
+}
+
+.admin-table-row-mesas {
+  grid-template-columns: 1.2fr 2fr 1.4fr 1fr 0.8fr !important;
+}
+
+.admin-table-cell-sede-mesa {
+  font-size: 12px;
+  color: #666;
+  min-width: 0;
+}
+
+/* El codigo del QR es un token de 6 caracteres sin vocales ambiguas: monoespaciado
+   para poder cotejarlo de un vistazo contra el sticker pegado en la mesa. */
+.admin-table-cell-codigo {
+  font: 600 12px 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  color: #999;
+  min-width: 0;
+}
+
+/* Una mesa sin sede no esta rota, pero manda su pedido al lugar equivocado:
+   se marca en rojo para que no pase inadvertida en una lista larga. */
+.admin-sin-sede {
+  color: #C0392B;
+  font-weight: 600;
+}
+
+.admin-aviso {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #E11E2B;
+  background: #FDE8EA;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #8A1D25;
 }
 
 /* Tabular para que los numeros no bailen de fila en fila */
@@ -739,6 +904,7 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-header-sauces,
   .admin-table-header-categorias,
   .admin-table-header-sedes,
+  .admin-table-header-mesas,
   .admin-table-header-pedidos {
     display: none !important;
   }
@@ -912,7 +1078,7 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-row-sedes {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto;
     align-items: center;
     gap: 2px 10px !important;
     padding: 10px 12px !important;
@@ -928,7 +1094,34 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-row-sedes .admin-table-cell-direccion { grid-column: 1 / -1; grid-row: 2; }
   .admin-table-row-sedes .admin-table-cell-whatsapp { grid-column: 1; grid-row: 3; }
   .admin-table-row-sedes .admin-table-cell-productos { grid-column: 2; grid-row: 3; justify-self: end; }
-  .admin-table-row-sedes .admin-table-actions { grid-column: 1 / -1; grid-row: 4; }
+  .admin-table-row-sedes .admin-table-cell-domicilio { grid-column: 1; grid-row: 4; }
+  .admin-table-row-sedes .admin-table-actions { grid-column: 1 / -1; grid-row: 5; }
+
+  /* Mesas en mobile:
+       Mesa 5                        [switch]
+       Sede Dalia            codigo: K7M2QX
+       [Editar]  [Eliminar]
+     Igual que en las otras tablas, TODA celda va ubicada explicitamente: una
+     sola sin posicion la reparte el auto-placement y cae donde no va. */
+  .admin-table-row-mesas {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    gap: 2px 10px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #F2ECE3;
+  }
+
+  .admin-table-row-mesas:last-child {
+    border-bottom: none;
+  }
+
+  .admin-table-row-mesas .admin-table-cell-name { grid-column: 1; grid-row: 1; }
+  .admin-table-row-mesas .admin-table-cell-status { grid-column: 2; grid-row: 1; justify-self: end; }
+  .admin-table-row-mesas .admin-table-cell-sede-mesa { grid-column: 1; grid-row: 2; }
+  .admin-table-row-mesas .admin-table-cell-codigo { grid-column: 2; grid-row: 2; justify-self: end; }
+  .admin-table-row-mesas .admin-table-actions { grid-column: 1 / -1; grid-row: 3; }
 
   .admin-badge-especial {
     margin-left: 6px;
