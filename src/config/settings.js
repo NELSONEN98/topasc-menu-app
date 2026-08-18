@@ -33,9 +33,17 @@ export const BUSINESS_NAME = 'Topasc';
 /*
  * Dominio al que apuntan los QR de las mesas.
  *
- * UN QR IMPRESO APUNTA ACA PARA SIEMPRE. Poner el dominio propio (topasc.com),
- * no la URL del hosting: si algun dia se migra de Vercel, el papel pegado en la
- * mesa tiene que seguir funcionando.
+ * UN QR IMPRESO APUNTA ACA PARA SIEMPRE. Va el dominio PROPIO y nunca la URL
+ * del hosting (topasc-menu-app.vercel.app): si algun dia se migra de Vercel, el
+ * papel pegado en la mesa tiene que seguir funcionando. El dominio se puede
+ * repuntar; un sticker impreso no.
+ *
+ * Se usa el apex (topasc.co) y no www: menos caracteres es un QR con menos
+ * modulos, mas facil de escanear y mas tolerante a que se raye o se manche.
+ *
+ * Los QR impresos ANTES de conectar el dominio apuntan a la URL de Vercel y
+ * siguen funcionando: Vercel no da de baja el .vercel.app al agregar un dominio
+ * propio. No hace falta reimprimir por esto.
  *
  * Vive aca y no en el script de QR para que haya UNA sola fuente de verdad: el
  * panel y `npm run qr` generan el mismo codigo. Si cada uno tuviera la suya,
@@ -45,7 +53,7 @@ export const BUSINESS_NAME = 'Topasc';
  * A proposito NO se usa `window.location.origin`: el admin puede estar entrando
  * desde una URL de preview de Vercel, y esa URL quedaria impresa.
  */
-export const QR_BASE_URL = 'https://topasc-menu-app.vercel.app';
+export const QR_BASE_URL = 'https://topasc.co';
 
 // Número de WhatsApp para contacto (sin +, sin espacios)
 export const WHATSAPP_NUMBER = '573206873870';
