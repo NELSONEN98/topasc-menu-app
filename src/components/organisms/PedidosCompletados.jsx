@@ -22,7 +22,6 @@ export const PedidosCompletados = () => {
   if (pedidos.length === 0) {
     return (
       <div className="pedidos-empty">
-        <span className="pedidos-empty__icon">📋</span>
         <p>Todavía no hay pedidos completados.</p>
       </div>
     );
@@ -59,7 +58,7 @@ export const PedidosCompletados = () => {
               todavia no guardan sede).
             */}
             <div className="admin-table-cell-sede" data-label="Sede">
-              {pedido.sedeNombre ? `📍 ${pedido.sedeNombre}` : '—'}
+              {pedido.sedeNombre || '—'}
             </div>
 
             <div className="admin-table-cell-tipo" data-label="Tipo">

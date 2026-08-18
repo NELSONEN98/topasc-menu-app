@@ -3,15 +3,19 @@ import { CURRENCY } from '../config/settings';
 // Formateadores compartidos por la vista de pedidos activos y la tabla de
 // completados, para que las dos muestren la plata y la hora igual.
 
+// Solo texto, sin emojis: el panel se lee en la cocina y en el mostrador, a
+// veces a los apurones y en pantallas chicas. Un emoji ocupa el ancho de dos
+// caracteres, se renderiza distinto en cada sistema operativo y no aporta nada
+// que la palabra al lado no diga ya.
 export const TIPO_LABEL = {
-  delivery: '🛵 Domicilio',
-  pickup: '🏃 Recoger',
-  'dine-in': '🪑 En mesa',
+  delivery: 'Domicilio',
+  pickup: 'Recoger',
+  'dine-in': 'En mesa',
 };
 
 export const PAGO_LABEL = {
-  efectivo: '💵 Efectivo',
-  transferencia: '📱 Transferencia',
+  efectivo: 'Efectivo',
+  transferencia: 'Transferencia',
 };
 
 export const ESTADO_LABEL = {

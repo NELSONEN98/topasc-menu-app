@@ -28,7 +28,6 @@ export const AdminPedidos = () => {
   if (pedidos.length === 0) {
     return (
       <div className="pedidos-empty">
-        <span className="pedidos-empty__icon">🧾</span>
         <p>No hay pedidos activos por ahora.</p>
       </div>
     );
@@ -59,7 +58,7 @@ export const AdminPedidos = () => {
               mostrar un "Sin sede" que no aporta.
             */}
             {pedido.sedeNombre && (
-              <div className="pedido-card__sede">📍 {pedido.sedeNombre}</div>
+              <div className="pedido-card__sede">{pedido.sedeNombre}</div>
             )}
 
             <div className="pedido-card__cliente">
@@ -130,7 +129,7 @@ export const AdminPedidos = () => {
                   className="pedido-btn pedido-btn--next"
                   onClick={() => cambiarEstado(pedido._id, 'completado')}
                 >
-                  ✅ Completar
+                  Completar
                 </button>
               </div>
             </div>

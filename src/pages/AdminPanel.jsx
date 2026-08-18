@@ -25,7 +25,7 @@ const PedidosSection = () => {
             ? 'Historial de pedidos completados'
             : 'Pedidos activos en tiempo real'
         }
-        textoAccion={verCompletados ? '← Ver activos' : '📋 Ver completados'}
+        textoAccion={verCompletados ? '← Ver activos' : 'Ver completados'}
         onAccion={() => setVerCompletados((valor) => !valor)}
       />
 

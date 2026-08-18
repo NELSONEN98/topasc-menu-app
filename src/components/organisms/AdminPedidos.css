@@ -8,10 +8,6 @@
   gap: 0.5rem;
 }
 
-.pedidos-empty__icon {
-  font-size: 2.5rem;
-}
-
 .pedidos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
