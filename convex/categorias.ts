@@ -3,13 +3,22 @@ import { v } from "convex/values";
 import { requerirAdmin } from "./guardias";
 
 // Publica: las categorias activas arman el menu que ve el cliente.
+//
+// El `withIndex("por_orden")` NO es opcional. Antes esto decia
+// `.order("asc", (q) => q.field("orden"))`, y ese segundo argumento no
+// existe en la API de Convex: la firma es `order("asc" | "desc")` a secas.
+// JavaScript descarta los argumentos de mas sin avisar, asi que la query
+// venia ordenada por `_creationTime` y `orden` no hacia nada. Pasaba
+// desapercibido porque `sincronizarMenu` inserta en el mismo orden que el
+// array, y los dos criterios coincidian de casualidad.
 export const listar = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db
       .query("categorias")
+      .withIndex("por_orden")
+      .order("asc")
       .filter((q) => q.eq(q.field("activo"), true))
-      .order("asc", (q) => q.field("orden"))
       .collect();
   },
 });
@@ -22,7 +31,8 @@ export const listarTodas = query({
 
     return await ctx.db
       .query("categorias")
-      .order("asc", (q) => q.field("orden"))
+      .withIndex("por_orden")
+      .order("asc")
       .collect();
   },
 });
@@ -90,6 +100,49 @@ export const actualizar = mutation({
     }
 
     await ctx.db.patch(id, campos);
+  },
+});
+
+/**
+ * Reescribe el orden de TODAS las categorias de una sola vez.
+ *
+ * Recibe la lista completa de ids ya acomodada y le asigna a cada una su
+ * posicion (1, 2, 3...). Se manda la lista entera y no "movi la X al lugar
+ * 3" a proposito: reordenar es una operacion sobre el conjunto, y mandar el
+ * conjunto completo deja la tabla consistente en una sola transaccion, sin
+ * estados intermedios con dos categorias compartiendo el mismo numero.
+ *
+ * Por eso mismo exige que la lista este COMPLETA. Si llegara parcial, las
+ * que faltan conservarian su `orden` viejo y chocarian con los nuevos, y el
+ * menu quedaria con un orden arbitrario decidido por el desempate interno.
+ */
+export const reordenar = mutation({
+  args: { ids: v.array(v.id("categorias")) },
+  handler: async (ctx, { ids }) => {
+    await requerirAdmin(ctx);
+
+    if (new Set(ids).size !== ids.length) {
+      throw new Error("La lista de orden trae categorias repetidas");
+    }
+
+    const todas = await ctx.db.query("categorias").collect();
+
+    if (ids.length !== todas.length) {
+      throw new Error(
+        `El orden debe incluir las ${todas.length} categorias y llegaron ${ids.length}`
+      );
+    }
+
+    const existentes = new Set(todas.map((cat) => cat._id));
+    const desconocida = ids.find((id) => !existentes.has(id));
+
+    if (desconocida) {
+      throw new Error(`La categoria ${desconocida} ya no existe`);
+    }
+
+    for (const [indice, id] of ids.entries()) {
+      await ctx.db.patch(id, { orden: indice + 1 });
+    }
   },
 });
 

@@ -657,6 +657,87 @@ input, select { font-family: 'Inter', sans-serif; }
 .admin-table-cell-orden {
   font: 600 13px 'Inter', sans-serif;
   color: #999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   REORDENAR CATEGORIAS (drag & drop)
+   ============================================================ */
+
+.admin-ayuda {
+  font: 500 13px 'Inter', sans-serif;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  max-width: 62ch;
+}
+
+.categoria-manija {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /*
+   * 32x32 y no el tamaño del icono: es el minimo tocable comodo en celular.
+   * El SVG mide 10x16, pero el area de toque tiene que ser mucho mas grande
+   * que el dibujo o en mobile no la agarra nadie.
+   */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #B0B0B0;
+  cursor: grab;
+  /*
+   * Le saca al navegador el scroll y el zoom sobre la manija. Sin esto, en
+   * celular el gesto de arrastrar scrollea la pagina en vez de mover la fila.
+   */
+  touch-action: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.categoria-manija:hover {
+  background: #F0F0F0;
+  color: #666;
+}
+
+.categoria-manija:focus-visible {
+  outline: 2px solid #E11E2B;
+  outline-offset: 2px;
+}
+
+.categoria-manija:active {
+  cursor: grabbing;
+}
+
+.categoria-orden-numero {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table-row--arrastrando {
+  /*
+   * z-index para que la fila levantada pase por encima de sus vecinas, y no
+   * por debajo, mientras dnd-kit las desplaza.
+   */
+  position: relative;
+  z-index: 2;
+  opacity: 0.9;
+  background: #FFF;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+/*
+ * Respeta a quien pidio menos movimiento en su sistema. dnd-kit anima el
+ * reacomodo de las filas vecinas; para estos usuarios el salto es directo.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .admin-table-row-categorias {
+    transition: none !important;
+  }
 }
 
 /* Tabla de Pedidos completados (historial).
@@ -1055,10 +1136,23 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-row-categorias .admin-table-cell-category { grid-column: 1 / -1; grid-row: 2; }
   .admin-table-row-categorias .admin-table-actions { grid-column: 1 / -1; grid-row: 3; }
 
+  /*
+   * En mobile la pildora beige pasa del contenedor al numero.
+   *
+   * El contenedor ahora tambien aloja la manija de arrastre, y un padding de
+   * 2px con fondo alrededor de un boton de 32px se ve como un globo. La
+   * pildora envuelve solo el numero, que es lo que siempre fue.
+   */
   .admin-table-row-categorias .admin-table-cell-orden {
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
+    padding: 0;
+    background: none;
+    gap: 4px;
+  }
+
+  .admin-table-row-categorias .categoria-orden-numero {
     padding: 2px 8px;
     border-radius: 10px;
     background: #F2ECE3;

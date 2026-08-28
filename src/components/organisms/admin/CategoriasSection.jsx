@@ -1,19 +1,48 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+
 import { CategoriaModal } from '../CategoriaModal';
 import { SeccionHeader } from './SeccionHeader';
+import { CategoriaFilaSortable } from './CategoriaFilaSortable';
 import { useCategoriasAdmin } from '../../../hooks/useCategoriasAdmin';
 
-const textoProductos = (cantidad) =>
-  cantidad === 0 ? 'Sin productos' : `${cantidad} producto${cantidad === 1 ? '' : 's'}`;
-
 export const CategoriasSection = () => {
-  const {
-    categorias,
-    productosPorCategoria,
-    siguienteOrden,
-    resumen,
-    modal,
-    acciones,
-  } = useCategoriasAdmin();
+  const { categorias, productosPorCategoria, siguienteOrden, resumen, modal, acciones } =
+    useCategoriasAdmin();
+
+  const sensores = useSensors(
+    useSensor(PointerSensor, {
+      // Sin esta distancia minima, apoyar el dedo o el mouse sobre la manija
+      // ya arranca un drag y se come el clic. 8px separa "toque" de "arrastre".
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const alSoltar = ({ active, over }) => {
+    // `over` viene null si se solto fuera de la lista.
+    if (!over || active.id === over.id) return;
+
+    const desde = categorias.findIndex((cat) => cat._id === active.id);
+    const hasta = categorias.findIndex((cat) => cat._id === over.id);
+    if (desde === -1 || hasta === -1) return;
+
+    // La mutation espera la lista COMPLETA ya acomodada, no un movimiento.
+    const idsOrdenados = arrayMove(categorias, desde, hasta).map((cat) => cat._id);
+    acciones.reordenar(idsOrdenados);
+  };
 
   return (
     <div>
@@ -23,6 +52,12 @@ export const CategoriasSection = () => {
         textoAccion="+ Agregar categoría"
         onAccion={modal.abrirNuevo}
       />
+
+      <p className="admin-ayuda">
+        Arrastrá una categoría desde la manija para cambiar el orden en que aparece en el
+        menú. También podés moverla con el teclado: enfocá la manija, espacio para
+        levantarla, flechas para moverla, espacio de nuevo para soltarla.
+      </p>
 
       <div className="admin-table-wrapper">
         <div className="admin-table-header admin-table-header-categorias">
@@ -37,60 +72,27 @@ export const CategoriasSection = () => {
           {categorias.length === 0 ? (
             <p className="admin-vacio">Todavía no hay categorías cargadas.</p>
           ) : (
-            categorias.map((categoria) => {
-              const productos = productosPorCategoria[categoria._id] || 0;
-
-              return (
-                <div key={categoria._id} className="admin-table-row admin-table-row-categorias">
-                  <div className="admin-table-cell-orden" data-label="Orden">
-                    {categoria.orden}
-                  </div>
-
-                  <div className="admin-table-cell-name">{categoria.nombre}</div>
-
-                  <div className="admin-table-cell-category" data-label="Productos">
-                    {textoProductos(productos)}
-                  </div>
-
-                  <div className="admin-table-cell-status" data-label="Estado">
-                    <button
-                      className={`status-toggle ${categoria.activo ? 'active' : ''}`}
-                      onClick={() => acciones.alternarActivo(categoria)}
-                      title={
-                        categoria.activo
-                          ? 'Clic para ocultar del menú'
-                          : 'Clic para mostrar en el menú'
-                      }
-                      aria-label={`${categoria.nombre}: ${categoria.activo ? 'visible' : 'oculta'} en el menú`}
-                      aria-pressed={categoria.activo}
-                    />
-                  </div>
-
-                  <div className="admin-table-actions">
-                    <button
-                      className="btn-edit"
-                      onClick={() => modal.abrirEdicion(categoria)}
-                      aria-label={`Editar ${categoria.nombre}`}
-                    >
-                      <span className="btn-texto">Editar</span>
-                    </button>
-                    <button
-                      className="btn-delete"
-                      onClick={() => acciones.eliminar(categoria)}
-                      disabled={productos > 0}
-                      title={
-                        productos > 0
-                          ? 'Tiene productos: movelos o desactivala'
-                          : 'Eliminar categoría'
-                      }
-                      aria-label={`Eliminar ${categoria.nombre}`}
-                    >
-                      <span className="btn-texto">Eliminar</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            <DndContext
+              sensors={sensores}
+              collisionDetection={closestCenter}
+              onDragEnd={alSoltar}
+            >
+              <SortableContext
+                items={categorias.map((cat) => cat._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {categorias.map((categoria) => (
+                  <CategoriaFilaSortable
+                    key={categoria._id}
+                    categoria={categoria}
+                    productos={productosPorCategoria[categoria._id] || 0}
+                    onEditar={modal.abrirEdicion}
+                    onEliminar={acciones.eliminar}
+                    onAlternarActivo={acciones.alternarActivo}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>

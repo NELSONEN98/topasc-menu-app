@@ -6,7 +6,13 @@ export default defineSchema({
     nombre: v.string(),
     orden: v.number(),
     activo: v.boolean(),
-  }),
+    // El indice es lo que hace que `orden` ordene de verdad.
+    //
+    // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin
+    // `withIndex` recorre el de `_creationTime`. No existe forma de pasarle
+    // un campo a `.order()`: su firma es `order("asc" | "desc")` y nada mas.
+    // Sin este indice, `orden` se guarda pero no mueve una fila.
+  }).index("por_orden", ["orden"]),
 
   items: defineTable({
     categoriaId: v.id("categorias"),
