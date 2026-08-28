@@ -3,7 +3,6 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useNotificacion } from '../context/NotificacionContext';
 import { mensajeDeError } from '../utils/mensajeDeError';
-import { aNumero } from '../utils/numeroDeInput';
 
 const SIN_DATOS = [];
 
@@ -64,6 +63,9 @@ export const useCategoriasAdmin = () => {
     [items]
   );
 
+  // Posicion para la categoria nueva: siempre el final de la lista.
+  // Ya no se expone al componente, porque el orden dejo de escribirse a
+  // mano en el formulario y solo se define arrastrando.
   const siguienteOrden = useMemo(
     () =>
       categorias.length > 0
@@ -94,16 +96,19 @@ export const useCategoriasAdmin = () => {
     }
 
     const editandoAhora = !!editando;
-    const orden = aNumero(formData.orden, siguienteOrden);
 
     try {
       if (editandoAhora) {
+        // Sin `orden`. Es opcional en la mutation, y omitirlo garantiza que
+        // renombrar o desactivar una categoria jamas le mueva la posicion:
+        // eso ahora se hace solo arrastrando.
         await actualizarCategoria({
           id: editando._id,
-          campos: { nombre: formData.nombre, orden, activo: formData.activo },
+          campos: { nombre: formData.nombre, activo: formData.activo },
         });
       } else {
-        await crearCategoria({ nombre: formData.nombre, orden });
+        // La nueva entra al final de la lista. Desde ahi se arrastra.
+        await crearCategoria({ nombre: formData.nombre, orden: siguienteOrden });
       }
 
       cerrarModal();
@@ -179,7 +184,6 @@ export const useCategoriasAdmin = () => {
   return {
     categorias,
     productosPorCategoria,
-    siguienteOrden,
     resumen: {
       total: categorias.length,
       activas: categorias.filter((c) => c.activo).length,

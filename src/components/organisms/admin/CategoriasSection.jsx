@@ -19,8 +19,7 @@ import { CategoriaFilaSortable } from './CategoriaFilaSortable';
 import { useCategoriasAdmin } from '../../../hooks/useCategoriasAdmin';
 
 export const CategoriasSection = () => {
-  const { categorias, productosPorCategoria, siguienteOrden, resumen, modal, acciones } =
-    useCategoriasAdmin();
+  const { categorias, productosPorCategoria, resumen, modal, acciones } = useCategoriasAdmin();
 
   const sensores = useSensors(
     useSensor(PointerSensor, {
@@ -101,7 +100,6 @@ export const CategoriasSection = () => {
         isOpen={modal.abierto}
         onClose={modal.cerrar}
         categoria={modal.editando}
-        siguienteOrden={siguienteOrden}
         onSave={acciones.guardar}
       />
     </div>

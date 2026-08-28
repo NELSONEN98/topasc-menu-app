@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
-import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
-export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onSave }) => {
+/**
+ * El orden NO se edita aca.
+ *
+ * Habia un input numerico para escribir la posicion a mano. Con dos
+ * formas de definir lo mismo, nada impedia asignarle el 3 a una categoria
+ * que ya lo tenia, y dos posiciones iguales dejan el menu a merced de un
+ * desempate interno. La posicion ahora se define en un solo lugar,
+ * arrastrando en la tabla, que ademas siempre produce una secuencia
+ * compacta y sin empates.
+ */
+export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
   const [formData, setFormData] = useState({
     nombre: '',
-    orden: 1,
     activo: true,
   });
 
@@ -13,28 +21,23 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onS
     if (categoria) {
       setFormData({
         nombre: categoria.nombre || '',
-        orden: categoria.orden ?? 1,
         activo: categoria.activo !== false,
       });
     } else {
       setFormData({
         nombre: '',
-        orden: siguienteOrden,
         activo: true,
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
-    // categoria. `siguienteOrden` se deriva de una query reactiva y
-    // reaccionar a el reseteaba el formulario mientras se escribia.
+    // categoria.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoria?._id, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newValue =
-      type === 'checkbox' ? checked : name === 'orden' ? numeroDeInput(value) : value;
 
-    setFormData((prev) => ({ ...prev, [name]: newValue }));
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = (e) => {
@@ -65,21 +68,6 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, siguienteOrden, onS
               required
               autoFocus
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="categoria-orden">Orden</label>
-            <input
-              id="categoria-orden"
-              type="number"
-              name="orden"
-              value={formData.orden}
-              onChange={handleChange}
-              min="1"
-            />
-            <small style={{ fontSize: '12px', color: '#999', marginTop: '6px' }}>
-              Define en qué posición aparece en el menú del cliente.
-            </small>
           </div>
 
           <div className="form-group form-checkbox">
