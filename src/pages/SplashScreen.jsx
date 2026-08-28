@@ -22,7 +22,7 @@ export const SplashScreen = ({ onComplete }) => {
       */}
       <img
         className="splash-screen__art"
-        src="/img/loader-logov3.png"
+        src="/img/loader-logov3.webp"
         alt="Topasc — una historia que contar"
         width="1170"
         height="2532"
