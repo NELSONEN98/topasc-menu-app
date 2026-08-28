@@ -4,37 +4,45 @@
 
 .splash-screen {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  /*
+   * Red de seguridad. El arte ya trae el rojo adentro, pero este fondo cubre
+   * el instante previo a que cargue la imagen y cualquier franja que quede
+   * si el cover no llega a tapar una relación de aspecto extrema.
+   */
   background: #E11E2B;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
   z-index: 9999;
   animation: splashComplete 2.5s ease-out forwards;
 }
 
-.splash-screen__content {
-  text-align: center;
-  position: relative;
-}
-
-.splash-screen__logo-full {
+.splash-screen__art {
   display: block;
-  width: 23.4rem;
-  height: 23.4rem;
-  margin: 0 auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0.125rem 0.25rem rgba(0, 0, 0, 0.3));
-  animation: textFallBounce 1s ease-out 0s;
+  width: 100%;
+  height: 100%;
+  /*
+   * cover llena siempre el viewport y recorta el excedente por el eje que
+   * sobre. El arte está diseñado sobre un canvas de 1170x2532 con la zona
+   * segura de 960x1920 centrada, así que el recorte solo se come margen.
+   */
+  object-fit: cover;
+  object-position: center;
+  animation: artFadeIn 0.8s ease-out both;
 }
 
 .splash-screen__loader {
+  position: absolute;
+  /*
+   * Centrado con left/right/margin en vez de translateX(-50%): la animación
+   * spin escribe sobre transform y pisaría cualquier translate que pongamos
+   * acá, dejando el spinner corrido hacia la derecha.
+   */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
   width: 2rem;
   height: 2rem;
-  margin: 4rem auto 0;
   border: 0.25rem solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -55,27 +63,23 @@
   }
 }
 
-/* Texto cae, rebota y sube */
-@keyframes textFallBounce {
-  0% {
-    transform: translateY(-3rem);
-    opacity: 1;
+/*
+ * Entrada del arte a sangre completa.
+ *
+ * Reemplaza a textFallBounce, que servía cuando el logo era un bloque chico
+ * centrado. Sobre una imagen que ocupa el viewport entero, un translateY
+ * despega el borde inferior y deja ver una franja del fondo durante toda la
+ * animación. Un fade con un scale mínimo conserva el gesto sin descubrir
+ * ningún borde.
+ */
+@keyframes artFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
   }
-  50% {
-    transform: translateY(0.5rem);
+  to {
     opacity: 1;
-  }
-  70% {
-    transform: translateY(-0.25rem);
-    opacity: 1;
-  }
-  85% {
-    transform: translateY(0.1rem);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
+    transform: scale(1);
   }
 }
 

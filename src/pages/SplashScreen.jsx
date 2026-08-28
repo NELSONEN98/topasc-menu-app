@@ -14,21 +14,21 @@ export const SplashScreen = ({ onComplete }) => {
 
   return (
     <div className={`splash-screen ${isExiting ? 'splash-screen--exit' : ''}`}>
-      <div className="splash-screen__content">
-        {/*
-          Una sola imagen con "Topasc" y "una historia que contar" ya
-          dibujados adentro, en vez de logo + h1 + p sueltos. Reemplaza a los
-          tres elementos anteriores.
-        */}
-        <img
-          className="splash-screen__logo-full"
-          src="/img/loader-logo-v2.webp"
-          alt="Topasc — una historia que contar"
-          width="600"
-          height="600"
-        />
-        <div className="splash-screen__loader"></div>
-      </div>
+      {/*
+        Arte a sangre completa: la imagen ya trae el fondo rojo dibujado
+        adentro. El rojo del contenedor queda atrás como red de seguridad
+        para cualquier franja que el cover no alcance a tapar, y para el
+        instante previo a que la imagen termine de cargar.
+      */}
+      <img
+        className="splash-screen__art"
+        src="/img/loader-logov3.png"
+        alt="Topasc — una historia que contar"
+        width="1170"
+        height="2532"
+        fetchpriority="high"
+      />
+      <div className="splash-screen__loader"></div>
     </div>
   );
 };
