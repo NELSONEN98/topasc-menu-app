@@ -131,6 +131,7 @@ export const useProductosAdmin = () => {
             imagenUrl: formData.imagenUrl,
             disponible: formData.disponible,
             llevaSalsas: formData.llevaSalsas,
+            llevaPresentacion: formData.llevaPresentacion,
             sedeIds: formData.sedeIds,
           },
         });
@@ -143,6 +144,7 @@ export const useProductosAdmin = () => {
           precio,
           imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
           llevaSalsas: formData.llevaSalsas,
+          llevaPresentacion: formData.llevaPresentacion,
           disponible: formData.disponible,
           sedeIds: formData.sedeIds,
         });

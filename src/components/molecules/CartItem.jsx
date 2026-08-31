@@ -23,6 +23,11 @@ export const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
       />
       <div className="cart-item__info">
         <h4 className="cart-item__name">{item.name}</h4>
+        {item.presentacion && (
+          <p className="cart-item__option">
+            {item.presentacion.sabor} · {item.presentacion.tamano}
+          </p>
+        )}
         {item.salsas?.length > 0 && (
           <p className="cart-item__option">
             {item.salsas[0] === SIN_SALSAS

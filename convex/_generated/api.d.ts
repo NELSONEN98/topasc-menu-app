@@ -9,12 +9,14 @@
  */
 
 import type * as categorias from "../categorias.js";
+import type * as configuracion from "../configuracion.js";
 import type * as guardias from "../guardias.js";
 import type * as horarios from "../horarios.js";
 import type * as items from "../items.js";
 import type * as mesas from "../mesas.js";
 import type * as migraciones from "../migraciones.js";
 import type * as pedidos from "../pedidos.js";
+import type * as presentacionesGaseosa from "../presentacionesGaseosa.js";
 import type * as salsas from "../salsas.js";
 import type * as sedes from "../sedes.js";
 
@@ -26,12 +28,14 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   categorias: typeof categorias;
+  configuracion: typeof configuracion;
   guardias: typeof guardias;
   horarios: typeof horarios;
   items: typeof items;
   mesas: typeof mesas;
   migraciones: typeof migraciones;
   pedidos: typeof pedidos;
+  presentacionesGaseosa: typeof presentacionesGaseosa;
   salsas: typeof salsas;
   sedes: typeof sedes;
 }>;

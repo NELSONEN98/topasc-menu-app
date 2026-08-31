@@ -2,16 +2,53 @@ import { useState } from 'react';
 import './ProductDetailModal.css';
 import { useCart, SIN_SALSAS } from '../../context/CartContext';
 
-export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
+export const ProductDetailModal = ({
+  product,
+  salsas = [],
+  presentaciones = [],
+  onClose,
+}) => {
   const { addToCart } = useCart();
   const [salsasSeleccionadas, setSalsasSeleccionadas] = useState([]);
   const [sinSalsas, setSinSalsas] = useState(false);
   const [extrasSeleccionados, setExtrasSeleccionados] = useState([]);
+  const [saborElegido, setSaborElegido] = useState(null);
+  const [tamanoElegido, setTamanoElegido] = useState(null);
   const [comentario, setComentario] = useState('');
   const [cantidad, setCantidad] = useState(1);
 
   // undefined = lleva salsas (default); false = bebidas, postres, etc.
   const llevaSalsas = product.llevaSalsas !== false;
+
+  // Al reves que llevaSalsas: aca el default es NO. Ver la nota en schema.ts.
+  const llevaPresentacion = product.llevaPresentacion === true;
+
+  const opciones = llevaPresentacion ? presentaciones : [];
+
+  // Sabores unicos, en el orden en que vinieron del servidor.
+  const sabores = [...new Set(opciones.map((p) => p.sabor))];
+
+  const tamanos = saborElegido
+    ? opciones.filter((p) => p.sabor === saborElegido)
+    : [];
+
+  const presentacionElegida =
+    opciones.find(
+      (p) => p.sabor === saborElegido && p.tamano === tamanoElegido
+    ) ?? null;
+
+  const elegirSabor = (sabor) => {
+    setSaborElegido(sabor);
+    // Se conserva el tamaño solo si existe para el sabor nuevo. Sin este
+    // chequeo, pasar de "Coca Cola 2 L" a un sabor que no tiene 2 L dejaria
+    // marcado un tamaño inexistente, con `presentacionElegida` en null y el
+    // boton bloqueado sin que se entienda por que.
+    setTamanoElegido((previo) =>
+      opciones.some((p) => p.sabor === sabor && p.tamano === previo)
+        ? previo
+        : null
+    );
+  };
 
   const ingredientes = product.ingredientes || [];
 
@@ -27,13 +64,23 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
   // pagando por la de la casa, ya eligio salsa. `extrasSeleccionados` es un
   // estado aparte de `salsasSeleccionadas` (que solo guarda las base), asi que
   // hay que mirar los dos o el boton queda bloqueado sin motivo.
-  const puedeAgregar =
+  const salsaResuelta =
     !requiereSalsa ||
     salsasSeleccionadas.length > 0 ||
     extrasSeleccionados.length > 0 ||
     sinSalsas;
 
-  const precioBase = product.precio ?? product.price;
+  // Mismo criterio que con las salsas: si el admin todavia no cargo ninguna
+  // presentacion no se bloquea la venta, se cobra el precio del producto.
+  const requierePresentacion = opciones.length > 0;
+  const presentacionResuelta = !requierePresentacion || presentacionElegida !== null;
+
+  const puedeAgregar = salsaResuelta && presentacionResuelta;
+
+  // El precio de la presentacion REEMPLAZA al del producto, no se suma.
+  const precioBase = presentacionElegida
+    ? presentacionElegida.precio
+    : product.precio ?? product.price;
   const precioExtras = extrasSeleccionados.reduce((sum, s) => sum + s.precio, 0);
   const total = (precioBase + precioExtras) * cantidad;
 
@@ -74,6 +121,13 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
         nombre: s.nombre,
         precio: s.precio,
       })),
+      presentacion: presentacionElegida
+        ? {
+            sabor: presentacionElegida.sabor,
+            tamano: presentacionElegida.tamano,
+            precio: presentacionElegida.precio,
+          }
+        : null,
       comentario,
       cantidad,
     });
@@ -120,7 +174,71 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
             </ul>
           )}
 
-          <div className="detail-price">{formatPrice(precioBase)}</div>
+          <div className="detail-price">
+            {formatPrice(precioBase)}
+            {/* Mientras no eligio, el precio del producto es un "desde":
+                decir el precio a secas seria mentir, porque el de 2 litros
+                cuesta mas que el que esta viendo. */}
+            {requierePresentacion && !presentacionElegida && (
+              <span className="detail-price__desde"> desde</span>
+            )}
+          </div>
+
+          {requierePresentacion && (
+            <>
+              <div className="detail-section">
+                <div className="detail-section__header">
+                  <span className="detail-section__title">Elegí el sabor</span>
+                  <span className="detail-section__badge detail-section__badge--required">
+                    Obligatorio
+                  </span>
+                </div>
+
+                <div className="detail-chips" role="group" aria-label="Sabor de la gaseosa">
+                  {sabores.map((sabor) => (
+                    <button
+                      key={sabor}
+                      type="button"
+                      className={`detail-chip ${saborElegido === sabor ? 'is-selected' : ''}`}
+                      onClick={() => elegirSabor(sabor)}
+                      aria-pressed={saborElegido === sabor}
+                    >
+                      {sabor}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {saborElegido && (
+                <div className="detail-section">
+                  <div className="detail-section__header">
+                    <span className="detail-section__title">Elegí el tamaño</span>
+                    <span className="detail-section__badge detail-section__badge--required">
+                      Obligatorio
+                    </span>
+                  </div>
+
+                  {/* El precio va en cada chip: el tamaño es justamente lo
+                      que lo cambia, y esconderlo obliga a tocar cada opcion
+                      para descubrir cuanto sale. */}
+                  <div className="detail-chips" role="group" aria-label="Tamaño de la gaseosa">
+                    {tamanos.map((opcion) => (
+                      <button
+                        key={opcion._id}
+                        type="button"
+                        className={`detail-chip ${tamanoElegido === opcion.tamano ? 'is-selected' : ''}`}
+                        onClick={() => setTamanoElegido(opcion.tamano)}
+                        aria-pressed={tamanoElegido === opcion.tamano}
+                      >
+                        <span className="detail-chip__nombre">{opcion.tamano}</span>
+                        <span className="detail-chip__precio">{formatPrice(opcion.precio)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {requiereSalsa && (
             <div className="detail-section">

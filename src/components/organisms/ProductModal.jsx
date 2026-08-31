@@ -25,6 +25,9 @@ export const ProductModal = ({
     imagenUrl: '',
     disponible: true,
     llevaSalsas: true,
+    // Default false, al reves que llevaSalsas: las gaseosas son un puñado
+    // de items contra toda la carta. Ver la nota en schema.ts.
+    llevaPresentacion: false,
     sedeIds: [],
   });
 
@@ -49,6 +52,7 @@ export const ProductModal = ({
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
         llevaSalsas: product.llevaSalsas !== false,
+        llevaPresentacion: product.llevaPresentacion === true,
         sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
       });
       setImagePreview(product.imagenUrl || '');
@@ -62,6 +66,7 @@ export const ProductModal = ({
         imagenUrl: '',
         disponible: true,
         llevaSalsas: true,
+        llevaPresentacion: false,
         sedeIds: todasLasSedes,
       });
       setImagePreview('');
@@ -327,6 +332,23 @@ export const ProductModal = ({
               <span className="opcion-tarjeta__texto">
                 <strong>Lleva salsas</strong>
                 <small>El cliente debe elegirlas al pedir.</small>
+              </span>
+            </label>
+
+            <label className="opcion-tarjeta" htmlFor="llevaPresentacion">
+              <input
+                id="llevaPresentacion"
+                type="checkbox"
+                name="llevaPresentacion"
+                checked={formData.llevaPresentacion}
+                onChange={handleChange}
+              />
+              <span className="opcion-tarjeta__texto">
+                <strong>Lleva presentación</strong>
+                <small>
+                  El cliente elige sabor y tamaño en la pestaña Gaseosas, y paga el
+                  precio de esa combinación en lugar de este.
+                </small>
               </span>
             </label>
           </fieldset>

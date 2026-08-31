@@ -343,3 +343,68 @@
     opacity: 1;
   }
 }
+
+/* ============================================================
+   PRESENTACION DE GASEOSA — sabor y tamaño
+   ============================================================ */
+
+.detail-price__desde {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #999;
+  text-transform: lowercase;
+}
+
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detail-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  /* 44px de alto minimo: es un boton que se toca con el pulgar en el celular. */
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1.5px solid #E0D5C7;
+  border-radius: 0.75rem;
+  background: #FFF;
+  color: #241C15;
+  font: 500 0.8125rem 'Inter', sans-serif;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.detail-chip:hover {
+  border-color: #C9BCA1;
+}
+
+.detail-chip:focus-visible {
+  outline: 2px solid #E11E2B;
+  outline-offset: 2px;
+}
+
+/*
+ * El seleccionado se marca con borde y fondo, NO solo con color.
+ * Un cambio de color a secas deja afuera a quien no distingue rojo de gris.
+ */
+.detail-chip.is-selected {
+  border-color: #E11E2B;
+  border-width: 2px;
+  background: #FDE8EA;
+  font-weight: 600;
+}
+
+.detail-chip__nombre {
+  display: block;
+}
+
+.detail-chip__precio {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #E11E2B;
+}

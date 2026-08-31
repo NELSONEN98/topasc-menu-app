@@ -7,6 +7,7 @@ import { SedesSection } from '../components/organisms/admin/SedesSection';
 import { MesasSection } from '../components/organisms/admin/MesasSection';
 import { HorarioSection } from '../components/organisms/admin/HorarioSection';
 import { AparienciaSection } from '../components/organisms/admin/AparienciaSection';
+import { GaseosasSection } from '../components/organisms/admin/GaseosasSection';
 import { SeccionHeader } from '../components/organisms/admin/SeccionHeader';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
 import { PedidosCompletados } from '../components/organisms/PedidosCompletados';
@@ -45,6 +46,7 @@ const SECCIONES = {
   sedes: SedesSection,
   mesas: MesasSection,
   horario: HorarioSection,
+  gaseosas: GaseosasSection,
   apariencia: AparienciaSection,
 };
 

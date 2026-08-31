@@ -107,6 +107,7 @@ export const Cart = ({
       cantidad: item.quantity,
       salsasBase: item.salsas?.length ? item.salsas : undefined,
       salsasExtra: item.salsasExtra?.length ? item.salsasExtra : undefined,
+      presentacion: item.presentacion ?? undefined,
       notas: item.comentario || undefined,
     }));
 
@@ -145,6 +146,10 @@ export const Cart = ({
     let message = `${encabezadoSede}Hola, quisiera hacer un pedido por ${formatPrice(total)}. Detalles:\n${cartItems
       .map((item) => {
         let line = `- ${item.name} x${item.quantity}`;
+        // Antes que las salsas: sin el sabor y el tamaño, el local no sabe
+        // que botella servir. WhatsApp es el canal principal del pedido.
+        if (item.presentacion)
+          line += `\n  ${item.presentacion.sabor} · ${item.presentacion.tamano}`;
         if (item.salsas?.length > 0)
           line +=
             item.salsas[0] === SIN_SALSAS

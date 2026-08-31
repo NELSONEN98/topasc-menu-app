@@ -19,24 +19,43 @@ export const useCart = () => {
 // Una "línea" es producto + salsas + extras + comentario: el mismo producto
 // con distintas salsas o comentario ocupa líneas separadas.
 const toCartItem = (product, opciones = {}) => {
-  const { salsas = [], salsasExtra = [], comentario = '' } = opciones;
+  const {
+    salsas = [],
+    salsasExtra = [],
+    comentario = '',
+    presentacion = null,
+  } = opciones;
   const id = product._id ?? product.id;
-  const precioBase = product.precio ?? product.price;
+  // La presentacion de gaseosa REEMPLAZA el precio del producto, no lo suma.
+  // El `precio` del item es el "desde $X" de la grilla; el precio real de la
+  // linea es el de la combinacion de sabor y tamaño que quedo elegida.
+  const precioBase = presentacion ? presentacion.precio : product.precio ?? product.price;
   const precioExtras = salsasExtra.reduce((sum, s) => sum + s.precio, 0);
   const salsasKey = [...salsas].sort().join(',');
   const extrasKey = salsasExtra
     .map((s) => s.nombre)
     .sort()
     .join(',');
+  // La presentacion entra en la clave de linea. Sin esto una Coca de 500 ml
+  // y una de 2 litros se fusionarian en la misma linea y la segunda se
+  // cobraria al precio de la primera.
+  const presentacionKey = presentacion
+    ? `${presentacion.sabor}|${presentacion.tamano}`
+    : '';
 
   return {
-    lineId: `${id}::${salsasKey}::${extrasKey}::${comentario.trim()}`,
+    lineId: `${id}::${salsasKey}::${extrasKey}::${presentacionKey}::${comentario.trim()}`,
     id,
     name: product.nombre ?? product.name,
     price: precioBase + precioExtras,
     image: product.imagenUrl ?? product.image,
     salsas,
     salsasExtra,
+    // Solo sabor y tamaño: el precio ya quedo aplicado arriba y repetirlo
+    // seria una segunda fuente de verdad que puede desincronizarse.
+    presentacion: presentacion
+      ? { sabor: presentacion.sabor, tamano: presentacion.tamano }
+      : null,
     comentario: comentario.trim(),
   };
 };

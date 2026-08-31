@@ -91,6 +91,13 @@ export const AdminPedidos = () => {
                   <span className="pedido-item__cant">{item.cantidad}×</span>
                   <div className="pedido-item__detalle">
                     <span className="pedido-item__nombre">{item.nombreSnapshot}</span>
+                    {/* Va primero y no al final: es lo que define QUE botella
+                        se saca de la nevera, no un agregado del pedido. */}
+                    {item.presentacion && (
+                      <span className="pedido-item__extra">
+                        {item.presentacion.sabor} · {item.presentacion.tamano}
+                      </span>
+                    )}
                     {item.salsasBase?.length > 0 && (
                       <span className="pedido-item__extra">
                         {item.salsasBase.join(', ')}

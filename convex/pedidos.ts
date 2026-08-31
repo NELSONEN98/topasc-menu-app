@@ -11,6 +11,11 @@ const itemValidator = v.object({
   salsasExtra: v.optional(
     v.array(v.object({ nombre: v.string(), precio: v.number() }))
   ),
+  // Sabor y tamaño de gaseosa, congelados como texto. El precio elegido ya
+  // viaja en `precioSnapshot` de esta misma linea.
+  presentacion: v.optional(
+    v.object({ sabor: v.string(), tamano: v.string() })
+  ),
   notas: v.optional(v.string()),
 });
 
