@@ -1280,3 +1280,120 @@ input, select { font-family: 'Inter', sans-serif; }
     animation: none;
   }
 }
+
+/* ============================================================
+   APARIENCIA — portada del menu
+   ============================================================ */
+
+.apariencia-panel {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  max-width: 720px;
+}
+
+/*
+ * La preview replica la proporcion real del Hero: ocupa todo el ancho y
+ * deja ver solo una franja del alto. Sin esto el admin sube una foto
+ * vertical preciosa y despues no entiende por que en el menu se ve un
+ * recorte del medio.
+ */
+.apariencia-preview {
+  position: relative;
+  width: 100%;
+  height: 170px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #CFCFCF;
+}
+
+.apariencia-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.apariencia-preview__vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 24px;
+  text-align: center;
+  font: 500 13px 'Inter', sans-serif;
+  color: #666;
+}
+
+.apariencia-preview__gradiente {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.apariencia-preview__titulo {
+  position: absolute;
+  left: 16px;
+  bottom: 12px;
+  margin: 0;
+  font: 400 22px 'Luckiest Guy', cursive;
+  color: #FFF;
+  letter-spacing: 0.5px;
+}
+
+.apariencia-acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/*
+ * El input nativo se esconde pero sigue en el arbol de accesibilidad: lo
+ * dispara el boton de al lado. `display: none` lo sacaria del foco del
+ * teclado y de los lectores de pantalla.
+ */
+.apariencia-input-archivo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
+   GASEOSAS — presentaciones agrupadas por sabor
+   ============================================================ */
+
+.gaseosa-grupo {
+  margin-bottom: 24px;
+}
+
+.gaseosa-grupo__titulo {
+  font: 700 15px 'Inter', sans-serif;
+  color: var(--dark-bg);
+  margin: 0 0 10px;
+}
+
+/* Tamaño | Precio | Disponible | acciones */
+.admin-table-header-gaseosas,
+.admin-table-row-gaseosas {
+  grid-template-columns: 2fr 1.2fr 1fr 0.8fr !important;
+}
+
+@media (max-width: 768px) {
+  .admin-table-header-gaseosas {
+    display: none !important;
+  }
+
+  .admin-table-row-gaseosas .admin-table-cell-name { grid-column: 1; grid-row: 1; }
+  .admin-table-row-gaseosas .admin-table-cell-price { grid-column: 2; grid-row: 1; justify-self: end; }
+  .admin-table-row-gaseosas .admin-table-cell-status { grid-column: 1 / -1; grid-row: 2; }
+  .admin-table-row-gaseosas .admin-table-actions { grid-column: 1 / -1; grid-row: 3; }
+}

@@ -21,10 +21,11 @@ const calcularMedidas = (ancho, alto, maxLado) => {
   };
 };
 
-export const resizeImage = (
-  file,
-  { maxDimension = MAX_DIMENSION, quality = JPEG_QUALITY } = {}
-) =>
+// Decodifica el archivo y lo dibuja ya escalado en un canvas.
+//
+// Es el tronco comun de las dos exportaciones: cambia solo como se saca el
+// resultado del canvas (data URI o Blob), no como se llega hasta el.
+const dibujarEnCanvas = (file, maxDimension) =>
   new Promise((resolve, reject) => {
     if (!file) {
       reject(new Error('No se recibio ningun archivo'));
@@ -56,9 +57,7 @@ export const resizeImage = (
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, ancho, alto);
 
-      // Siempre JPEG: un PNG de foto pesa varias veces mas y aca no
-      // necesitamos transparencia
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      resolve(canvas);
     };
 
     img.onerror = () => {
@@ -68,3 +67,40 @@ export const resizeImage = (
 
     img.src = objectUrl;
   });
+
+export const resizeImage = async (
+  file,
+  { maxDimension = MAX_DIMENSION, quality = JPEG_QUALITY } = {}
+) => {
+  const canvas = await dibujarEnCanvas(file, maxDimension);
+
+  // Siempre JPEG: un PNG de foto pesa varias veces mas y aca no
+  // necesitamos transparencia
+  return canvas.toDataURL('image/jpeg', quality);
+};
+
+/**
+ * Igual que resizeImage pero devuelve un Blob.
+ *
+ * Es lo que necesita la subida a Convex File Storage, que sube el archivo
+ * crudo por fetch. Un data URI ahi obligaria a decodificar el base64 a mano
+ * y a pagar el 33% de inflado en el traslado, justo lo que file storage
+ * viene a evitar.
+ */
+export const resizeImageToBlob = async (
+  file,
+  { maxDimension = MAX_DIMENSION, quality = JPEG_QUALITY } = {}
+) => {
+  const canvas = await dibujarEnCanvas(file, maxDimension);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('No se pudo convertir la imagen'));
+      },
+      'image/jpeg',
+      quality
+    );
+  });
+};

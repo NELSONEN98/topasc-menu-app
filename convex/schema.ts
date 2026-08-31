@@ -26,6 +26,15 @@ export default defineSchema({
     activo: v.boolean(),
     // undefined = lleva salsas (default); false = bebidas, postres, etc.
     llevaSalsas: v.optional(v.boolean()),
+    // El cliente elige sabor y tamaño de `presentacionesGaseosa` antes de
+    // poder agregarlo al carrito.
+    //
+    // OJO: el default es al REVES que el de `llevaSalsas`. Ahi undefined
+    // significa "si lleva" porque casi todo el menu lleva salsa; aca
+    // undefined significa "NO lleva", porque las gaseosas son un puñado de
+    // items contra toda la carta. Un default "si" haria que cada plato
+    // existente pidiera elegir un sabor de gaseosa para poder venderse.
+    llevaPresentacion: v.optional(v.boolean()),
     // En que sedes se vende este plato. Un plato = una fila, marcada en varias
     // sedes: asi el precio y la imagen (que va en base64 dentro del documento)
     // no se duplican por local.
@@ -41,6 +50,33 @@ export default defineSchema({
     // asi que un array vacio solo puede venir de datos previos a este campo.
     sedeIds: v.optional(v.array(v.id("sedes"))),
   }).index("por_categoria", ["categoriaId"]),
+
+  /**
+   * Presentaciones de gaseosa: una fila por combinacion de sabor y tamaño.
+   *
+   * Es una tabla PLANA y no dos (sabores por un lado, tamaños por otro)
+   * porque cada combinacion tiene su propio precio. Una Coca Cola de 2 L y
+   * una Postobon de 2 L no valen lo mismo, asi que el precio no se puede
+   * derivar del tamaño solo: vive en el cruce.
+   *
+   * El cliente igual elige en dos pasos (primero sabor, despues tamaño): la
+   * pantalla agrupa estas filas, pero el precio sale siempre de la fila
+   * exacta que quedo elegida.
+   */
+  presentacionesGaseosa: defineTable({
+    sabor: v.string(),
+    tamano: v.string(),
+    // Precio FINAL de la linea, no un adicional sobre el precio del item.
+    // El `precio` del item pasa a ser el "desde $X" que se muestra en la
+    // grilla del menu.
+    precio: v.number(),
+    // Igual que en items: `activo` es "existe en la carta", `disponible` es
+    // "hoy se puede pedir". Se agoto la Coca de 2 L el sabado -> disponible
+    // false, sin perder la fila ni su precio.
+    disponible: v.boolean(),
+    activo: v.boolean(),
+    orden: v.number(),
+  }).index("por_orden", ["orden"]),
 
   salsas: defineTable({
     nombre: v.string(),
@@ -148,6 +184,16 @@ export default defineSchema({
         salsasExtra: v.optional(
           v.array(v.object({ nombre: v.string(), precio: v.number() }))
         ),
+        // Sabor y tamaño elegidos, congelados igual que el nombre y el
+        // precio. NO se guarda el id de la presentacion: si mañana la
+        // borran o le cambian el nombre, el pedido historico tiene que
+        // seguir diciendo que se vendio una Coca Cola de 2 L.
+        //
+        // El precio de la presentacion NO se repite aca: ya es el
+        // `precioSnapshot` de esta misma linea.
+        presentacion: v.optional(
+          v.object({ sabor: v.string(), tamano: v.string() })
+        ),
         notas: v.optional(v.string()),
       })
     ),
@@ -175,10 +221,20 @@ export default defineSchema({
     cerrado: v.boolean(),
   }).index("por_dia", ["diaSemana"]),
 
+  // Singleton: una sola fila para todo el restaurante.
   configuracionRestaurante: defineTable({
     nombreRestaurante: v.string(),
     telefono: v.optional(v.string()),
     direccion: v.optional(v.string()),
     abiertoManualOverride: v.optional(v.boolean()),
+    // Imagen de portada del Hero, la que ve el cliente en todo el flujo.
+    //
+    // Se guarda el id del archivo en storage, NO la imagen. Los productos
+    // usan base64 dentro del documento, pero ese patron no sirve aca: el
+    // techo de Convex es 1 MiB por documento, base64 infla ~33%, y sobre
+    // todo la imagen viajaria dentro de la suscripcion reactiva de cada
+    // cliente en vez de cachearse en el navegador. Un hero a lo ancho de
+    // la pantalla lo cargan todos, siempre.
+    imagenHeaderId: v.optional(v.id("_storage")),
   }),
 });
