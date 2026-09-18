@@ -169,6 +169,130 @@ describe("promociones.listar — filtro por sede", () => {
   });
 });
 
+describe("promociones — vigencia", () => {
+  test("guarda la ventana de fechas tal cual", async () => {
+    const t = convexTest(schema, modules);
+
+    await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Semana santa",
+      vigenteDesde: "2026-03-29",
+      vigenteHasta: "2026-04-05",
+    });
+
+    const [promo] = await comoAdmin(t).query(api.promociones.listarTodas, {});
+
+    expect(promo.vigenteDesde).toBe("2026-03-29");
+    expect(promo.vigenteHasta).toBe("2026-04-05");
+  });
+
+  test("rechaza una fecha con formato invalido", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      comoAdmin(t).mutation(api.promociones.crear, {
+        titulo: "Mal formateada",
+        vigenteDesde: "29/03/2026",
+      })
+    ).rejects.toThrow(/YYYY-MM-DD/);
+  });
+
+  test("rechaza una ventana al reves", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      comoAdmin(t).mutation(api.promociones.crear, {
+        titulo: "Al reves",
+        vigenteDesde: "2026-04-05",
+        vigenteHasta: "2026-03-29",
+      })
+    ).rejects.toThrow(/no puede ser posterior/);
+  });
+
+  test("una fecha vacia se guarda como sin fecha", async () => {
+    const t = convexTest(schema, modules);
+
+    // El <input type="date"> vacio manda "": tiene que significar "sin
+    // fecha", no romper la validacion de formato.
+    await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Sin vencimiento",
+      vigenteDesde: "",
+      vigenteHasta: "",
+    });
+
+    const [promo] = await comoAdmin(t).query(api.promociones.listarTodas, {});
+
+    expect(promo.vigenteDesde).toBeUndefined();
+    expect(promo.vigenteHasta).toBeUndefined();
+  });
+
+  test("se le puede SACAR la fecha a una promo que ya la tenia", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Con fecha",
+      vigenteHasta: "2026-09-18",
+    });
+
+    await comoAdmin(t).mutation(api.promociones.actualizar, {
+      id,
+      campos: { vigenteHasta: "" },
+    });
+
+    const [promo] = await comoAdmin(t).query(api.promociones.listarTodas, {});
+    expect(promo.vigenteHasta).toBeUndefined();
+  });
+
+  test("editar solo el fin no borra el inicio que ya estaba", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Ventana",
+      vigenteDesde: "2026-09-01",
+      vigenteHasta: "2026-09-10",
+    });
+
+    await comoAdmin(t).mutation(api.promociones.actualizar, {
+      id,
+      campos: { vigenteHasta: "2026-09-30" },
+    });
+
+    const [promo] = await comoAdmin(t).query(api.promociones.listarTodas, {});
+    // `undefined` en un patch borra el campo: si la mutation mandara las dos
+    // fechas siempre, esta promo se quedaria sin inicio sin que nadie lo pida.
+    expect(promo.vigenteDesde).toBe("2026-09-01");
+    expect(promo.vigenteHasta).toBe("2026-09-30");
+  });
+
+  test("actualizar valida el estado FINAL, no solo lo que llega", async () => {
+    const t = convexTest(schema, modules);
+    const id = await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Ventana",
+      vigenteDesde: "2026-09-20",
+    });
+
+    // El `hasta` que llega es anterior al `desde` que ya estaba guardado.
+    await expect(
+      comoAdmin(t).mutation(api.promociones.actualizar, {
+        id,
+        campos: { vigenteHasta: "2026-09-10" },
+      })
+    ).rejects.toThrow(/no puede ser posterior/);
+  });
+
+  test("listar NO filtra por fecha: eso lo decide el cliente", async () => {
+    const t = convexTest(schema, modules);
+
+    await comoAdmin(t).mutation(api.promociones.crear, {
+      titulo: "Vencida hace rato",
+      vigenteHasta: "2020-01-01",
+    });
+
+    // A proposito: Convex corre en UTC y en Colombia (UTC-5) el server ya
+    // esta en el dia siguiente desde las 19:00, asi que filtrar la fecha aca
+    // apagaria las promos del dia en plena hora pico. El filtro vive en
+    // src/utils/vigencia.js, con la hora local del navegador.
+    expect(await t.query(api.promociones.listar, {})).toHaveLength(1);
+  });
+});
+
 describe("promociones.actualizar y borrar", () => {
   test("editar la sede de una promo la mueve de local", async () => {
     const t = convexTest(schema, modules);

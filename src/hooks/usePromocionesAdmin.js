@@ -55,6 +55,17 @@ export const usePromocionesAdmin = () => {
       notificar.info('Elegí al menos una sede');
       return;
     }
+    // Se corta acá además del servidor para no hacer viajar un formulario que
+    // ya sabemos que va a rebotar. Compara strings porque "YYYY-MM-DD" ordena
+    // igual alfabética que cronológicamente.
+    if (
+      formData.vigenteDesde &&
+      formData.vigenteHasta &&
+      formData.vigenteDesde > formData.vigenteHasta
+    ) {
+      notificar.info('La fecha de inicio no puede ser posterior a la de fin');
+      return;
+    }
 
     const editandoAhora = !!editando;
 
@@ -69,6 +80,10 @@ export const usePromocionesAdmin = () => {
             imagenUrl: formData.imagenUrl || undefined,
             activa: formData.activa,
             sedeIds: formData.sedeIds,
+            // Van como '' y no como undefined a proposito: es asi como el
+            // server distingue "sacale la fecha" de "no la toques".
+            vigenteDesde: formData.vigenteDesde,
+            vigenteHasta: formData.vigenteHasta,
           },
         });
       } else {
@@ -79,6 +94,8 @@ export const usePromocionesAdmin = () => {
           imagenUrl: formData.imagenUrl || undefined,
           activa: formData.activa,
           sedeIds: formData.sedeIds,
+          vigenteDesde: formData.vigenteDesde || undefined,
+          vigenteHasta: formData.vigenteHasta || undefined,
         });
       }
 

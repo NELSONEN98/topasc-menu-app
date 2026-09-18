@@ -251,6 +251,31 @@ export default defineSchema({
     // promo del dia corra en varios locales a la vez; la excepcion es la que
     // corre en uno solo.
     sedeIds: v.optional(v.array(v.id("sedes"))),
+    /**
+     * Ventana de vigencia, en formato "YYYY-MM-DD". Las dos son opcionales:
+     *   ninguna         -> solo manda el switch `activa` (es lo que habia antes)
+     *   solo desde      -> arranca ese dia y no termina
+     *   solo hasta      -> corre hasta ese dia inclusive
+     *   las dos         -> ventana cerrada, inclusive en los dos extremos
+     *
+     * Se guardan como STRING y no como timestamp, por dos razones:
+     *
+     * 1. Es el formato que escupe <input type="date">, igual que
+     *    `horaApertura` guarda "11:00" por <input type="time">. Y un
+     *    "YYYY-MM-DD" ordena y compara bien como string, sin parsear nada:
+     *    `new Date("2026-09-18")` se interpreta como medianoche UTC, que es
+     *    una fuente clasica de errores de un dia de corrimiento.
+     *
+     * 2. Un timestamp obligaria a comparar contra `Date.now()` del servidor,
+     *    y Convex corre en UTC. En Colombia (UTC-5) el servidor ya esta en el
+     *    dia siguiente desde las 19:00 — o sea que una promo "de hoy" se
+     *    apagaria sola en plena hora pico. Por eso el dia de HOY lo resuelve
+     *    el navegador con su hora local y el filtro por fecha vive en el
+     *    cliente (src/utils/vigencia.js), no en la query. Mismo criterio que
+     *    ya usa StatusBar.jsx para saber que dia de la semana es.
+     */
+    vigenteDesde: v.optional(v.string()),
+    vigenteHasta: v.optional(v.string()),
     orden: v.number(),
   }).index("por_orden", ["orden"]),
 

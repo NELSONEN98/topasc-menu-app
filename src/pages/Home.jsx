@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Hero } from '../components/organisms/Hero';
@@ -9,6 +9,7 @@ import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { PromocionesCarouselModal } from '../components/organisms/PromocionesCarouselModal';
 import { PromoGridCard } from '../components/molecules/PromoGridCard';
 import { useCart } from '../context/CartContext';
+import { estaVigente } from '../utils/vigencia';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
 
@@ -53,8 +54,18 @@ export const Home = ({
     useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
   // Mismo criterio que items.listarMenu: sin sede (entrada por QR) el
   // argumento va undefined y el server devuelve todas las promos activas.
-  const promociones =
+  const promocionesActivas =
     useQuery(api.promociones.listar, { sedeId: sede?._id }) ?? SIN_DATOS;
+
+  // El filtro por fecha va ACA y no en la query a proposito: el dia de hoy lo
+  // tiene que resolver el navegador con su hora local. Convex corre en UTC y
+  // en Colombia (UTC-5) el server ya esta en el dia siguiente desde las 19:00,
+  // asi que una promo que vence hoy se apagaria sola en plena hora pico.
+  // Mismo criterio que StatusBar.jsx. Ver src/utils/vigencia.js.
+  const promociones = useMemo(
+    () => promocionesActivas.filter((promo) => estaVigente(promo)),
+    [promocionesActivas]
+  );
 
   const hayPromos = promociones.length > 0;
   const esFiltroPromos = activeCategory === CATEGORIA_PROMOS;

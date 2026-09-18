@@ -21,6 +21,8 @@ export const PromocionFormModal = ({
     imagenUrl: '',
     activa: true,
     sedeIds: [],
+    vigenteDesde: '',
+    vigenteHasta: '',
   });
   const [imagePreview, setImagePreview] = useState('');
   const [imageError, setImageError] = useState('');
@@ -39,6 +41,8 @@ export const PromocionFormModal = ({
         imagenUrl: promocion.imagenUrl || '',
         activa: promocion.activa !== false,
         sedeIds: promocion.sedeIds?.length ? promocion.sedeIds : todasLasSedes,
+        vigenteDesde: promocion.vigenteDesde || '',
+        vigenteHasta: promocion.vigenteHasta || '',
       });
       setImagePreview(promocion.imagenUrl || '');
     } else {
@@ -49,6 +53,8 @@ export const PromocionFormModal = ({
         imagenUrl: '',
         activa: true,
         sedeIds: todasLasSedes,
+        vigenteDesde: '',
+        vigenteHasta: '',
       });
       setImagePreview('');
     }
@@ -230,6 +236,42 @@ export const PromocionFormModal = ({
             </div>
           </div>
 
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Vigencia</legend>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="promo-vigenteDesde">Desde</label>
+                <input
+                  id="promo-vigenteDesde"
+                  type="date"
+                  name="vigenteDesde"
+                  value={formData.vigenteDesde}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="promo-vigenteHasta">Hasta</label>
+                <input
+                  id="promo-vigenteHasta"
+                  type="date"
+                  name="vigenteHasta"
+                  value={formData.vigenteHasta}
+                  onChange={handleChange}
+                  min={formData.vigenteDesde || undefined}
+                />
+              </div>
+            </div>
+
+            <small className="form-ayuda">
+              Las dos son opcionales y los días se cuentan completos. Para una promo de un
+              solo día, poné la misma fecha en las dos. Si las dejás vacías, la promo corre
+              hasta que la apagues a mano — es lo que conviene revisar si alguna quedó
+              colgada.
+            </small>
+          </fieldset>
+
           <div className="form-group form-checkbox">
             <label htmlFor="promo-activa">
               <input
@@ -241,6 +283,10 @@ export const PromocionFormModal = ({
               />
               Activa (se muestra en el menú)
             </label>
+            <small className="form-ayuda">
+              Es el interruptor maestro: si está apagado, la promo no se ve aunque esté
+              dentro de las fechas.
+            </small>
           </div>
 
           <div className="modal-actions">

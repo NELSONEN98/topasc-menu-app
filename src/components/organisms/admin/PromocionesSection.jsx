@@ -2,6 +2,27 @@ import { PromocionFormModal } from '../PromocionFormModal';
 import { Pagination } from '../../molecules/Pagination';
 import { SeccionHeader } from './SeccionHeader';
 import { usePromocionesAdmin } from '../../../hooks/usePromocionesAdmin';
+import { estadoVigencia } from '../../../utils/vigencia';
+
+// Una promo `activa` pero fuera de su ventana de fechas NO se ve en el menu,
+// y con solo el switch prendido eso es indistinguible de una que si se ve.
+// Sin este aviso el admin la prende, no la encuentra en el menu y no tiene
+// forma de saber que el problema es la fecha.
+const AVISO_VIGENCIA = {
+  programada: 'Todavía no arranca',
+  vencida: 'Ya venció',
+};
+
+const rangoVigencia = ({ vigenteDesde, vigenteHasta }) => {
+  if (!vigenteDesde && !vigenteHasta) return 'Sin fechas';
+  if (vigenteDesde && vigenteHasta) {
+    return vigenteDesde === vigenteHasta
+      ? vigenteDesde
+      : `${vigenteDesde} → ${vigenteHasta}`;
+  }
+
+  return vigenteDesde ? `Desde ${vigenteDesde}` : `Hasta ${vigenteHasta}`;
+};
 
 export const PromocionesSection = () => {
   const { sedes, paginadas, pagina, setPagina, totalPaginas, resumen, modal, acciones } =
@@ -20,6 +41,7 @@ export const PromocionesSection = () => {
         <div className="admin-table-header admin-table-header-promos">
           <div></div>
           <div>Título</div>
+          <div>Vigencia</div>
           <div>Precio</div>
           <div>Estado</div>
           <div></div>
@@ -39,7 +61,18 @@ export const PromocionesSection = () => {
                   </div>
                 )}
 
-                <div className="admin-table-cell-name">{promo.titulo}</div>
+                <div className="admin-table-cell-name">
+                  {promo.titulo}
+                  {AVISO_VIGENCIA[estadoVigencia(promo)] && (
+                    <span className="admin-table-noimg">
+                      {AVISO_VIGENCIA[estadoVigencia(promo)]}
+                    </span>
+                  )}
+                </div>
+
+                <div className="admin-table-cell-vigencia" data-label="Vigencia">
+                  {rangoVigencia(promo)}
+                </div>
 
                 <div className="admin-table-cell-price" data-label="Precio">
                   {promo.precio != null ? `$${promo.precio.toLocaleString()}` : '—'}

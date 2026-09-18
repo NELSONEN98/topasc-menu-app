@@ -1073,6 +1073,19 @@ input, select { font-family: 'Inter', sans-serif; }
     white-space: nowrap;
   }
 
+  /* Mismo lugar que la categoria: la tabla de promos no tiene esa celda, asi
+     que la fila de abajo esta libre y no se pisan. */
+  .admin-table-cell-vigencia {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    font-size: 12px;
+    color: #999;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .admin-table-cell-price {
     grid-column: 3;
     grid-row: 1;
@@ -1091,6 +1104,7 @@ input, select { font-family: 'Inter', sans-serif; }
      el precio lleva $ y la categoria es texto. El toggle se explica
      por su aria-label, no por texto en pantalla. */
   .admin-table-cell-category::before,
+  .admin-table-cell-vigencia::before,
   .admin-table-cell-price::before,
   .admin-table-cell-status::before,
   .admin-table-cell-orden::before {
@@ -1369,12 +1383,21 @@ input, select { font-family: 'Inter', sans-serif; }
   border: 0;
 }
 
-/* Tabla de Promociones: imagen | Titulo | Precio | Estado | acciones.
+/* Tabla de Promociones: imagen | Titulo | Vigencia | Precio | Estado | acciones.
    Mismo ancho de imagen que la tabla de Productos, sin la columna de
    categoria: las promos no pertenecen a ninguna. */
 .admin-table-header-promos,
 .admin-table-row-promos {
-  grid-template-columns: 60px 2fr 1fr 1fr 0.8fr !important;
+  grid-template-columns: 60px 2fr 1.4fr 1fr 1fr 0.8fr !important;
+}
+
+/* Clase propia y no .admin-table-cell-category: en mobile la posicion en la
+   grilla se asigna POR CLASE, y dos celdas que la comparten se superponen. */
+.admin-table-cell-vigencia {
+  font-size: 12px;
+  color: #666;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================
