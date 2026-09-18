@@ -7,6 +7,7 @@ import { SedesSection } from '../components/organisms/admin/SedesSection';
 import { MesasSection } from '../components/organisms/admin/MesasSection';
 import { HorarioSection } from '../components/organisms/admin/HorarioSection';
 import { AparienciaSection } from '../components/organisms/admin/AparienciaSection';
+import { PromocionesSection } from '../components/organisms/admin/PromocionesSection';
 import { GaseosasSection } from '../components/organisms/admin/GaseosasSection';
 import { SeccionHeader } from '../components/organisms/admin/SeccionHeader';
 import { AdminPedidos } from '../components/organisms/AdminPedidos';
@@ -48,6 +49,7 @@ const SECCIONES = {
   horario: HorarioSection,
   gaseosas: GaseosasSection,
   apariencia: AparienciaSection,
+  promociones: PromocionesSection,
 };
 
 export const AdminPanel = ({ onLogout }) => {

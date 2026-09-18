@@ -986,7 +986,8 @@ input, select { font-family: 'Inter', sans-serif; }
   .admin-table-header-categorias,
   .admin-table-header-sedes,
   .admin-table-header-mesas,
-  .admin-table-header-pedidos {
+  .admin-table-header-pedidos,
+  .admin-table-header-promos {
     display: none !important;
   }
 
@@ -1036,7 +1037,8 @@ input, select { font-family: 'Inter', sans-serif; }
 
   .admin-table-row:last-child,
   .admin-table-row-sauces:last-child,
-  .admin-table-row-categorias:last-child {
+  .admin-table-row-categorias:last-child,
+  .admin-table-row-promos:last-child {
     border-bottom: none;
   }
 
@@ -1365,6 +1367,14 @@ input, select { font-family: 'Inter', sans-serif; }
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Tabla de Promociones: imagen | Titulo | Precio | Estado | acciones.
+   Mismo ancho de imagen que la tabla de Productos, sin la columna de
+   categoria: las promos no pertenecen a ninguna. */
+.admin-table-header-promos,
+.admin-table-row-promos {
+  grid-template-columns: 60px 2fr 1fr 1fr 0.8fr !important;
 }
 
 /* ============================================================

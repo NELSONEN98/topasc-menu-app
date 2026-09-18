@@ -131,6 +131,13 @@
   animation: spin 0.9s linear infinite;
 }
 
+.home__vacio {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  font: 500 0.875rem 'Inter', sans-serif;
+  color: #999;
+}
+
 /* ============================================================
    PAGINATION
    ============================================================ */

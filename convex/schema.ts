@@ -221,6 +221,29 @@ export default defineSchema({
     cerrado: v.boolean(),
   }).index("por_dia", ["diaSemana"]),
 
+  /**
+   * Lista de promociones del dia (ya no es un singleton: puede haber varias
+   * vigentes al mismo tiempo). Arman el filtro "Promociones del dia" del
+   * menu y el carrusel que se abre apenas el cliente entra.
+   */
+  promocionesDelDia: defineTable({
+    titulo: v.string(),
+    descripcion: v.optional(v.string()),
+    // Optional: hay promos (2x1, "10% en combos") que no se resumen en un
+    // unico precio final.
+    precio: v.optional(v.number()),
+    // Igual que en items: base64 dentro del documento, no storage. Son a lo
+    // sumo unas pocas decenas de promos, del mismo orden que los productos,
+    // asi que no justifica el vaiven de storage (URL de subida, borrar el
+    // blob viejo, etc) que sí tiene sentido para la imagen unica del Hero.
+    imagenUrl: v.optional(v.string()),
+    // Interruptor por promo. La fila sigue existiendo (con su texto e
+    // imagen) mientras el admin la apaga entre un dia y el siguiente, sin
+    // perder los datos para reactivarla despues.
+    activa: v.boolean(),
+    orden: v.number(),
+  }).index("por_orden", ["orden"]),
+
   // Singleton: una sola fila para todo el restaurante.
   configuracionRestaurante: defineTable({
     nombreRestaurante: v.string(),

@@ -10,6 +10,7 @@ export const TABS = [
   { id: 'mesas', etiqueta: 'Mesas' },
   { id: 'horario', etiqueta: 'Horario' },
   { id: 'apariencia', etiqueta: 'Apariencia' },
+  { id: 'promociones', etiqueta: 'Promociones' },
 ];
 
 export const AdminNavbar = ({ tabActivo, onCambiarTab, menuAbierto, onToggleMenu, onLogout }) => {

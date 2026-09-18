@@ -6,6 +6,8 @@ import { CartBar } from '../components/organisms/CartBar';
 import { BackButton } from '../components/atoms/BackButton';
 import { ProductGrid } from '../components/organisms/ProductGrid';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
+import { PromocionesCarouselModal } from '../components/organisms/PromocionesCarouselModal';
+import { PromoGridCard } from '../components/molecules/PromoGridCard';
 import { useCart } from '../context/CartContext';
 import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
@@ -13,6 +15,12 @@ import './Home.css';
 // Referencia estable mientras las queries cargan: un `[]` nuevo por render
 // rompe cualquier useEffect/useMemo que lo tenga como dependencia.
 const SIN_DATOS = [];
+
+// Pseudo-categoria: no viene de la tabla `categorias`, se arma con las filas
+// de `promocionesDelDia`. Vive en una constante y no como string suelto
+// porque se compara en dos lugares (armar la lista de tabs y decidir que
+// grilla mostrar) y no pueden desincronizarse.
+const CATEGORIA_PROMOS = 'Promociones del día';
 
 export const Home = ({
   onNavigateToCart,
@@ -24,6 +32,7 @@ export const Home = ({
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [promoCerrada, setPromoCerrada] = useState(false);
 
   // Sin el `?? SIN_DATOS` todavia en estos dos: hace falta distinguir
   // "no llego la respuesta" (undefined) de "llego y esta vacio" ([]) para
@@ -42,15 +51,24 @@ export const Home = ({
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
   const presentaciones =
     useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
+  const promociones = useQuery(api.promociones.listar) ?? SIN_DATOS;
 
-  const categories = ['Todos', ...allCategorias.map(c => c.nombre)];
+  const hayPromos = promociones.length > 0;
+  const esFiltroPromos = activeCategory === CATEGORIA_PROMOS;
 
-  const allFiltered =
-    activeCategory === 'Todos'
+  const categories = [
+    'Todos',
+    ...(hayPromos ? [CATEGORIA_PROMOS] : []),
+    ...allCategorias.map(c => c.nombre),
+  ];
+
+  const allFiltered = esFiltroPromos
+    ? SIN_DATOS
+    : activeCategory === 'Todos'
       ? allItems
       : allItems.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
 
-  const totalPages = Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
+  const totalPages = esFiltroPromos ? 0 : Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const filteredProducts = allFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
@@ -95,6 +113,16 @@ export const Home = ({
             <div className="home__loading">
               <div className="home__loading-spinner" />
             </div>
+          ) : esFiltroPromos ? (
+            promociones.length === 0 ? (
+              <p className="home__vacio">Por ahora no hay promociones activas.</p>
+            ) : (
+              <div className="product-grid">
+                {promociones.map((promo) => (
+                  <PromoGridCard key={promo._id} promocion={promo} />
+                ))}
+              </div>
+            )
           ) : (
             <ProductGrid
               products={filteredProducts}
@@ -156,6 +184,13 @@ export const Home = ({
           salsas={salsas}
           presentaciones={presentaciones}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {hayPromos && !promoCerrada && (
+        <PromocionesCarouselModal
+          promociones={promociones}
+          onClose={() => setPromoCerrada(true)}
         />
       )}
     </div>
