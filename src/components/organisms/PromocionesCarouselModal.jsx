@@ -7,18 +7,30 @@ import './PromocionesCarouselModal.css';
 // en un solo modal ilegible.
 export const PromocionesCarouselModal = ({ promociones, onClose }) => {
   const [indice, setIndice] = useState(0);
-  const promocion = promociones[indice];
-  const esUltima = indice === promociones.length - 1;
+
+  // El indice se acota al largo actual en vez de usarse crudo. `promociones`
+  // es una query reactiva de Convex: si el admin apaga o borra una promo
+  // mientras el cliente tiene el carrusel abierto, la lista se acorta y un
+  // `promociones[indice]` viejo devolveria undefined — y la linea siguiente
+  // (promocion.imagenUrl) tira la app entera a pantalla en blanco, porque no
+  // hay error boundary que lo frene.
+  const indiceValido = Math.min(indice, promociones.length - 1);
+  const promocion = promociones[indiceValido];
+  const esUltima = indiceValido === promociones.length - 1;
+
+  // La lista se vacio entre renders (el admin apago la ultima promo): no hay
+  // nada que mostrar. Home igual desmonta el modal, esto es el cinturon.
+  if (!promocion) return null;
 
   const siguiente = () => {
     if (esUltima) {
       onClose();
       return;
     }
-    setIndice((i) => i + 1);
+    setIndice(indiceValido + 1);
   };
 
-  const anterior = () => setIndice((i) => Math.max(0, i - 1));
+  const anterior = () => setIndice(Math.max(0, indiceValido - 1));
 
   return (
     <div className="promo-modal-overlay" onClick={onClose}>
@@ -50,17 +62,17 @@ export const PromocionesCarouselModal = ({ promociones, onClose }) => {
               {promociones.map((p, i) => (
                 <button
                   key={p._id}
-                  className={`promo-modal-dot ${i === indice ? 'active' : ''}`}
+                  className={`promo-modal-dot ${i === indiceValido ? 'active' : ''}`}
                   onClick={() => setIndice(i)}
                   aria-label={`Ver promoción ${i + 1}`}
-                  aria-current={i === indice}
+                  aria-current={i === indiceValido}
                 />
               ))}
             </div>
           )}
 
           <div className="promo-modal-acciones">
-            {indice > 0 && (
+            {indiceValido > 0 && (
               <button type="button" className="promo-modal-btn promo-modal-btn--secundario" onClick={anterior}>
                 Anterior
               </button>
