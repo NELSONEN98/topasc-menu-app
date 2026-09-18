@@ -4,7 +4,7 @@ import { SeccionHeader } from './SeccionHeader';
 import { usePromocionesAdmin } from '../../../hooks/usePromocionesAdmin';
 
 export const PromocionesSection = () => {
-  const { paginadas, pagina, setPagina, totalPaginas, resumen, modal, acciones } =
+  const { sedes, paginadas, pagina, setPagina, totalPaginas, resumen, modal, acciones } =
     usePromocionesAdmin();
 
   return (
@@ -83,6 +83,7 @@ export const PromocionesSection = () => {
         isOpen={modal.abierto}
         onClose={modal.cerrar}
         promocion={modal.editando}
+        sedes={sedes}
         onSave={acciones.guardar}
       />
     </div>

@@ -51,7 +51,10 @@ export const Home = ({
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
   const presentaciones =
     useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
-  const promociones = useQuery(api.promociones.listar) ?? SIN_DATOS;
+  // Mismo criterio que items.listarMenu: sin sede (entrada por QR) el
+  // argumento va undefined y el server devuelve todas las promos activas.
+  const promociones =
+    useQuery(api.promociones.listar, { sedeId: sede?._id }) ?? SIN_DATOS;
 
   const hayPromos = promociones.length > 0;
   const esFiltroPromos = activeCategory === CATEGORIA_PROMOS;

@@ -12,6 +12,10 @@ export const usePromocionesAdmin = () => {
   const { notificar, confirmar } = useNotificacion();
 
   const promociones = useQuery(api.promociones.listarTodas) ?? SIN_DATOS;
+  // listarTodas y no listar, por lo mismo que en useProductosAdmin: si una
+  // sede se desactiva, con `listar` desapareceria del formulario pero seguiria
+  // guardada en el `sedeIds` de la promo, invisible e imposible de sacar.
+  const sedes = useQuery(api.sedes.listarTodas) ?? SIN_DATOS;
   const crearPromocion = useMutation(api.promociones.crear);
   const actualizarPromocion = useMutation(api.promociones.actualizar);
   const borrarPromocion = useMutation(api.promociones.borrar);
@@ -44,6 +48,13 @@ export const usePromocionesAdmin = () => {
       notificar.info('El título de la promo es obligatorio');
       return;
     }
+    // Mismo corte que en useProductosAdmin: el server interpreta un array
+    // vacio como "todas las sedes" (por las promos previas al campo), asi que
+    // guardar sin marcar ninguna lograria lo contrario de lo que el admin cree.
+    if (!formData.sedeIds?.length) {
+      notificar.info('Elegí al menos una sede');
+      return;
+    }
 
     const editandoAhora = !!editando;
 
@@ -57,6 +68,7 @@ export const usePromocionesAdmin = () => {
             precio: formData.precio === '' ? undefined : aNumero(formData.precio),
             imagenUrl: formData.imagenUrl || undefined,
             activa: formData.activa,
+            sedeIds: formData.sedeIds,
           },
         });
       } else {
@@ -66,6 +78,7 @@ export const usePromocionesAdmin = () => {
           precio: formData.precio === '' ? undefined : aNumero(formData.precio),
           imagenUrl: formData.imagenUrl || undefined,
           activa: formData.activa,
+          sedeIds: formData.sedeIds,
         });
       }
 
@@ -108,6 +121,7 @@ export const usePromocionesAdmin = () => {
   };
 
   return {
+    sedes,
     paginadas,
     pagina,
     setPagina,

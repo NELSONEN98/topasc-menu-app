@@ -241,6 +241,16 @@ export default defineSchema({
     // imagen) mientras el admin la apaga entre un dia y el siguiente, sin
     // perder los datos para reactivarla despues.
     activa: v.boolean(),
+    // En que sedes corre esta promo. Misma semantica que `items.sedeIds`, a
+    // proposito: undefined o [] = corre en TODAS las sedes. Asi las promos
+    // que se cargaron antes de que existiera el campo siguen mostrandose, y
+    // el flujo por QR (que puede llegar sin sede, ver App.jsx) nunca queda
+    // sin promos por un filtro que no puede resolver.
+    //
+    // Va como array y no como un `sedeId` unico porque lo normal es que una
+    // promo del dia corra en varios locales a la vez; la excepcion es la que
+    // corre en uno solo.
+    sedeIds: v.optional(v.array(v.id("sedes"))),
     orden: v.number(),
   }).index("por_orden", ["orden"]),
 

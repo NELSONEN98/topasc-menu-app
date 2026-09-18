@@ -3,18 +3,34 @@ import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
 import '../styles/ProductModal.css';
 
-export const PromocionFormModal = ({ isOpen, onClose, promocion, onSave }) => {
+// Referencia estable para el fallback: un `[]` nuevo por render no sirve como
+// default de una prop que se lee dentro de un efecto.
+const SIN_DATOS = [];
+
+export const PromocionFormModal = ({
+  isOpen,
+  onClose,
+  promocion,
+  sedes = SIN_DATOS,
+  onSave,
+}) => {
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
     precio: '',
     imagenUrl: '',
     activa: true,
+    sedeIds: [],
   });
   const [imagePreview, setImagePreview] = useState('');
   const [imageError, setImageError] = useState('');
 
   useEffect(() => {
+    // Todas las sedes marcadas por defecto, igual que en ProductModal: lo
+    // normal es que una promo corra en todos los locales, y es mas rapido
+    // destildar uno que tildar tres.
+    const todasLasSedes = sedes.map((s) => s._id);
+
     if (promocion) {
       setFormData({
         titulo: promocion.titulo || '',
@@ -22,6 +38,7 @@ export const PromocionFormModal = ({ isOpen, onClose, promocion, onSave }) => {
         precio: promocion.precio ?? '',
         imagenUrl: promocion.imagenUrl || '',
         activa: promocion.activa !== false,
+        sedeIds: promocion.sedeIds?.length ? promocion.sedeIds : todasLasSedes,
       });
       setImagePreview(promocion.imagenUrl || '');
     } else {
@@ -31,12 +48,25 @@ export const PromocionFormModal = ({ isOpen, onClose, promocion, onSave }) => {
         precio: '',
         imagenUrl: '',
         activa: true,
+        sedeIds: todasLasSedes,
       });
       setImagePreview('');
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de promo.
+    // `sedes.length` va como dependencia por la misma razon que alla: si el
+    // modal se abre antes de que resuelva la query, `todasLasSedes` sale
+    // vacio y los checkboxes quedan todos destildados.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promocion?._id, isOpen]);
+  }, [promocion?._id, isOpen, sedes.length]);
+
+  const alternarSede = (sedeId) => {
+    setFormData((prev) => ({
+      ...prev,
+      sedeIds: prev.sedeIds.includes(sedeId)
+        ? prev.sedeIds.filter((id) => id !== sedeId)
+        : [...prev.sedeIds, sedeId],
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -128,6 +158,41 @@ export const PromocionFormModal = ({ isOpen, onClose, promocion, onSave }) => {
               combos").
             </small>
           </div>
+
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Sedes</legend>
+
+            {sedes.map((sede) => (
+              <label
+                key={sede._id}
+                className="opcion-tarjeta"
+                htmlFor={`promo-sede-${sede._id}`}
+              >
+                <input
+                  id={`promo-sede-${sede._id}`}
+                  type="checkbox"
+                  checked={formData.sedeIds.includes(sede._id)}
+                  onChange={() => alternarSede(sede._id)}
+                />
+                <span className="opcion-tarjeta__texto">
+                  <strong>{sede.nombre}</strong>
+                  {/* Una sede apagada se sigue mostrando, igual que en
+                      ProductModal: si no, el admin la marca creyendo que la
+                      promo se va a ver ahi. */}
+                  <small>
+                    {sede.activo
+                      ? sede.direccion || 'La promo corre en este local.'
+                      : 'Sede desactivada: hoy el cliente no puede elegirla.'}
+                  </small>
+                </span>
+              </label>
+            ))}
+
+            <small className="form-ayuda">
+              La promo solo se muestra a los clientes de las sedes marcadas. Tiene que estar
+              en al menos una.
+            </small>
+          </fieldset>
 
           <div className="campo-imagen">
             <div className="campo-imagen__preview">

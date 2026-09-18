@@ -4,15 +4,31 @@ import { requerirAdmin } from "./guardias";
 
 // Publica: el filtro "Promociones del dia" y el carrusel del menu leen esta.
 // Solo trae las activas y en el orden en que se crearon.
+//
+// `sedeId` opcional y no obligatorio, igual que en items:listarMenu: el flujo
+// por QR puede llegar sin sede. Sin sede se devuelven todas las promos
+// activas — es preferible mostrar de mas que dejar al cliente sin ver ninguna.
 export const listar = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db
+  args: { sedeId: v.optional(v.id("sedes")) },
+  handler: async (ctx, { sedeId }) => {
+    const promos = await ctx.db
       .query("promocionesDelDia")
       .withIndex("por_orden")
       .order("asc")
       .filter((q) => q.eq(q.field("activa"), true))
       .collect();
+
+    if (!sedeId) return promos;
+
+    // El filtro por sede va en JS y no en el `.filter()` de arriba porque
+    // Convex no sabe preguntar "este array contiene X". Son unas pocas promos
+    // y ya estan todas en memoria.
+    //
+    // Sin sedeIds (o vacio) = promo anterior a este campo, o cargada para
+    // todos los locales: se muestra siempre. Ver la nota en schema.ts.
+    return promos.filter(
+      (promo) => !promo.sedeIds?.length || promo.sedeIds.includes(sedeId)
+    );
   },
 });
 
@@ -37,6 +53,7 @@ export const crear = mutation({
     precio: v.optional(v.number()),
     imagenUrl: v.optional(v.string()),
     activa: v.optional(v.boolean()),
+    sedeIds: v.optional(v.array(v.id("sedes"))),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -57,6 +74,7 @@ export const crear = mutation({
       precio: args.precio,
       imagenUrl: args.imagenUrl || undefined,
       activa: args.activa ?? true,
+      sedeIds: args.sedeIds,
       orden: ordenMaximo + 1,
     });
   },
@@ -71,6 +89,7 @@ export const actualizar = mutation({
       precio: v.optional(v.number()),
       imagenUrl: v.optional(v.string()),
       activa: v.optional(v.boolean()),
+      sedeIds: v.optional(v.array(v.id("sedes"))),
     }),
   },
   handler: async (ctx, { id, campos }) => {
