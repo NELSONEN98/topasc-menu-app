@@ -141,46 +141,62 @@ export const Cart = ({
     // Se aclara la sede en el propio texto: mientras las dos compartan el
     // mismo numero de WhatsApp de pruebas, es la unica forma de saber para
     // cual de los dos locales es el pedido.
-    const encabezadoSede = sede ? `Pedido para ${sede.nombre}\n\n` : '';
+    //
+    // Formato tipo factura: bloques separados por linea en blanco y titulos
+    // en MAYUSCULA en vez de *negrita*. WhatsApp Web/Desktop no siempre
+    // interpreta el asterisco cuando el texto llega prellenado por un link
+    // wa.me (no tecleado a mano) — queda como asterisco literal en vez de
+    // negrita. Mayuscula funciona siempre, en cualquier plataforma.
+    const encabezadoSede = sede
+      ? `/// PEDIDO PARA ${sede.nombre.toUpperCase()} ///\n\n`
+      : '';
 
-    let message = `${encabezadoSede}Hola, quisiera hacer un pedido por ${formatPrice(total)}. Detalles:\n${cartItems
+    // Cada item es su propio bloque (nombre, presentacion, salsas, extras,
+    // nota) separado del siguiente por una linea en blanco — como los
+    // renglones de una factura, no una lista apretada de una sola linea.
+    const detalleItems = cartItems
       .map((item) => {
-        let line = `- ${item.name} x${item.quantity}`;
+        let bloque = `* ${item.name} x${item.quantity}`;
         // Antes que las salsas: sin el sabor y el tamaño, el local no sabe
         // que botella servir. WhatsApp es el canal principal del pedido.
         if (item.presentacion)
-          line += `\n  ${item.presentacion.sabor} · ${item.presentacion.tamano}`;
+          bloque += `\n${item.presentacion.sabor} · ${item.presentacion.tamano}`;
         if (item.salsas?.length > 0)
-          line +=
+          bloque +=
             item.salsas[0] === SIN_SALSAS
-              ? `\n  ${SIN_SALSAS}`
-              : `\n  Salsas: ${item.salsas.join(', ')}`;
+              ? `\n${SIN_SALSAS}`
+              : `\nSALSAS: ${item.salsas.join(', ')}`;
         if (item.salsasExtra?.length > 0)
-          line += `\n  Extras: ${item.salsasExtra.map((s) => s.nombre).join(', ')}`;
-        if (item.comentario) line += `\n  Nota: ${item.comentario}`;
-        return line;
+          bloque += `\nEXTRAS: ${item.salsasExtra.map((extra) => extra.nombre).join(', ')}`;
+        if (item.comentario) bloque += `\nNOTA: ${item.comentario}`;
+        return bloque;
       })
-      .join('\n')}`;
+      .join('\n\n');
+
+    let message = `${encabezadoSede}DETALLES:\n\n${detalleItems}`;
 
     if (orderType === 'dine-in' && mesaNumeroFinal) {
-      message += `\n\nMesa: ${mesaNumeroFinal}`;
+      message += `\n\nMESA: ${mesaNumeroFinal}`;
     }
 
     if (orderType === 'delivery' && address) {
-      message += `\n\nEntregar en: ${address.direccion}`;
-      if (address.referencia) message += `\nReferencia: ${address.referencia}`;
+      message += `\n\nENTREGAR EN: ${address.direccion}`;
+      if (address.referencia) message += `\nREFERENCIA: ${address.referencia}`;
     }
 
     if (orderType === 'pickup' && pickup) {
-      message += `\n\nRecoge: ${pickup.nombre}`;
-      message += `\nCódigo de retiro: ${pickup.codigo}`;
+      message += `\n\nRECOGE: ${pickup.nombre}`;
+      message += `\nCÓDIGO DE RETIRO: ${pickup.codigo}`;
     }
 
     if (metodoPago) {
       const pagoLabel =
         metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia';
-      message += `\nPago: ${pagoLabel}`;
+      message += `\nMÉTODO DE PAGO: ${pagoLabel}`;
     }
+
+    // El total va al final, como el renglon de cierre de una factura.
+    message += `\n\nTOTAL: ${formatPrice(total)}`;
 
     // sede?.whatsapp: numero propio del local elegido. Sin sede (pedido por
     // QR, ver la nota en App.jsx) cae al numero de pruebas de settings.js.
