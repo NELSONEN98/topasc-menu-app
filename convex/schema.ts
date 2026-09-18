@@ -49,6 +49,12 @@ export default defineSchema({
     // queda con un menu vacio. El admin no puede guardar un plato sin sedes,
     // asi que un array vacio solo puede venir de datos previos a este campo.
     sedeIds: v.optional(v.array(v.id("sedes"))),
+    // Esta rama no usa el campo: vive en `feature/etiqueta-promo-productos`.
+    // Se declara igual porque las dos ramas comparten el mismo deployment de
+    // Convex en desarrollo, y ya quedaron productos de prueba guardados con
+    // `promo` — sin esto, el deploy del schema rechaza esos documentos ("extra
+    // field") y ninguna funcion de esta rama llega a publicarse.
+    promo: v.optional(v.boolean()),
   }).index("por_categoria", ["categoriaId"]),
 
   /**
