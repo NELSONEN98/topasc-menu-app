@@ -12,6 +12,16 @@ const SIN_DATOS = [];
 // un objeto nuevo por render lo volveria a disparar.
 const SIN_DEFAULTS = {};
 
+// Mismo nombre que usa categorias.ts para sincronizar el menu. `llevaPresentacion`
+// (elegir sabor y tamaño) solo tiene sentido para gaseosas: sin este chequeo el
+// checkbox queda suelto, se puede tildar en CUALQUIER producto por error, y el
+// cliente termina viendo "Elegí el sabor" en un plato de comida.
+const NOMBRE_CATEGORIA_BEBIDAS = 'bebidas';
+
+const esCategoriaBebidas = (categorias, categoriaId) =>
+  categorias.find((c) => c._id === categoriaId)?.nombre?.trim().toLowerCase() ===
+  NOMBRE_CATEGORIA_BEBIDAS;
+
 export const ProductModal = ({
   isOpen,
   onClose,
@@ -63,7 +73,12 @@ export const ProductModal = ({
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
         llevaSalsas: product.llevaSalsas !== false,
-        llevaPresentacion: product.llevaPresentacion === true,
+        // Se autocorrige si el producto quedo con el flag prendido en una
+        // categoria que no es Bebidas (el bug que motivo este chequeo): al
+        // volver a abrirlo y guardarlo, `llevaPresentacion` se limpia solo.
+        llevaPresentacion:
+          esCategoriaBebidas(categorias, product.categoriaId) &&
+          product.llevaPresentacion === true,
         sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
         esPromo: product.esPromo === true,
         vigenteDesde: product.vigenteDesde || '',
@@ -127,6 +142,13 @@ export const ProductModal = ({
     setFormData(prev => ({
       ...prev,
       [name]: newValue,
+      // Cambiar a una categoria que no es Bebidas apaga "lleva presentacion":
+      // el checkbox se esconde para esa categoria (ver mas abajo), y sin este
+      // reset el formulario lo seguiria mandando en true, invisible para
+      // quien esta editando.
+      ...(name === 'categoriaId' && !esCategoriaBebidas(categorias, newValue)
+        ? { llevaPresentacion: false }
+        : {}),
     }));
   };
 
@@ -411,22 +433,28 @@ export const ProductModal = ({
               </span>
             </label>
 
-            <label className="opcion-tarjeta" htmlFor="llevaPresentacion">
-              <input
-                id="llevaPresentacion"
-                type="checkbox"
-                name="llevaPresentacion"
-                checked={formData.llevaPresentacion}
-                onChange={handleChange}
-              />
-              <span className="opcion-tarjeta__texto">
-                <strong>Lleva presentación</strong>
-                <small>
-                  El cliente elige sabor y tamaño en la pestaña Gaseosas, y paga el
-                  precio de esa combinación en lugar de este.
-                </small>
-              </span>
-            </label>
+            {/* Solo para Bebidas: es la unica categoria con presentaciones
+                cargadas en la pestaña Gaseosas. Mostrarlo siempre invitaba a
+                tildarlo por error en cualquier plato — asi paso con el bug
+                de "Muslo Topasc" pidiendo sabor como si fuera gaseosa. */}
+            {esCategoriaBebidas(categorias, formData.categoriaId) && (
+              <label className="opcion-tarjeta" htmlFor="llevaPresentacion">
+                <input
+                  id="llevaPresentacion"
+                  type="checkbox"
+                  name="llevaPresentacion"
+                  checked={formData.llevaPresentacion}
+                  onChange={handleChange}
+                />
+                <span className="opcion-tarjeta__texto">
+                  <strong>Lleva presentación</strong>
+                  <small>
+                    El cliente elige sabor y tamaño en la pestaña Gaseosas, y paga el
+                    precio de esa combinación en lugar de este.
+                  </small>
+                </span>
+              </label>
+            )}
           </fieldset>
 
           <div className="modal-actions">

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { ProductModal } from './ProductModal';
 
 const CATEGORIAS = [{ _id: 'cat_1', nombre: 'Salchipapas' }];
+const CATEGORIAS_CON_BEBIDAS = [...CATEGORIAS, { _id: 'cat_2', nombre: 'Bebidas' }];
 
 const DALIA = { _id: 'sede_dalia', nombre: 'Sede Dalia', direccion: 'Carrera 8', activo: true };
 const MORICHAL = { _id: 'sede_morichal', nombre: 'Sede Morichal', activo: true };
@@ -113,6 +114,69 @@ describe('ProductModal — carrera con la query de sedes (regresion)', () => {
     // sacaba de dos locales.
     expect(checkboxSede('Sede Dalia')).toBeChecked();
     expect(checkboxSede('Sede Morichal')).toBeChecked();
+  });
+});
+
+describe('ProductModal — "lleva presentación" solo para Bebidas (regresion)', () => {
+  const checkboxPresentacion = () =>
+    screen.queryByRole('checkbox', { name: /Lleva presentación/ });
+
+  test('no aparece en una categoria que no es Bebidas', async () => {
+    abrir({ categorias: CATEGORIAS });
+
+    expect(checkboxPresentacion()).not.toBeInTheDocument();
+  });
+
+  test('aparece cuando la categoria elegida es Bebidas', async () => {
+    abrir({
+      categorias: CATEGORIAS_CON_BEBIDAS,
+      product: { _id: 'item_1', nombre: 'Coca Cola', categoriaId: 'cat_2', precio: 1 },
+    });
+
+    expect(checkboxPresentacion()).toBeInTheDocument();
+  });
+
+  test('un producto con el flag mal cargado en otra categoria se autocorrige al guardar', async () => {
+    // El bug real: "Muslo Topasc" quedo con `llevaPresentacion: true` en una
+    // categoria de comida, y el cliente veia "Elegí el sabor" como si fuera
+    // gaseosa. El checkbox ni se muestra para esta categoria, asi que la
+    // unica forma de arreglarlo es que el formulario lo apague solo.
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS,
+      product: {
+        _id: 'item_1',
+        nombre: 'Muslo Topasc',
+        categoriaId: 'cat_1',
+        precio: 18000,
+        llevaPresentacion: true,
+      },
+    });
+
+    expect(checkboxPresentacion()).not.toBeInTheDocument();
+
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(onSave.mock.calls[0][0].llevaPresentacion).toBe(false);
+  });
+
+  test('cambiar a una categoria que no es Bebidas apaga el flag aunque estuviera prendido', async () => {
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS_CON_BEBIDAS,
+      product: {
+        _id: 'item_1',
+        nombre: 'Coca Cola',
+        categoriaId: 'cat_2',
+        precio: 1,
+        llevaPresentacion: true,
+      },
+    });
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_1');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(onSave.mock.calls[0][0].llevaPresentacion).toBe(false);
   });
 });
 
