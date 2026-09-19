@@ -7,7 +7,6 @@ import { BackButton } from '../components/atoms/BackButton';
 import { ProductGrid } from '../components/organisms/ProductGrid';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { PromocionesCarouselModal } from '../components/organisms/PromocionesCarouselModal';
-import { PromoGridCard } from '../components/molecules/PromoGridCard';
 import { useCart } from '../context/CartContext';
 import { estaVigente } from '../utils/vigencia';
 import { ITEMS_PER_PAGE } from '../config/settings';
@@ -17,10 +16,10 @@ import './Home.css';
 // rompe cualquier useEffect/useMemo que lo tenga como dependencia.
 const SIN_DATOS = [];
 
-// Pseudo-categoria: no viene de la tabla `categorias`, se arma con las filas
-// de `promocionesDelDia`. Vive en una constante y no como string suelto
-// porque se compara en dos lugares (armar la lista de tabs y decidir que
-// grilla mostrar) y no pueden desincronizarse.
+// Pseudo-categoria: no viene de la tabla `categorias`, se arma con los items
+// marcados `esPromo`. Vive en una constante y no como string suelto porque se
+// compara en dos lugares (armar la lista de tabs y elegir que se muestra) y
+// no pueden desincronizarse.
 const CATEGORIA_PROMOS = 'Promociones del día';
 
 export const Home = ({
@@ -52,19 +51,18 @@ export const Home = ({
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
   const presentaciones =
     useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
-  // Mismo criterio que items.listarMenu: sin sede (entrada por QR) el
-  // argumento va undefined y el server devuelve todas las promos activas.
-  const promocionesActivas =
-    useQuery(api.promociones.listar, { sedeId: sede?._id }) ?? SIN_DATOS;
-
+  // Las promos son items como cualquier otro: salen de la misma query, se
+  // agregan al carrito igual y viajan al pedido igual. `esPromo` solo cambia
+  // DONDE se muestran.
+  //
   // El filtro por fecha va ACA y no en la query a proposito: el dia de hoy lo
   // tiene que resolver el navegador con su hora local. Convex corre en UTC y
   // en Colombia (UTC-5) el server ya esta en el dia siguiente desde las 19:00,
   // asi que una promo que vence hoy se apagaria sola en plena hora pico.
   // Mismo criterio que StatusBar.jsx. Ver src/utils/vigencia.js.
   const promociones = useMemo(
-    () => promocionesActivas.filter((promo) => estaVigente(promo)),
-    [promocionesActivas]
+    () => allItems.filter((item) => item.esPromo === true && estaVigente(item)),
+    [allItems]
   );
 
   const hayPromos = promociones.length > 0;
@@ -77,12 +75,12 @@ export const Home = ({
   ];
 
   const allFiltered = esFiltroPromos
-    ? SIN_DATOS
+    ? promociones
     : activeCategory === 'Todos'
       ? allItems
       : allItems.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
 
-  const totalPages = esFiltroPromos ? 0 : Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const filteredProducts = allFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
@@ -127,17 +125,11 @@ export const Home = ({
             <div className="home__loading">
               <div className="home__loading-spinner" />
             </div>
-          ) : esFiltroPromos ? (
-            promociones.length === 0 ? (
-              <p className="home__vacio">Por ahora no hay promociones activas.</p>
-            ) : (
-              <div className="product-grid">
-                {promociones.map((promo) => (
-                  <PromoGridCard key={promo._id} promocion={promo} />
-                ))}
-              </div>
-            )
+          ) : esFiltroPromos && filteredProducts.length === 0 ? (
+            <p className="home__vacio">Por ahora no hay promociones activas.</p>
           ) : (
+            // Las promos se muestran con la misma tarjeta que el resto: son
+            // productos, se agregan al carrito igual.
             <ProductGrid
               products={filteredProducts}
               onProductClick={setSelectedProduct}
@@ -205,6 +197,12 @@ export const Home = ({
         <PromocionesCarouselModal
           promociones={promociones}
           onClose={() => setPromoCerrada(true)}
+          onPedir={(promo) => {
+            // El carrusel se cierra y queda abierto el detalle: ahi se eligen
+            // salsas y presentacion, que es lo que habilita el "Agregar".
+            setPromoCerrada(true);
+            setSelectedProduct(promo);
+          }}
         />
       )}
     </div>

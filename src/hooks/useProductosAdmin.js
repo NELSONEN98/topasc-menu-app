@@ -115,6 +115,17 @@ export const useProductosAdmin = () => {
       notificar.info('Elegí al menos una sede');
       return;
     }
+    // Se corta acá además del servidor para no hacer viajar un formulario que
+    // ya sabemos que va a rebotar. Compara strings porque "YYYY-MM-DD" ordena
+    // igual alfabética que cronológicamente.
+    if (
+      formData.vigenteDesde &&
+      formData.vigenteHasta &&
+      formData.vigenteDesde > formData.vigenteHasta
+    ) {
+      notificar.info('La fecha de inicio no puede ser posterior a la de fin');
+      return;
+    }
 
     const editandoAhora = !!editando;
 
@@ -133,6 +144,11 @@ export const useProductosAdmin = () => {
             llevaSalsas: formData.llevaSalsas,
             llevaPresentacion: formData.llevaPresentacion,
             sedeIds: formData.sedeIds,
+            esPromo: formData.esPromo,
+            // Van como '' y no como undefined a propósito: es así como el
+            // server distingue "sacale la fecha" de "no la toques".
+            vigenteDesde: formData.esPromo ? formData.vigenteDesde : '',
+            vigenteHasta: formData.esPromo ? formData.vigenteHasta : '',
           },
         });
       } else {
@@ -147,6 +163,9 @@ export const useProductosAdmin = () => {
           llevaPresentacion: formData.llevaPresentacion,
           disponible: formData.disponible,
           sedeIds: formData.sedeIds,
+          esPromo: formData.esPromo,
+          vigenteDesde: formData.esPromo ? formData.vigenteDesde || undefined : undefined,
+          vigenteHasta: formData.esPromo ? formData.vigenteHasta || undefined : undefined,
         });
       }
 
@@ -192,6 +211,9 @@ export const useProductosAdmin = () => {
     categorias,
     sedes,
     categoriaMap,
+    // Lista completa y sin paginar: la usa la pestaña de Promociones, que es
+    // una vista filtrada de estos mismos items (`esPromo`).
+    todosLosItems: items,
     paginados,
     pagina,
     setPagina,

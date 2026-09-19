@@ -147,3 +147,134 @@ describe("items.listarMenu — filtro por sede", () => {
     expect(nombres(menu)).not.toContain("Fuera de carta en Dalia");
   });
 });
+
+const ADMIN = { email: "admin@test.local", subject: "user_admin_test" };
+const comoAdmin = (t: ReturnType<typeof convexTest>) => t.withIdentity(ADMIN);
+
+const conCategoria = async (t: ReturnType<typeof convexTest>) =>
+  await t.run(async (ctx) =>
+    ctx.db.insert("categorias", { nombre: "Promos", orden: 1, activo: true })
+  );
+
+const crearPromo = async (
+  t: ReturnType<typeof convexTest>,
+  extra: Record<string, unknown> = {}
+) => {
+  const categoriaId = await conCategoria(t);
+
+  return await comoAdmin(t).mutation(api.items.crear, {
+    categoriaId,
+    nombre: "Combo del día",
+    precio: 25000,
+    esPromo: true,
+    ...extra,
+  });
+};
+
+describe("items — promocion del dia", () => {
+  test("una promo es un item normal: entra al menu como cualquier producto", async () => {
+    const t = convexTest(schema, modules);
+    await crearPromo(t);
+
+    const menu = await t.query(api.items.listarMenu, {});
+
+    // Esto es lo que habilita pedirla: si no estuviera en el menu, tampoco
+    // podria entrar al carrito ni a un pedido.
+    expect(nombres(menu)).toContain("Combo del día");
+    expect(menu[0].esPromo).toBe(true);
+  });
+
+  test("guarda la ventana de vigencia tal cual", async () => {
+    const t = convexTest(schema, modules);
+    await crearPromo(t, { vigenteDesde: "2026-03-29", vigenteHasta: "2026-04-05" });
+
+    const [promo] = await t.query(api.items.listarMenu, {});
+
+    expect(promo.vigenteDesde).toBe("2026-03-29");
+    expect(promo.vigenteHasta).toBe("2026-04-05");
+  });
+
+  test("rechaza una fecha con formato invalido", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(crearPromo(t, { vigenteDesde: "29/03/2026" })).rejects.toThrow(
+      /YYYY-MM-DD/
+    );
+  });
+
+  test("rechaza una ventana al reves", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      crearPromo(t, { vigenteDesde: "2026-04-05", vigenteHasta: "2026-03-29" })
+    ).rejects.toThrow(/no puede ser posterior/);
+  });
+
+  test("una fecha vacia se guarda como sin fecha", async () => {
+    const t = convexTest(schema, modules);
+    // El <input type="date"> vacio manda "": tiene que significar "sin fecha",
+    // no romper la validacion de formato.
+    await crearPromo(t, { vigenteDesde: "", vigenteHasta: "" });
+
+    const [promo] = await t.query(api.items.listarMenu, {});
+
+    expect(promo.vigenteDesde).toBeUndefined();
+    expect(promo.vigenteHasta).toBeUndefined();
+  });
+
+  test("se le puede SACAR la fecha a una promo que ya la tenia", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearPromo(t, { vigenteHasta: "2026-09-18" });
+
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { vigenteHasta: "" },
+    });
+
+    const [promo] = await t.query(api.items.listarMenu, {});
+    expect(promo.vigenteHasta).toBeUndefined();
+  });
+
+  test("editar solo el fin no borra el inicio que ya estaba", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearPromo(t, {
+      vigenteDesde: "2026-09-01",
+      vigenteHasta: "2026-09-10",
+    });
+
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { vigenteHasta: "2026-09-30" },
+    });
+
+    const [promo] = await t.query(api.items.listarMenu, {});
+    // `undefined` en un patch borra el campo: si la mutation mandara las dos
+    // fechas siempre, esta promo se quedaria sin inicio sin que nadie lo pida.
+    expect(promo.vigenteDesde).toBe("2026-09-01");
+    expect(promo.vigenteHasta).toBe("2026-09-30");
+  });
+
+  test("actualizar valida el estado FINAL, no solo lo que llega", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearPromo(t, { vigenteDesde: "2026-09-20" });
+
+    // El `hasta` que llega es anterior al `desde` que ya estaba guardado.
+    await expect(
+      comoAdmin(t).mutation(api.items.actualizar, {
+        id,
+        campos: { vigenteHasta: "2026-09-10" },
+      })
+    ).rejects.toThrow(/no puede ser posterior/);
+  });
+
+  test("listarMenu NO filtra por fecha: eso lo decide el cliente", async () => {
+    const t = convexTest(schema, modules);
+    await crearPromo(t, { vigenteHasta: "2020-01-01" });
+
+    // A proposito: Convex corre en UTC y en Colombia (UTC-5) el server ya esta
+    // en el dia siguiente desde las 19:00, asi que filtrar la fecha aca
+    // apagaria las promos del dia en plena hora pico. El filtro vive en
+    // src/utils/vigencia.js, con la hora local del navegador.
+    expect(await t.query(api.items.listarMenu, {})).toHaveLength(1);
+  });
+});

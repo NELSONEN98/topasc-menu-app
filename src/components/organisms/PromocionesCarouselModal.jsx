@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { formatearPrecio } from '../../utils/formatoPedido';
 import './PromocionesCarouselModal.css';
 
-// Se abre una sola vez al entrar al menu, con todas las promos activas. El
+// Se abre una sola vez al entrar al menu, con todas las promos vigentes. El
 // admin puede cargar varias: esto las recorre de a una en vez de amontonarlas
 // en un solo modal ilegible.
-export const PromocionesCarouselModal = ({ promociones, onClose }) => {
+//
+// `onPedir` no agrega al carrito directo: abre el detalle del producto, que es
+// donde se eligen salsas y presentacion. Una promo es un item como cualquier
+// otro y puede necesitar esas dos cosas para poder venderse.
+export const PromocionesCarouselModal = ({ promociones, onClose, onPedir }) => {
   const [indice, setIndice] = useState(0);
 
   // El indice se acota al largo actual en vez de usarse crudo. `promociones`
@@ -41,13 +45,13 @@ export const PromocionesCarouselModal = ({ promociones, onClose }) => {
 
         {promocion.imagenUrl && (
           <div className="promo-modal-imagen">
-            <img src={promocion.imagenUrl} alt={promocion.titulo} />
+            <img src={promocion.imagenUrl} alt={promocion.nombre} />
           </div>
         )}
 
         <div className="promo-modal-body">
           <span className="promo-modal-etiqueta">Promoción del día</span>
-          <h2 className="promo-modal-titulo">{promocion.titulo}</h2>
+          <h2 className="promo-modal-titulo">{promocion.nombre}</h2>
 
           {promocion.descripcion && (
             <p className="promo-modal-descripcion">{promocion.descripcion}</p>
@@ -77,10 +81,14 @@ export const PromocionesCarouselModal = ({ promociones, onClose }) => {
                 Anterior
               </button>
             )}
-            <button type="button" className="promo-modal-btn" onClick={siguiente}>
-              {esUltima ? 'Ver el menú' : 'Siguiente promo'}
+            <button type="button" className="promo-modal-btn" onClick={() => onPedir(promocion)}>
+              Pedir esta promo
             </button>
           </div>
+
+          <button type="button" className="promo-modal-link" onClick={siguiente}>
+            {esUltima ? 'Ver el menú' : 'Siguiente promo'}
+          </button>
         </div>
       </div>
     </div>

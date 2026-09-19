@@ -138,3 +138,16 @@
   background: #F2ECE3;
   color: #666;
 }
+
+/* Salida secundaria: seguir mirando o irse al menú no compite visualmente
+   con el botón de pedir. */
+.promo-modal-link {
+  margin-top: 0.75rem;
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: #666;
+  font: 500 0.8125rem 'Inter', sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}

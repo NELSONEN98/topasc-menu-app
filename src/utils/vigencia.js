@@ -36,8 +36,12 @@ export const estaVigente = (promocion, hoy = fechaLocalHoy()) => {
 };
 
 // Por que una promo no se esta viendo. Lo usa el panel: sin esto, una promo
-// `activa` pero fuera de su ventana se ve igual que una que si se muestra, y
+// prendida pero fuera de su ventana se ve igual que una que si se muestra, y
 // el admin no entiende por que el cliente no la ve.
+//
+// `activa` es el interruptor manual de quien llama (para un item del menu, su
+// `disponible`): se separa de las fechas porque son dos motivos distintos por
+// los que una promo puede no estar a la vista.
 export const estadoVigencia = (promocion, hoy = fechaLocalHoy()) => {
   if (!promocion.activa) return 'apagada';
   if (promocion.vigenteDesde && hoy < promocion.vigenteDesde) return 'programada';

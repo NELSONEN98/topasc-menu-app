@@ -49,6 +49,46 @@ export default defineSchema({
     // queda con un menu vacio. El admin no puede guardar un plato sin sedes,
     // asi que un array vacio solo puede venir de datos previos a este campo.
     sedeIds: v.optional(v.array(v.id("sedes"))),
+    /**
+     * Promocion del dia. Es un item como cualquier otro —se pide, se agrega
+     * al carrito y viaja al pedido igual que un plato— y este flag solo
+     * cambia DONDE se muestra: entra en el filtro "Promociones del día" del
+     * menu y arma el carrusel que se abre al entrar.
+     *
+     * Se modela asi, y no como una tabla aparte, porque una promo que se
+     * puede pedir ES un producto: cada linea de `pedidos` exige un
+     * `itemId: v.id("items")`, asi que una promo fuera de esta tabla no
+     * podria entrar en un pedido sin debilitar ese vinculo.
+     *
+     * undefined/false = producto normal (el default).
+     */
+    esPromo: v.optional(v.boolean()),
+    /**
+     * Ventana de vigencia de la promo, en formato "YYYY-MM-DD". Las dos son
+     * opcionales:
+     *   ninguna    -> la promo corre hasta que la apaguen con `disponible`
+     *   solo desde -> arranca ese dia y no termina
+     *   solo hasta -> corre hasta ese dia inclusive
+     *   las dos    -> ventana cerrada, inclusive en los dos extremos
+     *
+     * Se guardan como STRING y no como timestamp, por dos razones:
+     *
+     * 1. Es el formato que escupe <input type="date">, igual que
+     *    `horaApertura` guarda "11:00" por <input type="time">. Y un
+     *    "YYYY-MM-DD" ordena y compara bien como string, sin parsear nada:
+     *    `new Date("2026-09-18")` se interpreta como medianoche UTC, que es
+     *    una fuente clasica de errores de un dia de corrimiento.
+     *
+     * 2. Un timestamp obligaria a comparar contra `Date.now()` del servidor,
+     *    y Convex corre en UTC. En Colombia (UTC-5) el servidor ya esta en el
+     *    dia siguiente desde las 19:00 — o sea que una promo "de hoy" se
+     *    apagaria sola en plena hora pico. Por eso el dia de HOY lo resuelve
+     *    el navegador con su hora local y el filtro por fecha vive en el
+     *    cliente (src/utils/vigencia.js), no en la query. Mismo criterio que
+     *    ya usa StatusBar.jsx para saber que dia de la semana es.
+     */
+    vigenteDesde: v.optional(v.string()),
+    vigenteHasta: v.optional(v.string()),
   }).index("por_categoria", ["categoriaId"]),
 
   /**
@@ -220,64 +260,6 @@ export default defineSchema({
     horaCierre: v.optional(v.string()),
     cerrado: v.boolean(),
   }).index("por_dia", ["diaSemana"]),
-
-  /**
-   * Lista de promociones del dia (ya no es un singleton: puede haber varias
-   * vigentes al mismo tiempo). Arman el filtro "Promociones del dia" del
-   * menu y el carrusel que se abre apenas el cliente entra.
-   */
-  promocionesDelDia: defineTable({
-    titulo: v.string(),
-    descripcion: v.optional(v.string()),
-    // Optional: hay promos (2x1, "10% en combos") que no se resumen en un
-    // unico precio final.
-    precio: v.optional(v.number()),
-    // Igual que en items: base64 dentro del documento, no storage. Son a lo
-    // sumo unas pocas decenas de promos, del mismo orden que los productos,
-    // asi que no justifica el vaiven de storage (URL de subida, borrar el
-    // blob viejo, etc) que sí tiene sentido para la imagen unica del Hero.
-    imagenUrl: v.optional(v.string()),
-    // Interruptor por promo. La fila sigue existiendo (con su texto e
-    // imagen) mientras el admin la apaga entre un dia y el siguiente, sin
-    // perder los datos para reactivarla despues.
-    activa: v.boolean(),
-    // En que sedes corre esta promo. Misma semantica que `items.sedeIds`, a
-    // proposito: undefined o [] = corre en TODAS las sedes. Asi las promos
-    // que se cargaron antes de que existiera el campo siguen mostrandose, y
-    // el flujo por QR (que puede llegar sin sede, ver App.jsx) nunca queda
-    // sin promos por un filtro que no puede resolver.
-    //
-    // Va como array y no como un `sedeId` unico porque lo normal es que una
-    // promo del dia corra en varios locales a la vez; la excepcion es la que
-    // corre en uno solo.
-    sedeIds: v.optional(v.array(v.id("sedes"))),
-    /**
-     * Ventana de vigencia, en formato "YYYY-MM-DD". Las dos son opcionales:
-     *   ninguna         -> solo manda el switch `activa` (es lo que habia antes)
-     *   solo desde      -> arranca ese dia y no termina
-     *   solo hasta      -> corre hasta ese dia inclusive
-     *   las dos         -> ventana cerrada, inclusive en los dos extremos
-     *
-     * Se guardan como STRING y no como timestamp, por dos razones:
-     *
-     * 1. Es el formato que escupe <input type="date">, igual que
-     *    `horaApertura` guarda "11:00" por <input type="time">. Y un
-     *    "YYYY-MM-DD" ordena y compara bien como string, sin parsear nada:
-     *    `new Date("2026-09-18")` se interpreta como medianoche UTC, que es
-     *    una fuente clasica de errores de un dia de corrimiento.
-     *
-     * 2. Un timestamp obligaria a comparar contra `Date.now()` del servidor,
-     *    y Convex corre en UTC. En Colombia (UTC-5) el servidor ya esta en el
-     *    dia siguiente desde las 19:00 — o sea que una promo "de hoy" se
-     *    apagaria sola en plena hora pico. Por eso el dia de HOY lo resuelve
-     *    el navegador con su hora local y el filtro por fecha vive en el
-     *    cliente (src/utils/vigencia.js), no en la query. Mismo criterio que
-     *    ya usa StatusBar.jsx para saber que dia de la semana es.
-     */
-    vigenteDesde: v.optional(v.string()),
-    vigenteHasta: v.optional(v.string()),
-    orden: v.number(),
-  }).index("por_orden", ["orden"]),
 
   // Singleton: una sola fila para todo el restaurante.
   configuracionRestaurante: defineTable({

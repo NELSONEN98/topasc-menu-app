@@ -8,12 +8,20 @@ import '../styles/ProductModal.css';
 // default de una prop que se lee dentro de un efecto.
 const SIN_DATOS = [];
 
+// Referencia estable: se lee dentro del efecto que arma el formulario, asi que
+// un objeto nuevo por render lo volveria a disparar.
+const SIN_DEFAULTS = {};
+
 export const ProductModal = ({
   isOpen,
   onClose,
   product,
   categorias,
   sedes = SIN_DATOS,
+  // Valores con los que nace un producto NUEVO. Lo usa la pestaña de
+  // Promociones para que "+ Agregar promo" abra el form ya marcado como promo,
+  // en vez de pedirle al admin que tilde el check que acaba de apretar.
+  defaults = SIN_DEFAULTS,
   onSave,
 }) => {
   const [formData, setFormData] = useState({
@@ -29,6 +37,9 @@ export const ProductModal = ({
     // de items contra toda la carta. Ver la nota en schema.ts.
     llevaPresentacion: false,
     sedeIds: [],
+    esPromo: false,
+    vigenteDesde: '',
+    vigenteHasta: '',
   });
 
   const [imagePreview, setImagePreview] = useState('');
@@ -54,6 +65,9 @@ export const ProductModal = ({
         llevaSalsas: product.llevaSalsas !== false,
         llevaPresentacion: product.llevaPresentacion === true,
         sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
+        esPromo: product.esPromo === true,
+        vigenteDesde: product.vigenteDesde || '',
+        vigenteHasta: product.vigenteHasta || '',
       });
       setImagePreview(product.imagenUrl || '');
     } else {
@@ -68,6 +82,10 @@ export const ProductModal = ({
         llevaSalsas: true,
         llevaPresentacion: false,
         sedeIds: todasLasSedes,
+        esPromo: false,
+        vigenteDesde: '',
+        vigenteHasta: '',
+        ...defaults,
       });
       setImagePreview('');
     }
@@ -302,6 +320,64 @@ export const ProductModal = ({
                 )}
               </div>
             </div>
+          </fieldset>
+
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Promoción del día</legend>
+
+            <label className="opcion-tarjeta" htmlFor="esPromo">
+              <input
+                id="esPromo"
+                type="checkbox"
+                name="esPromo"
+                checked={formData.esPromo}
+                onChange={handleChange}
+              />
+              <span className="opcion-tarjeta__texto">
+                <strong>Es promoción del día</strong>
+                <small>
+                  Se pide como cualquier producto, pero además aparece en el filtro
+                  "Promociones del día" y en el aviso que se abre al entrar al menú.
+                </small>
+              </span>
+            </label>
+
+            {/* Las fechas solo tienen sentido si es promo: en un plato normal
+                serian un campo mas para completar sin motivo. */}
+            {formData.esPromo && (
+              <>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="vigenteDesde">Vigente desde</label>
+                    <input
+                      id="vigenteDesde"
+                      type="date"
+                      name="vigenteDesde"
+                      value={formData.vigenteDesde}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="vigenteHasta">Vigente hasta</label>
+                    <input
+                      id="vigenteHasta"
+                      type="date"
+                      name="vigenteHasta"
+                      value={formData.vigenteHasta}
+                      onChange={handleChange}
+                      min={formData.vigenteDesde || undefined}
+                    />
+                  </div>
+                </div>
+
+                <small className="form-ayuda">
+                  Las dos son opcionales y los días se cuentan completos. Para una promo de
+                  un solo día, poné la misma fecha en las dos. Si las dejás vacías, corre
+                  hasta que la saques de promo o la marques como no disponible.
+                </small>
+              </>
+            )}
           </fieldset>
 
           <fieldset className="form-seccion">

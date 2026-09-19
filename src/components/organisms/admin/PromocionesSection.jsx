@@ -1,13 +1,12 @@
-import { PromocionFormModal } from '../PromocionFormModal';
-import { Pagination } from '../../molecules/Pagination';
+import { ProductModal } from '../ProductModal';
 import { SeccionHeader } from './SeccionHeader';
-import { usePromocionesAdmin } from '../../../hooks/usePromocionesAdmin';
+import { useProductosAdmin } from '../../../hooks/useProductosAdmin';
 import { estadoVigencia } from '../../../utils/vigencia';
 
-// Una promo `activa` pero fuera de su ventana de fechas NO se ve en el menu,
-// y con solo el switch prendido eso es indistinguible de una que si se ve.
-// Sin este aviso el admin la prende, no la encuentra en el menu y no tiene
-// forma de saber que el problema es la fecha.
+// Una promo dentro de su ventana de fechas pero marcada como no disponible NO
+// se ve en el menu, y con solo el toggle prendido eso es indistinguible de una
+// que si se ve. Sin este aviso el admin la prende, no la encuentra en el menu
+// y no tiene forma de saber que el problema es la fecha.
 const AVISO_VIGENCIA = {
   programada: 'Todavía no arranca',
   vencida: 'Ya venció',
@@ -24,23 +23,38 @@ const rangoVigencia = ({ vigenteDesde, vigenteHasta }) => {
   return vigenteDesde ? `Desde ${vigenteDesde}` : `Hasta ${vigenteHasta}`;
 };
 
+/**
+ * Vista filtrada de Productos: solo los que estan marcados como promo del dia.
+ *
+ * No tiene datos ni CRUD propios — una promo ES un producto (asi se puede
+ * pedir y entrar en un pedido), asi que se crea y edita con el mismo modal.
+ * Esta pestaña existe para poder ver de un vistazo que promos estan corriendo
+ * y hasta cuando, que en la tabla de Productos se perderia entre todo el menu.
+ */
 export const PromocionesSection = () => {
-  const { sedes, paginadas, pagina, setPagina, totalPaginas, resumen, modal, acciones } =
-    usePromocionesAdmin();
+  const { categorias, sedes, modal, acciones, todosLosItems } = useProductosAdmin();
+
+  const promos = todosLosItems.filter((item) => item.esPromo === true);
 
   return (
     <div>
       <SeccionHeader
         titulo="Promociones del día"
-        resumen={`${resumen.total} promos · ${resumen.activas} activas · se ven en el menú del cliente`}
+        resumen={`${promos.length} promos · se piden como cualquier producto`}
         textoAccion="+ Agregar promo"
         onAccion={modal.abrirNuevo}
       />
 
+      <p className="admin-ayuda">
+        Una promo es un producto con el check "Es promoción del día". Se agrega al carrito
+        igual que el resto y aparece además en el filtro "Promociones del día" del menú y en
+        el aviso que se abre al entrar.
+      </p>
+
       <div className="admin-table-wrapper">
         <div className="admin-table-header admin-table-header-promos">
           <div></div>
-          <div>Título</div>
+          <div>Producto</div>
           <div>Vigencia</div>
           <div>Precio</div>
           <div>Estado</div>
@@ -48,13 +62,15 @@ export const PromocionesSection = () => {
         </div>
 
         <div className="admin-table-body">
-          {paginadas.length === 0 ? (
-            <p className="admin-vacio">Todavía no hay promociones cargadas.</p>
+          {promos.length === 0 ? (
+            <p className="admin-vacio">
+              Todavía no hay promociones. Creá una o marcá un producto existente como promo.
+            </p>
           ) : (
-            paginadas.map((promo) => (
+            promos.map((promo) => (
               <div key={promo._id} className="admin-table-row admin-table-row-promos">
                 {promo.imagenUrl ? (
-                  <img src={promo.imagenUrl} alt={promo.titulo} className="admin-table-img" />
+                  <img src={promo.imagenUrl} alt={promo.nombre} className="admin-table-img" />
                 ) : (
                   <div className="admin-table-img admin-table-img--empty" title="Sin imagen">
                     📷
@@ -62,10 +78,10 @@ export const PromocionesSection = () => {
                 )}
 
                 <div className="admin-table-cell-name">
-                  {promo.titulo}
-                  {AVISO_VIGENCIA[estadoVigencia(promo)] && (
+                  {promo.nombre}
+                  {AVISO_VIGENCIA[estadoVigencia({ ...promo, activa: promo.disponible })] && (
                     <span className="admin-table-noimg">
-                      {AVISO_VIGENCIA[estadoVigencia(promo)]}
+                      {AVISO_VIGENCIA[estadoVigencia({ ...promo, activa: promo.disponible })]}
                     </span>
                   )}
                 </div>
@@ -75,31 +91,31 @@ export const PromocionesSection = () => {
                 </div>
 
                 <div className="admin-table-cell-price" data-label="Precio">
-                  {promo.precio != null ? `$${promo.precio.toLocaleString()}` : '—'}
+                  ${promo.precio.toLocaleString()}
                 </div>
 
                 <div className="admin-table-cell-status" data-label="Estado">
                   <button
-                    className={`status-toggle ${promo.activa ? 'active' : ''}`}
-                    onClick={() => acciones.alternarActiva(promo)}
-                    title={promo.activa ? 'Clic para apagar' : 'Clic para activar'}
-                    aria-label={`${promo.titulo}: ${promo.activa ? 'activa' : 'apagada'}`}
-                    aria-pressed={promo.activa}
+                    className={`status-toggle ${promo.disponible ? 'active' : ''}`}
+                    onClick={() => acciones.alternarDisponible(promo)}
+                    title={promo.disponible ? 'Clic para inhabilitar' : 'Clic para habilitar'}
+                    aria-label={`${promo.nombre}: ${promo.disponible ? 'disponible' : 'no disponible'}`}
+                    aria-pressed={promo.disponible}
                   />
                 </div>
 
                 <div className="admin-table-actions">
                   <button
                     className="btn-edit"
-                    onClick={() => modal.abrirEdicion(promo)}
-                    aria-label={`Editar ${promo.titulo}`}
+                    onClick={() => modal.abrirEdicion(promo._id)}
+                    aria-label={`Editar ${promo.nombre}`}
                   >
                     <span className="btn-texto">Editar</span>
                   </button>
                   <button
                     className="btn-delete"
                     onClick={() => acciones.eliminar(promo)}
-                    aria-label={`Eliminar ${promo.titulo}`}
+                    aria-label={`Eliminar ${promo.nombre}`}
                   >
                     <span className="btn-texto">Eliminar</span>
                   </button>
@@ -110,13 +126,13 @@ export const PromocionesSection = () => {
         </div>
       </div>
 
-      <Pagination currentPage={pagina} totalPages={totalPaginas} onPageChange={setPagina} />
-
-      <PromocionFormModal
+      <ProductModal
         isOpen={modal.abierto}
         onClose={modal.cerrar}
-        promocion={modal.editando}
+        product={modal.editando}
+        categorias={categorias}
         sedes={sedes}
+        defaults={{ esPromo: true }}
         onSave={acciones.guardar}
       />
     </div>
