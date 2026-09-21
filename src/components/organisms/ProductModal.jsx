@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { IngredientesInput } from '../molecules/IngredientesInput';
 import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
+import { esCategoriaBebidas } from '../../utils/categorias';
 import '../styles/ProductModal.css';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
@@ -12,15 +13,10 @@ const SIN_DATOS = [];
 // un objeto nuevo por render lo volveria a disparar.
 const SIN_DEFAULTS = {};
 
-// Mismo nombre que usa categorias.ts para sincronizar el menu. `llevaPresentacion`
-// (elegir sabor y tamaño) solo tiene sentido para gaseosas: sin este chequeo el
-// checkbox queda suelto, se puede tildar en CUALQUIER producto por error, y el
-// cliente termina viendo "Elegí el sabor" en un plato de comida.
-const NOMBRE_CATEGORIA_BEBIDAS = 'bebidas';
-
-const esCategoriaBebidas = (categorias, categoriaId) =>
-  categorias.find((c) => c._id === categoriaId)?.nombre?.trim().toLowerCase() ===
-  NOMBRE_CATEGORIA_BEBIDAS;
+// `llevaPresentacion` (elegir sabor y tamaño) solo tiene sentido para
+// gaseosas, por eso se ata a la categoria Bebidas (esCategoriaBebidas): sin ese
+// chequeo el checkbox queda suelto, se puede tildar en CUALQUIER producto por
+// error, y el cliente termina viendo "Elegí el sabor" en un plato de comida.
 
 export const ProductModal = ({
   isOpen,

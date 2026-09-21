@@ -1,0 +1,76 @@
+/* Mismo lenguaje que ProductDetailModal (hoja que sube desde abajo, mismo
+   ancho de telefono): son dos pasos seguidos del mismo flujo y no deberian
+   sentirse como dos pantallas distintas. */
+.bebidas-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  animation: bebidasFadeIn 0.2s ease-out;
+}
+
+.bebidas-content {
+  background: #F8F5F0;
+  border-radius: 1.5rem 1.5rem 0 0;
+  width: 100%;
+  max-width: 24.375rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: bebidasSlideUp 0.3s ease-out;
+}
+
+.bebidas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem 0.5rem;
+}
+
+.bebidas-titulo {
+  margin: 0;
+  font: 700 1.125rem 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.bebidas-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: #E11E2B;
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* La lista scrollea sola y el titulo queda fijo: con muchas bebidas, perder
+   el boton de cerrar al bajar obliga a tocar el fondo para salir. */
+.bebidas-lista {
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+@keyframes bebidasSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes bebidasFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

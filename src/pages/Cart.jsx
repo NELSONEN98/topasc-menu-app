@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useMutation } from 'convex/react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Header } from '../components/organisms/Header';
 import { CartItem } from '../components/molecules/CartItem';
@@ -8,10 +8,17 @@ import { OrderConfirmation } from '../components/organisms/OrderConfirmation';
 import { TableNumberModal } from '../components/organisms/TableNumberModal';
 import { AddressModal } from '../components/organisms/AddressModal';
 import { PickupModal } from '../components/organisms/PickupModal';
+import { BebidasModal } from '../components/organisms/BebidasModal';
+import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { useCart, SIN_SALSAS } from '../context/CartContext';
 import { useNotificacion } from '../context/NotificacionContext';
+import { esCategoriaBebidas } from '../utils/categorias';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
+
+// Referencia estable mientras las queries cargan: un `[]` nuevo por render
+// rompe cualquier useMemo que lo tenga como dependencia.
+const SIN_DATOS = [];
 
 export const Cart = ({
   onNavigateToHome,
@@ -30,6 +37,31 @@ export const Cart = ({
   const [address, setAddress] = useState(null);
   const [showPickupModal, setShowPickupModal] = useState(false);
   const [pickup, setPickup] = useState(null);
+  const [showBebidas, setShowBebidas] = useState(false);
+  const [bebidaElegida, setBebidaElegida] = useState(null);
+
+  // Misma query que el menu, con la misma sede: la bebida que se ofrece aca
+  // tiene que venderse en el local del pedido. Sin sede (entrada por QR) el
+  // server devuelve el menu completo, igual que en Home.
+  const items = useQuery(api.items.listarMenu, { sedeId: sede?._id }) ?? SIN_DATOS;
+  const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
+  // El detalle de producto los necesita: las gaseosas piden sabor y tamaño,
+  // y algunas bebidas podrian llevar salsa (no hay regla que lo impida).
+  const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
+  const presentaciones =
+    useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
+
+  const bebidas = useMemo(
+    () => items.filter((item) => esCategoriaBebidas(categorias, item.categoriaId)),
+    [items, categorias]
+  );
+
+  // Se pasa de la lista al detalle en vez de apilarlos: dos hojas abiertas a
+  // la vez no dejan claro cual se cierra con el fondo.
+  const elegirBebida = (bebida) => {
+    setShowBebidas(false);
+    setBebidaElegida(bebida);
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
@@ -262,6 +294,25 @@ export const Cart = ({
             ))}
           </div>
 
+          {/* Debajo de los productos y antes del total: es el ultimo momento
+              en que el cliente repasa lo que pidio. Si el local no tiene
+              bebidas cargadas para esta sede, el boton no aparece — abrir una
+              hoja vacia es peor que no ofrecer nada. */}
+          {bebidas.length > 0 && (
+            <button
+              type="button"
+              className="cart__bebidas-btn"
+              onClick={() => setShowBebidas(true)}
+            >
+              <span className="cart__bebidas-icono" aria-hidden="true">🥤</span>
+              <span className="cart__bebidas-texto">
+                <strong>¿Algo para tomar?</strong>
+                <small>Agregá una bebida a tu orden</small>
+              </span>
+              <span className="cart__bebidas-mas" aria-hidden="true">+</span>
+            </button>
+          )}
+
           <div className="cart__summary">
             <div className="cart__summary-row">
               <span>Subtotal</span>
@@ -318,6 +369,23 @@ export const Cart = ({
         <PickupModal
           onConfirm={handlePickupConfirm}
           onCancel={() => setShowPickupModal(false)}
+        />
+      )}
+
+      {showBebidas && (
+        <BebidasModal
+          bebidas={bebidas}
+          onElegir={elegirBebida}
+          onClose={() => setShowBebidas(false)}
+        />
+      )}
+
+      {bebidaElegida && (
+        <ProductDetailModal
+          product={bebidaElegida}
+          salsas={salsas}
+          presentaciones={presentaciones}
+          onClose={() => setBebidaElegida(null)}
         />
       )}
 

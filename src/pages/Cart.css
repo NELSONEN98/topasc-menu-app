@@ -81,6 +81,72 @@
 }
 
 /* ============================================================
+   AGREGAR BEBIDAS
+   ============================================================ */
+
+/* Tarjeta punteada y no un boton solido: invita a sumar algo sin competir
+   con "Confirmar por WhatsApp", que es la accion principal de la pantalla. */
+.cart__bebidas-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: calc(100% - 2.25rem);
+  margin: 0 1.125rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px dashed #E0D5C7;
+  border-radius: 0.875rem;
+  background: #FFFDF9;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cart__bebidas-btn:hover {
+  border-color: #E11E2B;
+  background: #FFF;
+}
+
+.cart__bebidas-btn:focus-visible {
+  outline: 2px solid #E11E2B;
+  outline-offset: 2px;
+}
+
+.cart__bebidas-icono {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.cart__bebidas-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.cart__bebidas-texto strong {
+  font: 700 0.875rem 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+.cart__bebidas-texto small {
+  font: 400 0.75rem 'Inter', sans-serif;
+  color: #999;
+}
+
+.cart__bebidas-mas {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: #E11E2B;
+  color: #fff;
+  font: 700 1.125rem 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================
    SUMMARY
    ============================================================ */
 .cart__summary {
