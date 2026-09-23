@@ -117,37 +117,44 @@
   border-radius: 999px;
 }
 
-.promo-modal-acciones {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
 .promo-modal-btn {
   flex: 1;
+  /* 2.75rem = 44px, el minimo comodo para el pulgar. */
+  min-height: 2.75rem;
   padding: 0.75rem 1rem;
-  border: none;
+  border: 1.5px solid #FFC933;
   border-radius: 0.75rem;
-  background: #FFC933;
-  color: #241C15;
+  background: #241C15;
+  color: #FFF;
   font: 700 0.9375rem 'Inter', sans-serif;
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.promo-modal-btn--secundario {
-  background: #F2ECE3;
-  color: #666;
+.promo-modal-btn:focus-visible {
+  outline: 2px solid #FFC933;
+  outline-offset: 2px;
 }
 
-/* Salida secundaria: seguir mirando o irse al menú no compite visualmente
-   con el botón de pedir. */
-.promo-modal-link {
+.promo-modal-btn--principal {
+  width: 100%;
   margin-top: 0.75rem;
-  padding: 0.25rem;
-  border: none;
-  background: none;
-  color: #666;
-  font: 500 0.8125rem 'Inter', sans-serif;
-  text-decoration: underline;
-  cursor: pointer;
+}
+
+/* Los dos de navegacion comparten la fila en partes iguales, asi ninguno
+   cambia de ancho al pasar de una promo a otra. */
+.promo-modal-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/*
+ * En los extremos el boton sigue ocupando su lugar pero se apaga. Se baja la
+ * opacidad en vez de esconderlo: que desaparezca correria al de al lado justo
+ * cuando el dedo ya salio para apretarlo.
+ */
+.promo-modal-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }

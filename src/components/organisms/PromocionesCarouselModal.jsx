@@ -26,14 +26,9 @@ export const PromocionesCarouselModal = ({ promociones, onClose, onPedir }) => {
   // nada que mostrar. Home igual desmonta el modal, esto es el cinturon.
   if (!promocion) return null;
 
-  const siguiente = () => {
-    if (esUltima) {
-      onClose();
-      return;
-    }
-    setIndice(indiceValido + 1);
-  };
-
+  // Los dos se frenan en el borde: el boton ya viene deshabilitado ahi, esto
+  // es el cinturon por si alguien lo dispara por teclado igual.
+  const siguiente = () => setIndice(Math.min(promociones.length - 1, indiceValido + 1));
   const anterior = () => setIndice(Math.max(0, indiceValido - 1));
 
   return (
@@ -75,20 +70,39 @@ export const PromocionesCarouselModal = ({ promociones, onClose, onPedir }) => {
             </div>
           )}
 
-          <div className="promo-modal-acciones">
-            {indiceValido > 0 && (
-              <button type="button" className="promo-modal-btn promo-modal-btn--secundario" onClick={anterior}>
+          <button
+            type="button"
+            className="promo-modal-btn promo-modal-btn--principal"
+            onClick={() => onPedir(promocion)}
+          >
+            Pedir esta promo
+          </button>
+
+          {/* Los dos de navegacion van juntos y SIEMPRE renderizados, aunque
+              no se puedan usar: si "Anterior" apareciera recien en la segunda
+              promo, "Siguiente" se correria de lugar y el dedo erraria el
+              boton que venia apretando. Se deshabilitan en los extremos en vez
+              de esconderse. */}
+          {promociones.length > 1 && (
+            <div className="promo-modal-nav">
+              <button
+                type="button"
+                className="promo-modal-btn"
+                onClick={anterior}
+                disabled={indiceValido === 0}
+              >
                 Anterior
               </button>
-            )}
-            <button type="button" className="promo-modal-btn" onClick={() => onPedir(promocion)}>
-              Pedir esta promo
-            </button>
-          </div>
-
-          <button type="button" className="promo-modal-link" onClick={siguiente}>
-            {esUltima ? 'Ver el menú' : 'Siguiente promo'}
-          </button>
+              <button
+                type="button"
+                className="promo-modal-btn"
+                onClick={siguiente}
+                disabled={esUltima}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
