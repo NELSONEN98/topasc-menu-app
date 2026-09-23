@@ -122,7 +122,7 @@
   /* 2.75rem = 44px, el minimo comodo para el pulgar. */
   min-height: 2.75rem;
   padding: 0.75rem 1rem;
-  border: 1.5px solid #FFC933;
+  border: none;
   border-radius: 0.75rem;
   background: #241C15;
   color: #FFF;
@@ -131,14 +131,18 @@
   transition: opacity 0.15s ease;
 }
 
+/* El rojo de la marca y no el dorado: se ve tanto sobre el negro de los
+   botones de navegacion como sobre el dorado del principal. */
 .promo-modal-btn:focus-visible {
-  outline: 2px solid #FFC933;
+  outline: 2px solid #E11E2B;
   outline-offset: 2px;
 }
 
 .promo-modal-btn--principal {
   width: 100%;
   margin-top: 0.75rem;
+  background: #FFC933;
+  color: #241C15;
 }
 
 /* Los dos de navegacion comparten la fila en partes iguales, asi ninguno
