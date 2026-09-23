@@ -68,7 +68,13 @@ export const ProductModal = ({
         ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
         disponible: product.disponible !== false,
-        llevaSalsas: product.llevaSalsas !== false,
+        // Una bebida NO lleva salsas, y el default de este campo es al reves
+        // (undefined = si lleva), asi que una gaseosa vieja sin el campo
+        // pediria elegir salsas. Se apaga solo al abrirla, igual que
+        // `llevaPresentacion` mas abajo pero en el sentido opuesto.
+        llevaSalsas:
+          !esCategoriaBebidas(categorias, product.categoriaId) &&
+          product.llevaSalsas !== false,
         // Se autocorrige si el producto quedo con el flag prendido en una
         // categoria que no es Bebidas (el bug que motivo este chequeo): al
         // volver a abrirlo y guardarlo, `llevaPresentacion` se limpia solo.
@@ -82,15 +88,18 @@ export const ProductModal = ({
       });
       setImagePreview(product.imagenUrl || '');
     } else {
+      const categoriaInicial = categorias[0]?._id || '';
+
       setFormData({
         nombre: '',
-        categoriaId: categorias[0]?._id || '',
+        categoriaId: categoriaInicial,
         precio: '',
         descripcion: '',
         ingredientes: [],
         imagenUrl: '',
         disponible: true,
-        llevaSalsas: true,
+        // Arranca apagado si la categoria que quedo elegida es Bebidas.
+        llevaSalsas: !esCategoriaBebidas(categorias, categoriaInicial),
         llevaPresentacion: false,
         sedeIds: todasLasSedes,
         esPromo: false,
@@ -135,17 +144,22 @@ export const ProductModal = ({
     const newValue =
       type === 'checkbox' ? checked : name === 'precio' ? numeroDeInput(value) : value;
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue,
-      // Cambiar a una categoria que no es Bebidas apaga "lleva presentacion":
-      // el checkbox se esconde para esa categoria (ver mas abajo), y sin este
-      // reset el formulario lo seguiria mandando en true, invisible para
-      // quien esta editando.
-      ...(name === 'categoriaId' && !esCategoriaBebidas(categorias, newValue)
-        ? { llevaPresentacion: false }
-        : {}),
-    }));
+    setFormData(prev => {
+      if (name !== 'categoriaId') return { ...prev, [name]: newValue };
+
+      // Los dos checkboxes se esconden segun la categoria (ver el render), y
+      // un checkbox escondido igual sigue mandando su valor. Sin estos dos
+      // resets el formulario guardaria en true algo que quien edita ya no ve:
+      // una gaseosa pidiendo salsas, o un plato pidiendo sabor.
+      const aBebidas = esCategoriaBebidas(categorias, newValue);
+
+      return {
+        ...prev,
+        categoriaId: newValue,
+        llevaSalsas: aBebidas ? false : prev.llevaSalsas,
+        llevaPresentacion: aBebidas ? prev.llevaPresentacion : false,
+      };
+    });
   };
 
   const handleIngredientesChange = (ingredientes) => {
@@ -415,19 +429,25 @@ export const ProductModal = ({
               </span>
             </label>
 
-            <label className="opcion-tarjeta" htmlFor="llevaSalsas">
-              <input
-                id="llevaSalsas"
-                type="checkbox"
-                name="llevaSalsas"
-                checked={formData.llevaSalsas}
-                onChange={handleChange}
-              />
-              <span className="opcion-tarjeta__texto">
-                <strong>Lleva salsas</strong>
-                <small>El cliente debe elegirlas al pedir.</small>
-              </span>
-            </label>
+            {/* En Bebidas no se muestra: una gaseosa no lleva salsas, y
+                dejarlo a la vista invita a tildarlo por error — el cliente
+                terminaria eligiendo salsas para una Coca. Es el espejo de
+                "lleva presentacion", que solo aparece en Bebidas. */}
+            {!esCategoriaBebidas(categorias, formData.categoriaId) && (
+              <label className="opcion-tarjeta" htmlFor="llevaSalsas">
+                <input
+                  id="llevaSalsas"
+                  type="checkbox"
+                  name="llevaSalsas"
+                  checked={formData.llevaSalsas}
+                  onChange={handleChange}
+                />
+                <span className="opcion-tarjeta__texto">
+                  <strong>Lleva salsas</strong>
+                  <small>El cliente debe elegirlas al pedir.</small>
+                </span>
+              </label>
+            )}
 
             {/* Solo para Bebidas: es la unica categoria con presentaciones
                 cargadas en la pestaña Gaseosas. Mostrarlo siempre invitaba a

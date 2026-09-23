@@ -180,6 +180,65 @@ describe('ProductModal — "lleva presentación" solo para Bebidas (regresion)',
   });
 });
 
+describe('ProductModal — "lleva salsas" no va en Bebidas', () => {
+  const checkboxSalsas = () =>
+    screen.queryByRole('checkbox', { name: /Lleva salsas/ });
+
+  test('aparece en una categoria de comida', async () => {
+    abrir({ categorias: CATEGORIAS });
+
+    expect(checkboxSalsas()).toBeInTheDocument();
+  });
+
+  test('no aparece cuando la categoria es Bebidas', async () => {
+    abrir({
+      categorias: CATEGORIAS_CON_BEBIDAS,
+      product: { _id: 'item_1', nombre: 'Coca Cola', categoriaId: 'cat_2', precio: 1 },
+    });
+
+    expect(checkboxSalsas()).not.toBeInTheDocument();
+  });
+
+  test('una bebida vieja SIN el campo se autocorrige a false', async () => {
+    // El default de `llevaSalsas` es al reves que el resto: undefined
+    // significa "SI lleva". Sin el autocorregido, una gaseosa cargada antes de
+    // este chequeo le pediria salsas al cliente.
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS_CON_BEBIDAS,
+      product: { _id: 'item_1', nombre: 'Coca Cola', categoriaId: 'cat_2', precio: 1 },
+    });
+
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(onSave.mock.calls[0][0].llevaSalsas).toBe(false);
+  });
+
+  test('pasar un plato a Bebidas apaga el flag aunque estuviera prendido', async () => {
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS_CON_BEBIDAS,
+      product: {
+        _id: 'item_1',
+        nombre: 'Salchipapa',
+        categoriaId: 'cat_1',
+        precio: 18000,
+        llevaSalsas: true,
+      },
+    });
+
+    expect(checkboxSalsas()).toBeChecked();
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_2');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    // El checkbox ya no se ve: si el formulario siguiera mandando true, nadie
+    // podria darse cuenta hasta que un cliente pida una gaseosa con salsas.
+    expect(checkboxSalsas()).not.toBeInTheDocument();
+    expect(onSave.mock.calls[0][0].llevaSalsas).toBe(false);
+  });
+});
+
 describe('ProductModal — que se guarda', () => {
   test('destildar una sede la saca de lo que se envia', async () => {
     const usuario = userEvent.setup();
