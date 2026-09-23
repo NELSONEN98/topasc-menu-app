@@ -201,6 +201,21 @@
   width: 100%;
 }
 
+/*
+ * Achica el alto que trae `.btn--lg` (1rem de padding arriba y abajo), que en
+ * esta pantalla se veia desproporcionado.
+ *
+ * El selector lleva `.btn` a proposito: asi gana por especificidad (0,2,0
+ * contra 0,1,0) y no depende de que Cart.css se cargue despues de Button.css.
+ *
+ * `min-height` en 2.75rem = 44px, el minimo comodo para el pulgar. Es el piso:
+ * el padding puede bajar, pero el area que se toca no.
+ */
+.btn.cart__checkout-btn {
+  padding: 0.75rem 1.5rem;
+  min-height: 2.75rem;
+}
+
 .cart__clear-btn {
   font-size: 0.75rem;
   color: #999;
