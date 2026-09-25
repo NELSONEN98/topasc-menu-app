@@ -19,7 +19,18 @@
   border-radius: 1.25rem;
   width: 100%;
   max-width: 22rem;
-  overflow: hidden;
+  /*
+   * Red de contencion: debajo de la imagen hay ~335px de contenido fijo
+   * (titulo, descripcion, precio, puntitos y los dos botones). En una pantalla
+   * de 640px eso mas la foto se pasa, y sin esto el modal se cortaba y los
+   * botones quedaban fuera de alcance — sin scroll, sin salida salvo la X.
+   *
+   * `overflow-y: auto` y no `hidden`: preferimos que scrollee un poco antes
+   * que esconder el boton de pedir.
+   */
+  max-height: 90vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.3);
 }
 
@@ -41,9 +52,17 @@
   justify-content: center;
 }
 
+/*
+ * `aspect-ratio` en lugar de un alto fijo: la proporcion queda declarada en el
+ * codigo, que es justamente el dato que necesita quien prepara la foto. Si
+ * manana cambia el ancho del modal, el alto acompaña sin recalcular nada.
+ *
+ * 4:3 es lo que sacan las camaras de celular por defecto, asi que la foto
+ * entra sin recortes raros subiendola tal cual salio.
+ */
 .promo-modal-imagen {
   width: 100%;
-  height: 12rem;
+  aspect-ratio: 4 / 3;
   background: #cfcfcf;
 }
 
