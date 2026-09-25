@@ -41,9 +41,9 @@ export const spacing = {
 };
 
 export const typography = {
-  // Luckiest Guy — Display titles
+  // Anton — Display titles
   displayLarge: {
-    fontFamily: "'Luckiest Guy', cursive",
+    fontFamily: "'Anton', sans-serif",
     fontSize: '2.875rem',
     fontWeight: 400,
     lineHeight: 0.95,
