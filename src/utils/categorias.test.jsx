@@ -5,12 +5,24 @@ const CATEGORIAS = [
   { _id: 'cat_comida', nombre: 'Salchipapas' },
   { _id: 'cat_bebidas', nombre: 'Bebidas' },
   { _id: 'cat_gaseosas', nombre: 'Gaseosas' },
+  { _id: 'cat_gaseosa', nombre: 'Gaseosa' },
+  { _id: 'cat_mixta', nombre: 'Bebidas y Gaseosas' },
 ];
 
 describe('esCategoriaDeBebida', () => {
   test('reconoce Bebidas y Gaseosas', () => {
     expect(esCategoriaDeBebida(CATEGORIAS, 'cat_bebidas')).toBe(true);
     expect(esCategoriaDeBebida(CATEGORIAS, 'cat_gaseosas')).toBe(true);
+  });
+
+  test('el singular tambien cuenta (regresion)', () => {
+    // El bug real: la categoria del local se llama "Gaseosa" y la lista decia
+    // "gaseosas", asi que no matcheaba y el checkbox de salsas seguia saliendo.
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_gaseosa')).toBe(true);
+  });
+
+  test('un nombre compuesto tambien cuenta', () => {
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_mixta')).toBe(true);
   });
 
   test('una categoria de comida no es bebida', () => {

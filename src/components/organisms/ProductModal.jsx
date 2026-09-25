@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { IngredientesInput } from '../molecules/IngredientesInput';
 import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
 import { esCategoriaDeBebida } from '../../utils/categorias';
@@ -145,10 +144,6 @@ export const ProductModal = ({
     });
   };
 
-  const handleIngredientesChange = (ingredientes) => {
-    setFormData(prev => ({ ...prev, ingredientes }));
-  };
-
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -287,16 +282,8 @@ export const ProductModal = ({
                 rows="3"
               />
               <small className="form-ayuda">
-                Texto libre. Los ingredientes van aparte, acá abajo.
+                Texto libre: cómo se sirve, para cuántos alcanza, qué lleva.
               </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="ingredientes">Ingredientes</label>
-              <IngredientesInput
-                ingredientes={formData.ingredientes}
-                onChange={handleIngredientesChange}
-              />
             </div>
           </fieldset>
 
