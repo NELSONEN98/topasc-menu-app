@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useNotificacion } from '../context/NotificacionContext';
@@ -23,10 +23,44 @@ export const useAparienciaAdmin = () => {
   const generarUrlDeSubida = useMutation(api.configuracion.generarUrlDeSubida);
   const guardarImagenHeader = useMutation(api.configuracion.guardarImagenHeader);
   const quitarImagenHeader = useMutation(api.configuracion.quitarImagenHeader);
+  const guardarNombreMutation = useMutation(api.configuracion.guardarNombre);
 
   const [subiendo, setSubiendo] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [guardandoNombre, setGuardandoNombre] = useState(false);
 
   const imagenUrl = configCargando?.imagenHeaderUrl ?? null;
+  const nombreGuardado = configCargando?.nombreRestaurante ?? '';
+
+  // Se hidrata UNA sola vez, cuando llega la respuesta del servidor. Si se
+  // sincronizara en cada emision de la query, cada tecla que escribe el admin
+  // se pisaria con el valor viejo mientras escribe.
+  const yaHidratado = useRef(false);
+
+  useEffect(() => {
+    if (configCargando === undefined || yaHidratado.current) return;
+
+    yaHidratado.current = true;
+    setNombre(nombreGuardado);
+  }, [configCargando, nombreGuardado]);
+
+  const guardarNombre = async () => {
+    if (!nombre.trim()) {
+      notificar.info('El nombre no puede estar vacío');
+      return;
+    }
+
+    setGuardandoNombre(true);
+    try {
+      await guardarNombreMutation({ nombreRestaurante: nombre });
+      notificar.exito('Nombre actualizado');
+    } catch (error) {
+      console.error('Error al guardar el nombre:', error);
+      notificar.error(mensajeDeError(error));
+    } finally {
+      setGuardandoNombre(false);
+    }
+  };
 
   const subirImagen = async (file) => {
     if (!file) return;
@@ -105,6 +139,11 @@ export const useAparienciaAdmin = () => {
     // no hay imagen", que es null.
     cargando: configCargando === undefined,
     subiendo,
-    acciones: { subirImagen, quitarImagen },
+    nombre,
+    setNombre,
+    guardandoNombre,
+    // Para no ofrecer "Guardar" cuando no hay nada que guardar.
+    nombreSinGuardar: nombre.trim() !== nombreGuardado,
+    acciones: { subirImagen, quitarImagen, guardarNombre },
   };
 };

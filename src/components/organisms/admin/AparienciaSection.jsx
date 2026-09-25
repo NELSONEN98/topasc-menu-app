@@ -3,7 +3,16 @@ import { SeccionHeader } from './SeccionHeader';
 import { useAparienciaAdmin } from '../../../hooks/useAparienciaAdmin';
 
 export const AparienciaSection = () => {
-  const { imagenUrl, cargando, subiendo, acciones } = useAparienciaAdmin();
+  const {
+    imagenUrl,
+    cargando,
+    subiendo,
+    nombre,
+    setNombre,
+    guardandoNombre,
+    nombreSinGuardar,
+    acciones,
+  } = useAparienciaAdmin();
   const inputRef = useRef(null);
 
   const alElegirArchivo = async (e) => {
@@ -18,7 +27,7 @@ export const AparienciaSection = () => {
     <div>
       <SeccionHeader
         titulo="Apariencia"
-        resumen="Imagen de portada que ven los clientes en el menú"
+        resumen="Nombre e imagen de portada que ven los clientes en el menú"
       />
 
       <p className="admin-ayuda">
@@ -29,6 +38,33 @@ export const AparienciaSection = () => {
       </p>
 
       <div className="apariencia-panel">
+        <div className="apariencia-nombre">
+          <label htmlFor="apariencia-nombre-input">Nombre sobre la portada</label>
+          <div className="apariencia-nombre__fila">
+            <input
+              id="apariencia-nombre-input"
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Topasc"
+              maxLength={24}
+              disabled={cargando || guardandoNombre}
+            />
+            <button
+              type="button"
+              className="btn-add-item"
+              onClick={acciones.guardarNombre}
+              disabled={cargando || guardandoNombre || !nombreSinGuardar}
+            >
+              {guardandoNombre ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+          <small className="form-ayuda">
+            Es el texto grande que va sobre la foto. Hasta 24 caracteres: entra en una
+            sola línea y más largo que eso se recorta sin aviso.
+          </small>
+        </div>
+
         <div className="apariencia-preview">
           {cargando ? (
             <div className="apariencia-preview__vacio">Cargando…</div>
@@ -45,7 +81,9 @@ export const AparienciaSection = () => {
           {imagenUrl && (
             <>
               <div className="apariencia-preview__gradiente" />
-              <p className="apariencia-preview__titulo">Topasc</p>
+              {/* El nombre que se esta escribiendo, no el guardado: asi se ve
+                  como va a quedar sobre la foto antes de confirmar. */}
+              <p className="apariencia-preview__titulo">{nombre}</p>
             </>
           )}
         </div>

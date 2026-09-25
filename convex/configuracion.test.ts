@@ -133,3 +133,73 @@ describe("configuracion.quitarImagenHeader", () => {
     await expect(t.mutation(api.configuracion.quitarImagenHeader, {})).rejects.toThrow();
   });
 });
+
+describe("configuracion.guardarNombre", () => {
+  test("crea la fila si todavia no existe", async () => {
+    const t = convexTest(schema, modules);
+
+    await comoAdmin(t).mutation(api.configuracion.guardarNombre, {
+      nombreRestaurante: "Broaster Topasc",
+    });
+
+    expect((await t.query(api.configuracion.obtener, {}))?.nombreRestaurante).toBe(
+      "Broaster Topasc"
+    );
+  });
+
+  test("actualiza el nombre sin tocar la imagen ya cargada", async () => {
+    const t = convexTest(schema, modules);
+    const storageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["x"])));
+
+    await comoAdmin(t).mutation(api.configuracion.guardarImagenHeader, { storageId });
+    await comoAdmin(t).mutation(api.configuracion.guardarNombre, {
+      nombreRestaurante: "Otro nombre",
+    });
+
+    const config = await t.query(api.configuracion.obtener, {});
+    // Las dos cosas viven en la misma fila: guardar una no puede borrar la otra.
+    expect(config?.nombreRestaurante).toBe("Otro nombre");
+    expect(config?.imagenHeaderId).toBe(storageId);
+  });
+
+  test("recorta los espacios", async () => {
+    const t = convexTest(schema, modules);
+
+    await comoAdmin(t).mutation(api.configuracion.guardarNombre, {
+      nombreRestaurante: "  Topasc  ",
+    });
+
+    expect((await t.query(api.configuracion.obtener, {}))?.nombreRestaurante).toBe(
+      "Topasc"
+    );
+  });
+
+  test("rechaza un nombre vacio", async () => {
+    const t = convexTest(schema, modules);
+
+    // Sin nombre el titulo del Hero queda en blanco sobre la foto.
+    await expect(
+      comoAdmin(t).mutation(api.configuracion.guardarNombre, { nombreRestaurante: "   " })
+    ).rejects.toThrow(/vacio/i);
+  });
+
+  test("rechaza un nombre mas largo que el tope", async () => {
+    const t = convexTest(schema, modules);
+
+    // El titulo va en una linea con overflow hidden: de mas se recorta sin
+    // aviso, y el admin no entiende por que ve la mitad.
+    await expect(
+      comoAdmin(t).mutation(api.configuracion.guardarNombre, {
+        nombreRestaurante: "Un nombre larguisimo que no entra nunca",
+      })
+    ).rejects.toThrow(/24 caracteres/);
+  });
+
+  test("un visitante sin sesion no puede cambiar el nombre", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.mutation(api.configuracion.guardarNombre, { nombreRestaurante: "Hackeado" })
+    ).rejects.toThrow(/No autorizado/);
+  });
+});

@@ -1301,6 +1301,46 @@ input, select { font-family: 'Inter', sans-serif; }
    APARIENCIA — portada del menu
    ============================================================ */
 
+.apariencia-nombre {
+  margin-bottom: 20px;
+}
+
+.apariencia-nombre label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark-bg);
+}
+
+.apariencia-nombre__fila {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.apariencia-nombre__fila input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--dark-bg);
+}
+
+.apariencia-nombre__fila input:focus {
+  outline: none;
+  border-color: var(--primary-gold);
+}
+
+/* El boton de guardar se apaga cuando no hay cambios: sin esto parece que
+   siempre hay algo pendiente de confirmar. */
+.apariencia-nombre__fila button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .apariencia-panel {
   background: #FFF;
   border-radius: 14px;

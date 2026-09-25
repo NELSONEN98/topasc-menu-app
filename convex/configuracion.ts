@@ -6,6 +6,16 @@ import type { Id } from "./_generated/dataModel";
 const NOMBRE_POR_DEFECTO = "Topasc";
 
 /**
+ * Tope de largo del nombre que se muestra sobre la portada.
+ *
+ * No es capricho: el titulo del Hero va en 2.875rem de 'Luckiest Guy' en una
+ * sola linea, y el contenedor tiene `overflow: hidden`. Un nombre largo no
+ * rompe el layout — se recorta en silencio, que es peor, porque el admin lo
+ * guarda bien y ve la mitad. Ver Hero.css.
+ */
+const LARGO_MAXIMO_NOMBRE = 24;
+
+/**
  * `configuracionRestaurante` es un singleton: una sola fila para todo el
  * restaurante. La fila puede no existir todavia, asi que todo lo que lee
  * tiene que tolerar el null y todo lo que escribe tiene que poder crearla.
@@ -30,6 +40,41 @@ export const obtener = query({
         ? await ctx.storage.getUrl(config.imagenHeaderId)
         : null,
     };
+  },
+});
+
+/**
+ * Guarda el nombre que se muestra sobre la portada del menu.
+ *
+ * Crea la fila si todavia no existe, igual que `guardarImagenHeader`: el
+ * singleton puede no estar, y el admin no tiene por que enterarse de eso.
+ */
+export const guardarNombre = mutation({
+  args: { nombreRestaurante: v.string() },
+  handler: async (ctx, { nombreRestaurante }) => {
+    await requerirAdmin(ctx);
+
+    const nombre = nombreRestaurante.trim();
+
+    if (nombre === "") {
+      throw new Error("El nombre no puede estar vacio");
+    }
+    if (nombre.length > LARGO_MAXIMO_NOMBRE) {
+      throw new Error(
+        `El nombre no puede pasar de ${LARGO_MAXIMO_NOMBRE} caracteres (llegaron ${nombre.length})`
+      );
+    }
+
+    const config = await filaUnica(ctx);
+
+    if (!config) {
+      await ctx.db.insert("configuracionRestaurante", {
+        nombreRestaurante: nombre,
+      });
+      return;
+    }
+
+    await ctx.db.patch(config._id, { nombreRestaurante: nombre });
   },
 });
 
