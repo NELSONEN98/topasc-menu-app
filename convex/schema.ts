@@ -26,15 +26,6 @@ export default defineSchema({
     activo: v.boolean(),
     // undefined = lleva salsas (default); false = bebidas, postres, etc.
     llevaSalsas: v.optional(v.boolean()),
-    // El cliente elige sabor y tamaño de `presentacionesGaseosa` antes de
-    // poder agregarlo al carrito.
-    //
-    // OJO: el default es al REVES que el de `llevaSalsas`. Ahi undefined
-    // significa "si lleva" porque casi todo el menu lleva salsa; aca
-    // undefined significa "NO lleva", porque las gaseosas son un puñado de
-    // items contra toda la carta. Un default "si" haria que cada plato
-    // existente pidiera elegir un sabor de gaseosa para poder venderse.
-    llevaPresentacion: v.optional(v.boolean()),
     // En que sedes se vende este plato. Un plato = una fila, marcada en varias
     // sedes: asi el precio y la imagen (que va en base64 dentro del documento)
     // no se duplican por local.
@@ -90,33 +81,6 @@ export default defineSchema({
     vigenteDesde: v.optional(v.string()),
     vigenteHasta: v.optional(v.string()),
   }).index("por_categoria", ["categoriaId"]),
-
-  /**
-   * Presentaciones de gaseosa: una fila por combinacion de sabor y tamaño.
-   *
-   * Es una tabla PLANA y no dos (sabores por un lado, tamaños por otro)
-   * porque cada combinacion tiene su propio precio. Una Coca Cola de 2 L y
-   * una Postobon de 2 L no valen lo mismo, asi que el precio no se puede
-   * derivar del tamaño solo: vive en el cruce.
-   *
-   * El cliente igual elige en dos pasos (primero sabor, despues tamaño): la
-   * pantalla agrupa estas filas, pero el precio sale siempre de la fila
-   * exacta que quedo elegida.
-   */
-  presentacionesGaseosa: defineTable({
-    sabor: v.string(),
-    tamano: v.string(),
-    // Precio FINAL de la linea, no un adicional sobre el precio del item.
-    // El `precio` del item pasa a ser el "desde $X" que se muestra en la
-    // grilla del menu.
-    precio: v.number(),
-    // Igual que en items: `activo` es "existe en la carta", `disponible` es
-    // "hoy se puede pedir". Se agoto la Coca de 2 L el sabado -> disponible
-    // false, sin perder la fila ni su precio.
-    disponible: v.boolean(),
-    activo: v.boolean(),
-    orden: v.number(),
-  }).index("por_orden", ["orden"]),
 
   salsas: defineTable({
     nombre: v.string(),
@@ -224,13 +188,14 @@ export default defineSchema({
         salsasExtra: v.optional(
           v.array(v.object({ nombre: v.string(), precio: v.number() }))
         ),
-        // Sabor y tamaño elegidos, congelados igual que el nombre y el
-        // precio. NO se guarda el id de la presentacion: si mañana la
-        // borran o le cambian el nombre, el pedido historico tiene que
-        // seguir diciendo que se vendio una Coca Cola de 2 L.
+        // SOLO HISTORICO: ya no se escribe. El modulo de gaseosas se
+        // elimino y cada sabor/tamaño es ahora su propio producto, asi que
+        // ningun pedido nuevo trae este campo.
         //
-        // El precio de la presentacion NO se repite aca: ya es el
-        // `precioSnapshot` de esta misma linea.
+        // No se puede borrar del schema igual: los pedidos ya guardados lo
+        // tienen, y sacarlo haria fallar la validacion de esas filas. El
+        // panel lo sigue mostrando para que un pedido viejo siga diciendo
+        // que se vendio una Coca Cola de 2 L.
         presentacion: v.optional(
           v.object({ sabor: v.string(), tamano: v.string() })
         ),

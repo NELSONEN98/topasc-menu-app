@@ -5,7 +5,6 @@ export const TABS = [
   { id: 'productos', etiqueta: 'Productos' },
   { id: 'categorias', etiqueta: 'Categorías' },
   { id: 'salsas', etiqueta: 'Salsas' },
-  { id: 'gaseosas', etiqueta: 'Gaseosas' },
   { id: 'sedes', etiqueta: 'Sedes' },
   { id: 'mesas', etiqueta: 'Mesas' },
   { id: 'horario', etiqueta: 'Horario' },

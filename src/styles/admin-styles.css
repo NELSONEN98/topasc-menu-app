@@ -1440,33 +1440,3 @@ input, select { font-family: 'Inter', sans-serif; }
   font-variant-numeric: tabular-nums;
 }
 
-/* ============================================================
-   GASEOSAS — presentaciones agrupadas por sabor
-   ============================================================ */
-
-.gaseosa-grupo {
-  margin-bottom: 24px;
-}
-
-.gaseosa-grupo__titulo {
-  font: 700 15px 'Inter', sans-serif;
-  color: var(--dark-bg);
-  margin: 0 0 10px;
-}
-
-/* Tamaño | Precio | Disponible | acciones */
-.admin-table-header-gaseosas,
-.admin-table-row-gaseosas {
-  grid-template-columns: 2fr 1.2fr 1fr 0.8fr !important;
-}
-
-@media (max-width: 768px) {
-  .admin-table-header-gaseosas {
-    display: none !important;
-  }
-
-  .admin-table-row-gaseosas .admin-table-cell-name { grid-column: 1; grid-row: 1; }
-  .admin-table-row-gaseosas .admin-table-cell-price { grid-column: 2; grid-row: 1; justify-self: end; }
-  .admin-table-row-gaseosas .admin-table-cell-status { grid-column: 1 / -1; grid-row: 2; }
-  .admin-table-row-gaseosas .admin-table-actions { grid-column: 1 / -1; grid-row: 3; }
-}

@@ -12,7 +12,7 @@ import { BebidasModal } from '../components/organisms/BebidasModal';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { useCart, SIN_SALSAS } from '../context/CartContext';
 import { useNotificacion } from '../context/NotificacionContext';
-import { esCategoriaBebidas } from '../utils/categorias';
+import { esCategoriaDeBebida } from '../utils/categorias';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
@@ -45,14 +45,12 @@ export const Cart = ({
   // server devuelve el menu completo, igual que en Home.
   const items = useQuery(api.items.listarMenu, { sedeId: sede?._id }) ?? SIN_DATOS;
   const categorias = useQuery(api.categorias.listar) ?? SIN_DATOS;
-  // El detalle de producto los necesita: las gaseosas piden sabor y tamaño,
-  // y algunas bebidas podrian llevar salsa (no hay regla que lo impida).
+  // El detalle de producto las necesita: una bebida podria llevar salsa, no
+  // hay regla que lo impida.
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
-  const presentaciones =
-    useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
 
   const bebidas = useMemo(
-    () => items.filter((item) => esCategoriaBebidas(categorias, item.categoriaId)),
+    () => items.filter((item) => esCategoriaDeBebida(categorias, item.categoriaId)),
     [items, categorias]
   );
 
@@ -384,7 +382,6 @@ export const Cart = ({
         <ProductDetailModal
           product={bebidaElegida}
           salsas={salsas}
-          presentaciones={presentaciones}
           onClose={() => setBebidaElegida(null)}
         />
       )}

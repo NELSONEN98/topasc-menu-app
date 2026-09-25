@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { IngredientesInput } from '../molecules/IngredientesInput';
 import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
-import { esCategoriaBebidas } from '../../utils/categorias';
+import { esCategoriaDeBebida } from '../../utils/categorias';
 import '../styles/ProductModal.css';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
@@ -12,11 +12,6 @@ const SIN_DATOS = [];
 // Referencia estable: se lee dentro del efecto que arma el formulario, asi que
 // un objeto nuevo por render lo volveria a disparar.
 const SIN_DEFAULTS = {};
-
-// `llevaPresentacion` (elegir sabor y tamaño) solo tiene sentido para
-// gaseosas, por eso se ata a la categoria Bebidas (esCategoriaBebidas): sin ese
-// chequeo el checkbox queda suelto, se puede tildar en CUALQUIER producto por
-// error, y el cliente termina viendo "Elegí el sabor" en un plato de comida.
 
 export const ProductModal = ({
   isOpen,
@@ -39,9 +34,6 @@ export const ProductModal = ({
     imagenUrl: '',
     disponible: true,
     llevaSalsas: true,
-    // Default false, al reves que llevaSalsas: las gaseosas son un puñado
-    // de items contra toda la carta. Ver la nota en schema.ts.
-    llevaPresentacion: false,
     sedeIds: [],
     esPromo: false,
     vigenteDesde: '',
@@ -70,17 +62,10 @@ export const ProductModal = ({
         disponible: product.disponible !== false,
         // Una bebida NO lleva salsas, y el default de este campo es al reves
         // (undefined = si lleva), asi que una gaseosa vieja sin el campo
-        // pediria elegir salsas. Se apaga solo al abrirla, igual que
-        // `llevaPresentacion` mas abajo pero en el sentido opuesto.
+        // pediria elegir salsas. Se apaga solo al abrirla.
         llevaSalsas:
-          !esCategoriaBebidas(categorias, product.categoriaId) &&
+          !esCategoriaDeBebida(categorias, product.categoriaId) &&
           product.llevaSalsas !== false,
-        // Se autocorrige si el producto quedo con el flag prendido en una
-        // categoria que no es Bebidas (el bug que motivo este chequeo): al
-        // volver a abrirlo y guardarlo, `llevaPresentacion` se limpia solo.
-        llevaPresentacion:
-          esCategoriaBebidas(categorias, product.categoriaId) &&
-          product.llevaPresentacion === true,
         sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
         esPromo: product.esPromo === true,
         vigenteDesde: product.vigenteDesde || '',
@@ -98,9 +83,8 @@ export const ProductModal = ({
         ingredientes: [],
         imagenUrl: '',
         disponible: true,
-        // Arranca apagado si la categoria que quedo elegida es Bebidas.
-        llevaSalsas: !esCategoriaBebidas(categorias, categoriaInicial),
-        llevaPresentacion: false,
+        // Arranca apagado si la categoria que quedo elegida es de bebidas.
+        llevaSalsas: !esCategoriaDeBebida(categorias, categoriaInicial),
         sedeIds: todasLasSedes,
         esPromo: false,
         vigenteDesde: '',
@@ -147,17 +131,16 @@ export const ProductModal = ({
     setFormData(prev => {
       if (name !== 'categoriaId') return { ...prev, [name]: newValue };
 
-      // Los dos checkboxes se esconden segun la categoria (ver el render), y
-      // un checkbox escondido igual sigue mandando su valor. Sin estos dos
-      // resets el formulario guardaria en true algo que quien edita ya no ve:
-      // una gaseosa pidiendo salsas, o un plato pidiendo sabor.
-      const aBebidas = esCategoriaBebidas(categorias, newValue);
+      // El checkbox de salsas se esconde en las categorias de bebida (ver el
+      // render), y un checkbox escondido igual sigue mandando su valor. Sin
+      // este reset el formulario guardaria en true algo que quien edita ya no
+      // ve: una gaseosa pidiendole salsas al cliente.
+      const aBebidas = esCategoriaDeBebida(categorias, newValue);
 
       return {
         ...prev,
         categoriaId: newValue,
         llevaSalsas: aBebidas ? false : prev.llevaSalsas,
-        llevaPresentacion: aBebidas ? prev.llevaPresentacion : false,
       };
     });
   };
@@ -429,11 +412,10 @@ export const ProductModal = ({
               </span>
             </label>
 
-            {/* En Bebidas no se muestra: una gaseosa no lleva salsas, y
-                dejarlo a la vista invita a tildarlo por error — el cliente
-                terminaria eligiendo salsas para una Coca. Es el espejo de
-                "lleva presentacion", que solo aparece en Bebidas. */}
-            {!esCategoriaBebidas(categorias, formData.categoriaId) && (
+            {/* En Bebidas y Gaseosas no se muestra: una gaseosa no lleva
+                salsas, y dejarlo a la vista invita a tildarlo por error — el
+                cliente terminaria eligiendo salsas para una Coca. */}
+            {!esCategoriaDeBebida(categorias, formData.categoriaId) && (
               <label className="opcion-tarjeta" htmlFor="llevaSalsas">
                 <input
                   id="llevaSalsas"
@@ -449,28 +431,6 @@ export const ProductModal = ({
               </label>
             )}
 
-            {/* Solo para Bebidas: es la unica categoria con presentaciones
-                cargadas en la pestaña Gaseosas. Mostrarlo siempre invitaba a
-                tildarlo por error en cualquier plato — asi paso con el bug
-                de "Muslo Topasc" pidiendo sabor como si fuera gaseosa. */}
-            {esCategoriaBebidas(categorias, formData.categoriaId) && (
-              <label className="opcion-tarjeta" htmlFor="llevaPresentacion">
-                <input
-                  id="llevaPresentacion"
-                  type="checkbox"
-                  name="llevaPresentacion"
-                  checked={formData.llevaPresentacion}
-                  onChange={handleChange}
-                />
-                <span className="opcion-tarjeta__texto">
-                  <strong>Lleva presentación</strong>
-                  <small>
-                    El cliente elige sabor y tamaño en la pestaña Gaseosas, y paga el
-                    precio de esa combinación en lugar de este.
-                  </small>
-                </span>
-              </label>
-            )}
           </fieldset>
 
           <div className="modal-actions">

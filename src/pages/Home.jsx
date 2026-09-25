@@ -49,8 +49,6 @@ export const Home = ({
   const allItems = allItemsCargando ?? SIN_DATOS;
   const allCategorias = allCategoriasCargando ?? SIN_DATOS;
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
-  const presentaciones =
-    useQuery(api.presentacionesGaseosa.listarDisponibles) ?? SIN_DATOS;
   // Las promos son items como cualquier otro: salen de la misma query, se
   // agregan al carrito igual y viajan al pedido igual. `esPromo` solo cambia
   // DONDE se muestran.
@@ -188,7 +186,6 @@ export const Home = ({
         <ProductDetailModal
           product={selectedProduct}
           salsas={salsas}
-          presentaciones={presentaciones}
           onClose={() => setSelectedProduct(null)}
         />
       )}

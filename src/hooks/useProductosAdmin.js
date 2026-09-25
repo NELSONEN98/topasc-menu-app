@@ -142,7 +142,6 @@ export const useProductosAdmin = () => {
             imagenUrl: formData.imagenUrl,
             disponible: formData.disponible,
             llevaSalsas: formData.llevaSalsas,
-            llevaPresentacion: formData.llevaPresentacion,
             sedeIds: formData.sedeIds,
             esPromo: formData.esPromo,
             // Van como '' y no como undefined a propósito: es así como el
@@ -160,7 +159,6 @@ export const useProductosAdmin = () => {
           precio,
           imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
           llevaSalsas: formData.llevaSalsas,
-          llevaPresentacion: formData.llevaPresentacion,
           disponible: formData.disponible,
           sedeIds: formData.sedeIds,
           esPromo: formData.esPromo,
