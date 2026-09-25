@@ -12,11 +12,15 @@ const NOMBRE_POR_DEFECTO = 'Topasc';
 /**
  * El titulo se achica segun cuantos caracteres tenga el nombre.
  *
- * Va escalonado y no en un tamaño fijo porque 'Luckiest Guy' es una tipografia
- * display ancha: en los ~354px utiles (el ancho del telefono menos el padding)
- * entran unos 13 caracteres a 2.875rem, y para que entren 30 hay que bajar a
- * ~1.3rem. Con un unico tamaño chico, un nombre corto como "Topasc" — que es
- * el caso normal — quedaria como una etiqueta perdida sobre la foto.
+ * Va escalonado y no en un tamaño fijo porque con un unico tamaño chico un
+ * nombre corto como "Topasc" — que es el caso normal — quedaria como una
+ * etiqueta perdida sobre la foto.
+ *
+ * Los numeros son para 'Anton' sobre los 390px de ancho del telefono: es una
+ * condensada, gasta ~0.43em por letra, asi que a 2.875rem entran unos 19
+ * caracteres y los 30 del tope necesitan ~1.875rem. Si algun dia se cambia la
+ * tipografia del titulo, estos escalones se recalculan: una mas ancha recorta
+ * antes de llegar al tope.
  *
  * Las medidas viven ACA y no en el CSS a proposito: el umbral y el tamaño que
  * le corresponde son un solo dato. Partidos en dos archivos, cambiar uno sin
@@ -28,10 +32,9 @@ const NOMBRE_POR_DEFECTO = 'Topasc';
  * tabla tiene que cubrirlo.
  */
 const ESCALONES_TITULO = [
-  { hasta: 12, tamano: '2.875rem' },
-  { hasta: 18, tamano: '2.125rem' },
-  { hasta: 24, tamano: '1.625rem' },
-  { hasta: Infinity, tamano: '1.3125rem' },
+  { hasta: 18, tamano: '2.875rem' },
+  { hasta: 24, tamano: '2.25rem' },
+  { hasta: Infinity, tamano: '1.875rem' },
 ];
 
 const tamanoTitulo = (nombre) =>

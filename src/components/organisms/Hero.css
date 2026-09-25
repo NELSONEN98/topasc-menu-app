@@ -48,7 +48,7 @@
    * segun el largo del nombre (ver ESCALONES_TITULO). El `/ 0.95` es una
    * proporcion, asi que la altura de linea acompaña sola cuando el tamaño baja.
    */
-  font: 400 2.875rem / 0.95 'Luckiest Guy', cursive;
+  font: 400 2.875rem / 0.95 'Anton', sans-serif;
   letter-spacing: 0.5px;
   color: #fff;
   text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
