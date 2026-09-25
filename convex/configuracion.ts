@@ -13,7 +13,7 @@ const NOMBRE_POR_DEFECTO = "Topasc";
  * rompe el layout — se recorta en silencio, que es peor, porque el admin lo
  * guarda bien y ve la mitad. Ver Hero.css.
  */
-const LARGO_MAXIMO_NOMBRE = 24;
+const LARGO_MAXIMO_NOMBRE = 30;
 
 /**
  * `configuracionRestaurante` es un singleton: una sola fila para todo el

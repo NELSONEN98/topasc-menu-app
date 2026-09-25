@@ -10,6 +10,34 @@ const IMAGEN_POR_DEFECTO = '/fondo-test.jpg';
 const NOMBRE_POR_DEFECTO = 'Topasc';
 
 /**
+ * El titulo se achica segun cuantos caracteres tenga el nombre.
+ *
+ * Va escalonado y no en un tamaño fijo porque 'Luckiest Guy' es una tipografia
+ * display ancha: en los ~354px utiles (el ancho del telefono menos el padding)
+ * entran unos 13 caracteres a 2.875rem, y para que entren 30 hay que bajar a
+ * ~1.3rem. Con un unico tamaño chico, un nombre corto como "Topasc" — que es
+ * el caso normal — quedaria como una etiqueta perdida sobre la foto.
+ *
+ * Las medidas viven ACA y no en el CSS a proposito: el umbral y el tamaño que
+ * le corresponde son un solo dato. Partidos en dos archivos, cambiar uno sin
+ * el otro pasa desapercibido.
+ *
+ * El titulo va en UNA linea con `overflow: hidden` (ver Hero.css), asi que lo
+ * que no entra se recorta sin aviso. El tope de largo lo pone el servidor
+ * (LARGO_MAXIMO_NOMBRE en convex/configuracion.ts) y el ultimo escalon de esta
+ * tabla tiene que cubrirlo.
+ */
+const ESCALONES_TITULO = [
+  { hasta: 12, tamano: '2.875rem' },
+  { hasta: 18, tamano: '2.125rem' },
+  { hasta: 24, tamano: '1.625rem' },
+  { hasta: Infinity, tamano: '1.3125rem' },
+];
+
+const tamanoTitulo = (nombre) =>
+  ESCALONES_TITULO.find(({ hasta }) => nombre.length <= hasta).tamano;
+
+/**
  * El Hero consulta la configuracion por su cuenta en vez de recibirla por
  * prop.
  *
@@ -50,7 +78,9 @@ export const Hero = ({ title, imageUrl }) => {
             <circle cx="17" cy="5" r="6" fill="#fff" />
             <circle cx="29" cy="14" r="4" fill="#fff" />
           </svg>
-          <p className="hero-2a-title">{nombre}</p>
+          <p className="hero-2a-title" style={{ fontSize: tamanoTitulo(nombre) }}>
+            {nombre}
+          </p>
         </div>
       </div>
     </div>

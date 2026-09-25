@@ -192,7 +192,7 @@ describe("configuracion.guardarNombre", () => {
       comoAdmin(t).mutation(api.configuracion.guardarNombre, {
         nombreRestaurante: "Un nombre larguisimo que no entra nunca",
       })
-    ).rejects.toThrow(/24 caracteres/);
+    ).rejects.toThrow(/30 caracteres/);
   });
 
   test("un visitante sin sesion no puede cambiar el nombre", async () => {

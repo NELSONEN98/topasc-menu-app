@@ -30,7 +30,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0.625rem 1.125rem;
+  /* Sin padding lateral: son ~36px mas de ancho para el titulo, que es lo que
+     define cuantos caracteres entran antes de que se recorte. */
+  padding: 0.625rem 0;
   pointer-events: none;
 }
 
@@ -41,6 +43,11 @@
 
 .hero-2a-title {
   margin: 0;
+  /*
+   * El tamaño de aca es solo el de respaldo: Hero.jsx lo sobreescribe inline
+   * segun el largo del nombre (ver ESCALONES_TITULO). El `/ 0.95` es una
+   * proporcion, asi que la altura de linea acompaña sola cuando el tamaño baja.
+   */
   font: 400 2.875rem / 0.95 'Luckiest Guy', cursive;
   letter-spacing: 0.5px;
   color: #fff;

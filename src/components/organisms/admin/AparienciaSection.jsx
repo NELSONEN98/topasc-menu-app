@@ -47,7 +47,7 @@ export const AparienciaSection = () => {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Topasc"
-              maxLength={24}
+              maxLength={30}
               disabled={cargando || guardandoNombre}
             />
             <button
@@ -60,8 +60,8 @@ export const AparienciaSection = () => {
             </button>
           </div>
           <small className="form-ayuda">
-            Es el texto grande que va sobre la foto. Hasta 24 caracteres: entra en una
-            sola línea y más largo que eso se recorta sin aviso.
+            Es el texto grande que va sobre la foto. Hasta 30 caracteres. Ojo: cuanto más
+            largo el nombre, más chico se muestra, porque va en una sola línea.
           </small>
         </div>
 
