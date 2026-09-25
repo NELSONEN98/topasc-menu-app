@@ -66,7 +66,11 @@ export const ProductModal = ({
           !esCategoriaDeBebida(categorias, product.categoriaId) &&
           product.llevaSalsas !== false,
         sedeIds: product.sedeIds?.length ? product.sedeIds : todasLasSedes,
-        esPromo: product.esPromo === true,
+        // Una bebida no es promo del dia: el bloque no se muestra para esa
+        // categoria, asi que tampoco puede quedar prendido a escondidas.
+        esPromo:
+          !esCategoriaDeBebida(categorias, product.categoriaId) &&
+          product.esPromo === true,
         vigenteDesde: product.vigenteDesde || '',
         vigenteHasta: product.vigenteHasta || '',
       });
@@ -130,16 +134,18 @@ export const ProductModal = ({
     setFormData(prev => {
       if (name !== 'categoriaId') return { ...prev, [name]: newValue };
 
-      // El checkbox de salsas se esconde en las categorias de bebida (ver el
-      // render), y un checkbox escondido igual sigue mandando su valor. Sin
-      // este reset el formulario guardaria en true algo que quien edita ya no
-      // ve: una gaseosa pidiendole salsas al cliente.
+      // Las salsas y el bloque de promo se esconden en las categorias de
+      // bebida (ver el render), y un checkbox escondido igual sigue mandando
+      // su valor. Sin estos resets el formulario guardaria en true algo que
+      // quien edita ya no ve: una gaseosa pidiendole salsas al cliente, o
+      // metida en el carrusel de promociones.
       const aBebidas = esCategoriaDeBebida(categorias, newValue);
 
       return {
         ...prev,
         categoriaId: newValue,
         llevaSalsas: aBebidas ? false : prev.llevaSalsas,
+        esPromo: aBebidas ? false : prev.esPromo,
       };
     });
   };
@@ -324,6 +330,9 @@ export const ProductModal = ({
             </div>
           </fieldset>
 
+          {/* Fuera de las bebidas: una gaseosa no es la promoción del día, y
+              tener el bloque a la vista invita a tildarlo por error. */}
+          {!esCategoriaDeBebida(categorias, formData.categoriaId) && (
           <fieldset className="form-seccion">
             <legend className="form-seccion__titulo">Promoción del día</legend>
 
@@ -381,6 +390,7 @@ export const ProductModal = ({
               </>
             )}
           </fieldset>
+          )}
 
           <fieldset className="form-seccion">
             <legend className="form-seccion__titulo">Disponibilidad</legend>
