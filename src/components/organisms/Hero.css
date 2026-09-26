@@ -36,29 +36,21 @@
   pointer-events: none;
 }
 
-.hero-2a-title-wrap {
-  position: relative;
-  display: inline-block;
-}
-
 .hero-2a-title {
   margin: 0;
   /*
-   * El tamaño de aca es solo el de respaldo: Hero.jsx lo sobreescribe inline
-   * segun el largo del nombre (ver ESCALONES_TITULO). El `/ 0.95` es una
-   * proporcion, asi que la altura de linea acompaña sola cuando el tamaño baja.
+   * El tamaño sale de `--hero-titulo`, que Hero.jsx calcula segun el largo del
+   * nombre (ver ESCALONES_TITULO). Va por variable y no como `font-size`
+   * inline porque un inline le gana a cualquier media query: asi el ajuste de
+   * desktop de abajo sigue funcionando en vez de quedar muerto.
+   *
+   * El `/ 0.95` es una proporcion, asi que la altura de linea acompaña sola
+   * cuando el tamaño baja.
    */
-  font: 400 2.875rem / 0.95 'Anton', sans-serif;
+  font: 400 var(--hero-titulo, 2.875rem) / 0.95 'Anton', sans-serif;
   letter-spacing: 0.5px;
   color: #fff;
   text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
-}
-
-.hero-2a-crest {
-  position: absolute;
-  top: -0.8125rem;
-  right: -0.0625rem;
-  transform: rotate(20deg);
 }
 
 /* ============================================================
@@ -69,16 +61,14 @@
     height: 13rem;
   }
 
+  /* Escala el tamaño que calculo Hero.jsx en vez de reemplazarlo: un valor
+     fijo aca le pisaria el ajuste por largo del nombre, y un nombre de 30
+     caracteres volveria a desbordar en desktop. */
   .hero-2a-title {
-    font-size: 3.25rem;
+    font-size: calc(var(--hero-titulo, 2.875rem) * 1.13);
   }
 
   .hero-2a-title-block {
     padding: 1rem 2rem;
-  }
-
-  .hero-2a-crest {
-    width: 42px;
-    height: 25px;
   }
 }
