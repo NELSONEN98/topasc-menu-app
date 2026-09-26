@@ -26,6 +26,23 @@ export default defineSchema({
     activo: v.boolean(),
     // undefined = lleva salsas (default); false = bebidas, postres, etc.
     llevaSalsas: v.optional(v.boolean()),
+    /**
+     * LEGACY — NO BORRAR sin limpiar los datos primero.
+     *
+     * Quedo del modulo de gaseosas, que se elimino: cada sabor y tamaño es
+     * ahora su propio producto. Nada lo lee ni lo escribe.
+     *
+     * Sigue declarado porque en PRODUCCION hay 44 items que todavia lo tienen
+     * guardado, y Convex rechaza cualquier documento con un campo que el
+     * schema no declara ("extra field"). Sacarlo sin limpiar esos 44 rompe el
+     * deploy de produccion — paso exactamente eso, y dejo la publicacion
+     * frenada un dia.
+     *
+     * Para retirarlo de verdad: correr una migracion que lo ponga en undefined
+     * en todos los items (en prod, no solo en dev) y recien despues borrar
+     * esta linea.
+     */
+    llevaPresentacion: v.optional(v.boolean()),
     // En que sedes se vende este plato. Un plato = una fila, marcada en varias
     // sedes: asi el precio y la imagen (que va en base64 dentro del documento)
     // no se duplican por local.
@@ -81,6 +98,28 @@ export default defineSchema({
     vigenteDesde: v.optional(v.string()),
     vigenteHasta: v.optional(v.string()),
   }).index("por_categoria", ["categoriaId"]),
+
+  /**
+   * LEGACY — NO BORRAR sin vaciar la tabla primero.
+   *
+   * Era el modulo de gaseosas: una fila por combinacion de sabor y tamaño.
+   * Se elimino, cada sabor/tamaño es ahora su propio producto en `items`, y no
+   * queda ninguna funcion que lea ni escriba aca.
+   *
+   * Sigue declarada porque en PRODUCCION la tabla tiene filas, y Convex
+   * rechaza el deploy de un schema que no declara una tabla con datos. Hay que
+   * vaciarla en prod antes de poder sacar esto.
+   *
+   * En desarrollo ya esta vacia, asi que la declaracion no molesta a nadie.
+   */
+  presentacionesGaseosa: defineTable({
+    sabor: v.string(),
+    tamano: v.string(),
+    precio: v.number(),
+    disponible: v.boolean(),
+    activo: v.boolean(),
+    orden: v.number(),
+  }).index("por_orden", ["orden"]),
 
   salsas: defineTable({
     nombre: v.string(),
