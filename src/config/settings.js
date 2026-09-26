@@ -58,12 +58,8 @@ export const QR_BASE_URL = 'https://topasc.co';
 // Número de WhatsApp para contacto (sin +, sin espacios)
 export const WHATSAPP_NUMBER = '573206873870';
 
-// Cantidad de productos por página en el menú del cliente.
-// Par a proposito: la grilla es de dos columnas fijas, asi que un numero
-// impar deja una tarjeta sola en la ultima fila.
-export const ITEMS_PER_PAGE = 12;
-
-// Filas por página en las tablas del admin (pantalla más grande que el menú)
+// Filas por página en las tablas del admin (pantalla más grande que el menú).
+// El menú del cliente NO pagina: muestra la categoría completa y se scrollea.
 export const ADMIN_ITEMS_PER_PAGE = 8;
 
 // Imagen por defecto cuando un producto se crea sin foto.

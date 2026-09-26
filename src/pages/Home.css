@@ -1,7 +1,17 @@
 .home {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /*
+   * `min-height` y no `height`: el menu ya no pagina, asi que la grilla puede
+   * ser mas alta que la pantalla y el contenedor tiene que crecer con ella.
+   * Con `height: 100%` quedaba clavado al alto del viewport y el sobrante
+   * dependia de como cada navegador resuelve el overflow hacia el scroller de
+   * arriba (.scroll-area del shell).
+   *
+   * Sigue siendo 100% como piso para que `flex: 1` del wrapper reparta bien
+   * cuando hay pocos productos y la grilla no llena la pantalla.
+   */
+  min-height: 100%;
   background: #FBF6EE;
   position: relative;
 }
@@ -138,72 +148,6 @@
   color: #999;
 }
 
-/* ============================================================
-   PAGINATION
-   ============================================================ */
-.home__pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem 1rem 0;
-  flex: 0 0 auto;
-}
-
-.home__pagination-btn {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: #FFF3D6;
-  color: #241C15;
-  border: none;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.home__pagination-btn:hover:not(:disabled) {
-  background: #FFE9A8;
-  transform: scale(1.1);
-}
-
-.home__pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.home__pagination-dot {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: #FFF3D6;
-  color: #241C15;
-  border: none;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.home__pagination-dot:hover {
-  background: #FFE9A8;
-  transform: scale(1.1);
-}
-
-.home__pagination-dot.active {
-  background: #E11E2B;
-  color: #fff;
-}
-
 .home__products-spacer {
   height: 5rem;
   flex: 0 0 auto;
@@ -236,7 +180,4 @@
     gap: 1rem;
   }
 
-  .home__pagination {
-    padding: 1.5rem 2rem 0;
-  }
 }

@@ -9,7 +9,6 @@ import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { PromocionesCarouselModal } from '../components/organisms/PromocionesCarouselModal';
 import { useCart } from '../context/CartContext';
 import { estaVigente } from '../utils/vigencia';
-import { ITEMS_PER_PAGE } from '../config/settings';
 import './Home.css';
 
 // Referencia estable mientras las queries cargan: un `[]` nuevo por render
@@ -30,7 +29,6 @@ export const Home = ({
 }) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [promoCerrada, setPromoCerrada] = useState(false);
 
@@ -72,20 +70,13 @@ export const Home = ({
     ...allCategorias.map(c => c.nombre),
   ];
 
-  const allFiltered = esFiltroPromos
+  // Se muestra la categoria completa y el cliente scrollea: sin paginar.
+  const filteredProducts = esFiltroPromos
     ? promociones
     : activeCategory === 'Todos'
       ? allItems
       : allItems.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
 
-  const totalPages = Math.ceil(allFiltered.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const filteredProducts = allFiltered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const handleCategoryChange = (category) => {
-    setActiveCategory(category);
-    setCurrentPage(1);
-  };
 
   return (
     <div className="home">
@@ -110,7 +101,7 @@ export const Home = ({
             className={`home__category-btn ${
               activeCategory === category ? 'active' : ''
             }`}
-            onClick={() => handleCategoryChange(category)}
+            onClick={() => setActiveCategory(category)}
           >
             {category}
           </button>
@@ -132,40 +123,6 @@ export const Home = ({
               products={filteredProducts}
               onProductClick={setSelectedProduct}
             />
-          )}
-
-          {totalPages > 1 && (
-            <div className="home__pagination">
-              <button
-                className="home__pagination-btn"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                aria-label="Página anterior"
-              >
-                ‹
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`home__pagination-dot ${
-                    currentPage === i + 1 ? 'active' : ''
-                  }`}
-                  onClick={() => setCurrentPage(i + 1)}
-                  aria-label={`Página ${i + 1}`}
-                  aria-current={currentPage === i + 1 ? 'page' : undefined}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className="home__pagination-btn"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                aria-label="Página siguiente"
-              >
-                ›
-              </button>
-            </div>
           )}
 
           {/* Espacio para CartBar flotante */}
