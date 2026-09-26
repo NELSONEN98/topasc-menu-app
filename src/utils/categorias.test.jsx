@@ -3,37 +3,41 @@ import { esCategoriaDeBebida } from './categorias';
 
 const CATEGORIAS = [
   { _id: 'cat_comida', nombre: 'Salchipapas' },
+  { _id: 'cat_marcada', nombre: 'LO QUE SEA', esBebida: true },
+  { _id: 'cat_desmarcada', nombre: 'Jugos Naturales', esBebida: false },
   { _id: 'cat_bebidas', nombre: 'Bebidas' },
-  { _id: 'cat_gaseosas', nombre: 'Gaseosas' },
   { _id: 'cat_gaseosa', nombre: 'Gaseosa' },
-  { _id: 'cat_mixta', nombre: 'Bebidas y Gaseosas' },
+  { _id: 'cat_jugos', nombre: 'JUGOS NATURALES' },
 ];
 
-describe('esCategoriaDeBebida', () => {
-  test('reconoce Bebidas y Gaseosas', () => {
-    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_bebidas')).toBe(true);
-    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_gaseosas')).toBe(true);
+describe('esCategoriaDeBebida — la marca del panel manda', () => {
+  test('una categoria marcada cuenta, sin importar como se llame', () => {
+    // Es el punto del campo: el nombre lo escribe el local y no hay lista que
+    // lo adivine.
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_marcada')).toBe(true);
   });
 
-  test('el singular tambien cuenta (regresion)', () => {
-    // El bug real: la categoria del local se llama "Gaseosa" y la lista decia
-    // "gaseosas", asi que no matcheaba y el checkbox de salsas seguia saliendo.
+  test('una categoria desmarcada NO cuenta, aunque el nombre diga jugos', () => {
+    // La marca explicita gana en los dos sentidos.
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_desmarcada')).toBe(false);
+  });
+});
+
+describe('esCategoriaDeBebida — respaldo por nombre', () => {
+  test('reconoce las que nadie marco todavia', () => {
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_bebidas')).toBe(true);
     expect(esCategoriaDeBebida(CATEGORIAS, 'cat_gaseosa')).toBe(true);
   });
 
-  test('un nombre compuesto tambien cuenta', () => {
-    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_mixta')).toBe(true);
+  test('reconoce "JUGOS NATURALES" (regresion de produccion)', () => {
+    // El bug real: en produccion las 8 bebidas estaban en "JUGOS NATURALES",
+    // que no contiene ni "bebida" ni "gaseosa", asi que el boton del carrito
+    // no aparecia nunca.
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_jugos')).toBe(true);
   });
 
   test('una categoria de comida no es bebida', () => {
     expect(esCategoriaDeBebida(CATEGORIAS, 'cat_comida')).toBe(false);
-  });
-
-  test('tolera mayusculas y espacios en el nombre', () => {
-    // El nombre lo escribe el admin a mano: " GASEOSAS " tiene que contar.
-    const conRuido = [{ _id: 'cat_x', nombre: '  GASEOSAS ' }];
-
-    expect(esCategoriaDeBebida(conRuido, 'cat_x')).toBe(true);
   });
 
   test('una categoria que no existe no es bebida', () => {

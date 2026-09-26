@@ -104,11 +104,19 @@ export const useCategoriasAdmin = () => {
         // eso ahora se hace solo arrastrando.
         await actualizarCategoria({
           id: editando._id,
-          campos: { nombre: formData.nombre, activo: formData.activo },
+          campos: {
+            nombre: formData.nombre,
+            activo: formData.activo,
+            esBebida: formData.esBebida,
+          },
         });
       } else {
         // La nueva entra al final de la lista. Desde ahi se arrastra.
-        await crearCategoria({ nombre: formData.nombre, orden: siguienteOrden });
+        await crearCategoria({
+          nombre: formData.nombre,
+          orden: siguienteOrden,
+          esBebida: formData.esBebida,
+        });
       }
 
       cerrarModal();

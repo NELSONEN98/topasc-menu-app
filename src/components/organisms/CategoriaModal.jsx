@@ -15,6 +15,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     activo: true,
+    esBebida: false,
   });
 
   useEffect(() => {
@@ -22,11 +23,13 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
       setFormData({
         nombre: categoria.nombre || '',
         activo: categoria.activo !== false,
+        esBebida: categoria.esBebida === true,
       });
     } else {
       setFormData({
         nombre: '',
         activo: true,
+        esBebida: false,
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
@@ -81,6 +84,23 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
               />
               Activa (visible en el menú)
             </label>
+          </div>
+
+          <div className="form-group form-checkbox">
+            <label htmlFor="categoria-esBebida">
+              <input
+                id="categoria-esBebida"
+                type="checkbox"
+                name="esBebida"
+                checked={formData.esBebida}
+                onChange={handleChange}
+              />
+              Es categoría de bebidas
+            </label>
+            <small className="form-ayuda">
+              Marcala para gaseosas, jugos, limonadas. Sus productos aparecen en el botón
+              "¿Algo para tomar?" del carrito y nunca piden salsas.
+            </small>
           </div>
 
           <div className="modal-actions">

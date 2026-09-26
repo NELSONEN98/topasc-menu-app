@@ -6,6 +6,24 @@ export default defineSchema({
     nombre: v.string(),
     orden: v.number(),
     activo: v.boolean(),
+    /**
+     * Marca la categoria como "de bebidas". Decide dos cosas:
+     *   - el boton "¿Algo para tomar?" del carrito ofrece estos productos
+     *   - una bebida nunca pide salsas, ni en el menu ni en el admin
+     *
+     * Es un campo y NO una lista de nombres en el codigo, y eso se pago
+     * aprendiendo: antes se buscaban las palabras "bebida" y "gaseosa" dentro
+     * del nombre. Fallo dos veces con datos reales — primero con la categoria
+     * "Gaseosa" en singular, y despues en produccion, donde las bebidas viven
+     * en "JUGOS NATURALES" y ninguna de las dos palabras aparece. El nombre lo
+     * escribe el local y no hay forma de adivinarlo desde el codigo.
+     *
+     * Optional porque las categorias que ya existen no lo tienen. undefined =
+     * no es de bebidas, salvo que el nombre la delate (ver
+     * src/utils/categorias.js, que mantiene esa deteccion como respaldo para
+     * las que todavia nadie marco).
+     */
+    esBebida: v.optional(v.boolean()),
     // El indice es lo que hace que `orden` ordene de verdad.
     //
     // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin

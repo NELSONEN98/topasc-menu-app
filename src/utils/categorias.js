@@ -1,33 +1,35 @@
 /*
- * Que categorias cuentan como "bebida".
+ * Que categorias cuentan como "bebida". Decide dos cosas:
+ *   - el boton "¿Algo para tomar?" del carrito ofrece estos productos
+ *   - una bebida nunca pide salsas, ni en el menu ni en el formulario del admin
  *
- * Vive en un solo lugar porque dos pantallas dependen de esto: el formulario
- * del admin (una bebida no lleva salsas, asi que el checkbox se esconde) y el
- * carrito (el boton de agregar bebidas). Si cada una tuviera su copia,
- * renombrar o agregar una categoria dejaria una de las dos rota sin que nadie
- * se entere.
+ * Manda el campo `esBebida` de la categoria, que se marca desde el panel.
  *
- * Se compara por NOMBRE porque la tabla `categorias` no tiene un campo de
- * tipo: es la misma convencion que usa convex/categorias.ts para sincronizar
- * el menu.
+ * La deteccion por nombre quedo SOLO como respaldo, para las categorias que
+ * nadie marco todavia. No alcanza por si sola, y eso se aprendio a los golpes:
+ * primero fallo con "Gaseosa" en singular contra una lista que decia
+ * "gaseosas", y despues en produccion, donde las bebidas viven en "JUGOS
+ * NATURALES" y ni "bebida" ni "gaseosa" aparecen en el nombre. El nombre lo
+ * escribe el local; no hay lista que lo adivine.
  *
- * Se busca la RAIZ dentro del nombre y no el nombre completo, y eso es por un
- * bug real: la categoria del local se llama "Gaseosa" (singular) y la lista
- * decia "gaseosas", asi que no matcheaba y el checkbox de salsas seguia
- * apareciendo. Con la raiz entran "Gaseosa", "Gaseosas", "Bebida", "Bebidas" y
- * tambien "Bebidas y Gaseosas", sin depender de como lo escribio cada uno.
- *
- * Lo que sigue sin cubrir: una categoria llamada "Refrescos" o "Sodas" no
- * matchea. Si eso llega a pasar, la solucion de fondo no es alargar esta lista
- * sino marcar la categoria como "es bebida" en el panel.
+ * Cuando todas las categorias de bebida esten marcadas, este respaldo se puede
+ * borrar y dejar solo el campo.
  */
-const RAICES_DE_BEBIDA = ['bebida', 'gaseosa'];
+const RAICES_DE_BEBIDA = ['bebida', 'gaseosa', 'jugo', 'refresco', 'limonada'];
 
-export const esCategoriaDeBebida = (categorias, categoriaId) => {
-  const nombre = categorias.find((c) => c._id === categoriaId)?.nombre;
-  if (!nombre) return false;
-
+const nombreSugiereBebida = (nombre) => {
   const clave = nombre.trim().toLowerCase();
 
   return RAICES_DE_BEBIDA.some((raiz) => clave.includes(raiz));
+};
+
+export const esCategoriaDeBebida = (categorias, categoriaId) => {
+  const categoria = categorias.find((c) => c._id === categoriaId);
+  if (!categoria) return false;
+
+  // La marca explicita gana en los dos sentidos: si el admin la puso en false,
+  // no es bebida aunque el nombre diga "jugo".
+  if (categoria.esBebida !== undefined) return categoria.esBebida;
+
+  return nombreSugiereBebida(categoria.nombre ?? '');
 };
