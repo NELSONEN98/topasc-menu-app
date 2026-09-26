@@ -382,6 +382,7 @@ export const Cart = ({
         <ProductDetailModal
           product={bebidaElegida}
           salsas={salsas}
+          categorias={categorias}
           onClose={() => setBebidaElegida(null)}
         />
       )}

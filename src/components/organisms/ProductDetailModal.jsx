@@ -1,8 +1,18 @@
 import { useState } from 'react';
 import './ProductDetailModal.css';
 import { useCart, SIN_SALSAS } from '../../context/CartContext';
+import { esCategoriaDeBebida } from '../../utils/categorias';
 
-export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
+// Referencia estable para el fallback: un `[]` nuevo por render no sirve como
+// default de una prop.
+const SIN_DATOS = [];
+
+export const ProductDetailModal = ({
+  product,
+  salsas = SIN_DATOS,
+  categorias = SIN_DATOS,
+  onClose,
+}) => {
   const { addToCart } = useCart();
   const [salsasSeleccionadas, setSalsasSeleccionadas] = useState([]);
   const [sinSalsas, setSinSalsas] = useState(false);
@@ -10,8 +20,22 @@ export const ProductDetailModal = ({ product, salsas = [], onClose }) => {
   const [comentario, setComentario] = useState('');
   const [cantidad, setCantidad] = useState(1);
 
+  /*
+   * Una bebida NUNCA pide salsas, sin importar que diga el dato guardado.
+   *
+   * El flag `llevaSalsas` tiene el default al reves que el resto (undefined =
+   * SI lleva), y el formulario del admin solo lo apaga cuando alguien abre y
+   * guarda ese producto. Un jugo cargado antes de esa regla quedaba en `true`
+   * y el boton de agregar se bloqueaba pidiendo elegir una salsa — para un
+   * jugo. Paso de verdad con "Jugo tamarindo".
+   *
+   * Mirar la categoria y no solo el flag corta el problema en la raiz: el
+   * dato puede estar viejo o mal cargado, la categoria manda.
+   */
+  const esBebida = esCategoriaDeBebida(categorias, product.categoriaId);
+
   // undefined = lleva salsas (default); false = bebidas, postres, etc.
-  const llevaSalsas = product.llevaSalsas !== false;
+  const llevaSalsas = !esBebida && product.llevaSalsas !== false;
 
   const ingredientes = product.ingredientes || [];
 

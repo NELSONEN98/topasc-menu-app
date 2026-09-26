@@ -186,6 +186,7 @@ export const Home = ({
         <ProductDetailModal
           product={selectedProduct}
           salsas={salsas}
+          categorias={allCategorias}
           onClose={() => setSelectedProduct(null)}
         />
       )}
