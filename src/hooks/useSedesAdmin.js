@@ -25,6 +25,34 @@ export const useSedesAdmin = () => {
   const actualizarSede = useMutation(api.sedes.actualizar);
   const borrarSede = useMutation(api.sedes.borrar);
 
+  /**
+   * Update optimista: la fila queda en su lugar nuevo apenas soltas, sin
+   * esperar el round trip al servidor.
+   *
+   * Sin esto el arrastre se siente roto. Soltas la sede, la lista vuelve un
+   * instante al orden viejo, y recien despues salta al nuevo. Ese parpadeo lee
+   * como un bug aunque el guardado haya salido bien.
+   *
+   * Convex revierte solo si la mutation falla, asi que no hace falta guardarse
+   * el orden anterior a mano. Mismo criterio que en useCategoriasAdmin.
+   */
+  const reordenarSedes = useMutation(api.sedes.reordenar).withOptimisticUpdate(
+    (localStore, { ids }) => {
+      const actuales = localStore.getQuery(api.sedes.listarTodas, {});
+      if (!actuales) return;
+
+      const porId = new Map(actuales.map((sede) => [sede._id, sede]));
+      const reordenadas = ids
+        .map((id, indice) => {
+          const sede = porId.get(id);
+          return sede ? { ...sede, orden: indice + 1 } : null;
+        })
+        .filter(Boolean);
+
+      localStore.setQuery(api.sedes.listarTodas, {}, reordenadas);
+    }
+  );
+
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
 
@@ -166,6 +194,21 @@ export const useSedesAdmin = () => {
     }
   };
 
+  /**
+   * Recibe los ids ya acomodados y los persiste.
+   *
+   * No notifica en el camino feliz a proposito: un toast por cada arrastre es
+   * ruido, y el resultado ya se ve en pantalla. Solo avisa si falla.
+   */
+  const reordenar = async (idsOrdenados) => {
+    try {
+      await reordenarSedes({ ids: idsOrdenados });
+    } catch (error) {
+      console.error('Error al reordenar sedes:', error);
+      notificar.error(mensajeDeError(error));
+    }
+  };
+
   const alternarActivo = async (sede) => {
     try {
       await actualizarSede({
@@ -186,6 +229,6 @@ export const useSedesAdmin = () => {
       activas: sedes.filter((s) => s.activo).length,
     },
     modal: { abierto: modalAbierto, editando, abrirNuevo, abrirEdicion, cerrar: cerrarModal },
-    acciones: { guardar, eliminar, alternarActivo },
+    acciones: { guardar, eliminar, alternarActivo, reordenar },
   };
 };

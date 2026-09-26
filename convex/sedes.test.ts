@@ -535,3 +535,109 @@ describe("sedes.sincronizar — semilla, no fuente de verdad", () => {
     expect(sedes).toHaveLength(3);
   });
 });
+
+describe("sedes.reordenar", () => {
+  /** Crea sedes en el orden dado y devuelve sus ids. */
+  const sembrar = async (t: ReturnType<typeof convexTest>, nombres: string[]) =>
+    await t.run(async (ctx) => {
+      const ids = [];
+      for (const [indice, nombre] of nombres.entries()) {
+        ids.push(
+          await ctx.db.insert("sedes", {
+            nombre,
+            whatsapp: `57300000000${indice}`,
+            activo: true,
+            orden: indice + 1,
+          })
+        );
+      }
+      return ids;
+    });
+
+  const nombres = (sedes: { nombre: string }[]) => sedes.map((s) => s.nombre);
+
+  test("mover una sede al frente cambia lo que ve el cliente", async () => {
+    const t = convexTest(schema, modules);
+    const [dalia, morichal, tercera] = await sembrar(t, [
+      "Dalia",
+      "Morichal",
+      "Tercera",
+    ]);
+
+    // El caso que pidio el local: que Morichal salga primero.
+    await comoAdmin(t).mutation(api.sedes.reordenar, {
+      ids: [morichal, dalia, tercera],
+    });
+
+    expect(nombres(await t.query(api.sedes.listar, {}))).toEqual([
+      "Morichal",
+      "Dalia",
+      "Tercera",
+    ]);
+  });
+
+  test("asigna posiciones consecutivas desde 1", async () => {
+    const t = convexTest(schema, modules);
+    const [a, b] = await sembrar(t, ["A", "B"]);
+
+    await comoAdmin(t).mutation(api.sedes.reordenar, { ids: [b, a] });
+
+    const todas = await comoAdmin(t).query(api.sedes.listarTodas, {});
+    // Sin numeros consecutivos y sin repetidos, el orden quedaria a merced del
+    // desempate interno.
+    expect(todas.map((s) => s.orden)).toEqual([1, 2]);
+  });
+
+  test("las sedes sin orden van al final, no al principio", async () => {
+    const t = convexTest(schema, modules);
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sedes", {
+        nombre: "Con orden",
+        whatsapp: "573000000001",
+        activo: true,
+        orden: 1,
+      });
+      // Una sede anterior a este campo: no puede desaparecer ni colarse
+      // adelante solo por no estar migrada.
+      await ctx.db.insert("sedes", {
+        nombre: "Sin orden",
+        whatsapp: "573000000002",
+        activo: true,
+      });
+    });
+
+    expect(nombres(await t.query(api.sedes.listar, {}))).toEqual([
+      "Con orden",
+      "Sin orden",
+    ]);
+  });
+
+  test("rechaza una lista incompleta", async () => {
+    const t = convexTest(schema, modules);
+    const [a] = await sembrar(t, ["A", "B", "C"]);
+
+    // Si pasara, las que faltan conservarian su orden viejo y chocarian con
+    // los nuevos.
+    await expect(
+      comoAdmin(t).mutation(api.sedes.reordenar, { ids: [a] })
+    ).rejects.toThrow(/debe incluir las 3 sedes/);
+  });
+
+  test("rechaza ids repetidos", async () => {
+    const t = convexTest(schema, modules);
+    const [a] = await sembrar(t, ["A", "B"]);
+
+    await expect(
+      comoAdmin(t).mutation(api.sedes.reordenar, { ids: [a, a] })
+    ).rejects.toThrow(/repetidas/);
+  });
+
+  test("un visitante sin sesion no puede reordenar", async () => {
+    const t = convexTest(schema, modules);
+    const [a, b] = await sembrar(t, ["A", "B"]);
+
+    await expect(
+      t.mutation(api.sedes.reordenar, { ids: [b, a] })
+    ).rejects.toThrow(/No autorizado/);
+  });
+});

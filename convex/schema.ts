@@ -172,7 +172,17 @@ export default defineSchema({
     // configurado" y terminaria cobrando el de respaldo.
     costoDomicilio: v.optional(v.number()),
     activo: v.boolean(),
-  }),
+    /**
+     * Posicion en la pantalla donde el cliente elige sede. Se acomoda
+     * arrastrando en el panel, igual que las categorias.
+     *
+     * Optional porque las sedes que ya existen no lo tienen. Las que no lo
+     * tengan se ordenan al final: ver `sedes.listar`, que resuelve el
+     * undefined en JS y no con el indice, justamente para que ninguna sede
+     * desaparezca de la pantalla por no estar migrada.
+     */
+    orden: v.optional(v.number()),
+  }).index("por_orden", ["orden"]),
 
   mesas: defineTable({
     // codigo = token del QR (no legible, va en la URL /mesa/:codigo)

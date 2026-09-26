@@ -2,14 +2,35 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requerirAdmin } from "./guardias";
 
+/**
+ * Ordena por `orden`, dejando al final las sedes que todavia no lo tienen.
+ *
+ * Se ordena en JS y NO recorriendo el indice `por_orden` a proposito: `orden`
+ * es opcional, y una sede sin el campo quedaria en un lugar impredecible del
+ * indice. Son tres o cuatro sedes, no hay volumen que justifique otra cosa.
+ *
+ * El desempate por `_creationTime` es lo que hace el orden ESTABLE: sin el,
+ * dos sedes sin `orden` podrian intercambiarse entre una carga y la siguiente y
+ * la pantalla de eleccion se veria distinta cada vez.
+ */
+const porOrden = (sedes: any[]) =>
+  [...sedes].sort((a, b) => {
+    const ordenA = a.orden ?? Infinity;
+    const ordenB = b.orden ?? Infinity;
+
+    return ordenA - ordenB || a._creationTime - b._creationTime;
+  });
+
 // Publica: el cliente elige su sede antes de armar el pedido.
 export const listar = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db
+    const activas = await ctx.db
       .query("sedes")
       .filter((q) => q.eq(q.field("activo"), true))
       .collect();
+
+    return porOrden(activas);
   },
 });
 
@@ -21,7 +42,48 @@ export const listarTodas = query({
   handler: async (ctx) => {
     await requerirAdmin(ctx);
 
-    return await ctx.db.query("sedes").collect();
+    return porOrden(await ctx.db.query("sedes").collect());
+  },
+});
+
+/**
+ * Reescribe el orden de TODAS las sedes de una sola vez.
+ *
+ * Misma forma que categorias:reordenar, y por los mismos motivos: recibe la
+ * lista completa ya acomodada y le asigna 1, 2, 3... Mandar el conjunto entero
+ * deja la tabla consistente en una sola transaccion, sin estados intermedios
+ * con dos sedes compartiendo el mismo numero.
+ *
+ * Por eso exige la lista COMPLETA: si llegara parcial, las que faltan
+ * conservarian su `orden` viejo y chocarian con los nuevos.
+ */
+export const reordenar = mutation({
+  args: { ids: v.array(v.id("sedes")) },
+  handler: async (ctx, { ids }) => {
+    await requerirAdmin(ctx);
+
+    if (new Set(ids).size !== ids.length) {
+      throw new Error("La lista de orden trae sedes repetidas");
+    }
+
+    const todas = await ctx.db.query("sedes").collect();
+
+    if (ids.length !== todas.length) {
+      throw new Error(
+        `El orden debe incluir las ${todas.length} sedes y llegaron ${ids.length}`
+      );
+    }
+
+    const existentes = new Set(todas.map((sede) => sede._id));
+    const desconocida = ids.find((id) => !existentes.has(id));
+
+    if (desconocida) {
+      throw new Error(`La sede ${desconocida} ya no existe`);
+    }
+
+    for (const [indice, id] of ids.entries()) {
+      await ctx.db.patch(id, { orden: indice + 1 });
+    }
   },
 });
 

@@ -1,21 +1,47 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+
 import { SedeModal } from '../SedeModal';
 import { SeccionHeader } from './SeccionHeader';
+import { SedeFilaSortable } from './SedeFilaSortable';
 import { useSedesAdmin } from '../../../hooks/useSedesAdmin';
-import { formatearPrecio } from '../../../utils/formatoPedido';
-
-const textoProductos = (cantidad) =>
-  cantidad === 0 ? 'Sin productos' : `${cantidad} producto${cantidad === 1 ? '' : 's'}`;
-
-// Los tres estados del costo de domicilio son distintos y hay que poder
-// distinguirlos de un vistazo: sin configurar, gratis, o un monto.
-const textoDomicilio = (costo) => {
-  if (costo === undefined || costo === null) return 'Por defecto';
-  if (costo === 0) return 'Gratis';
-  return formatearPrecio(costo);
-};
 
 export const SedesSection = () => {
   const { sedes, productosPorSede, resumen, modal, acciones } = useSedesAdmin();
+
+  const sensores = useSensors(
+    useSensor(PointerSensor, {
+      // Sin esta distancia minima, apoyar el dedo o el mouse sobre la manija
+      // ya arranca un drag y se come el clic. 8px separa "toque" de "arrastre".
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const alSoltar = ({ active, over }) => {
+    // `over` viene null si se solto fuera de la lista.
+    if (!over || active.id === over.id) return;
+
+    const desde = sedes.findIndex((sede) => sede._id === active.id);
+    const hasta = sedes.findIndex((sede) => sede._id === over.id);
+    if (desde === -1 || hasta === -1) return;
+
+    // La mutation espera la lista COMPLETA ya acomodada, no un movimiento.
+    const idsOrdenados = arrayMove(sedes, desde, hasta).map((sede) => sede._id);
+    acciones.reordenar(idsOrdenados);
+  };
 
   return (
     <div>
@@ -26,8 +52,15 @@ export const SedesSection = () => {
         onAccion={modal.abrirNuevo}
       />
 
+      <p className="admin-ayuda">
+        Arrastrá una sede desde la manija para cambiar el orden en que el cliente la ve al
+        elegir dónde pedir. También podés moverla con el teclado: enfocá la manija, espacio
+        para levantarla, flechas para moverla, espacio de nuevo para soltarla.
+      </p>
+
       <div className="admin-table-wrapper">
         <div className="admin-table-header admin-table-header-sedes">
+          <div>Orden</div>
           <div>Nombre</div>
           <div>Dirección</div>
           <div>WhatsApp</div>
@@ -41,71 +74,28 @@ export const SedesSection = () => {
           {sedes.length === 0 ? (
             <p className="admin-vacio">Todavía no hay sedes cargadas.</p>
           ) : (
-            sedes.map((sede) => {
-              const productos = productosPorSede[sede._id] || 0;
-
-              return (
-                <div key={sede._id} className="admin-table-row admin-table-row-sedes">
-                  <div className="admin-table-cell-name">{sede.nombre}</div>
-
-                  {/* Clases distintas para Direccion y Productos aunque se vean
-                      igual: en mobile cada celda se ubica en la grilla por su
-                      clase, y dos celdas con la misma se superponen. */}
-                  <div className="admin-table-cell-direccion" data-label="Dirección">
-                    {sede.direccion || 'Sin dirección'}
-                  </div>
-
-                  <div className="admin-table-cell-whatsapp" data-label="WhatsApp">
-                    {sede.whatsapp}
-                  </div>
-
-                  <div className="admin-table-cell-domicilio" data-label="Domicilio">
-                    {textoDomicilio(sede.costoDomicilio)}
-                  </div>
-
-                  <div className="admin-table-cell-productos" data-label="Productos">
-                    {textoProductos(productos)}
-                  </div>
-
-                  <div className="admin-table-cell-status" data-label="Estado">
-                    <button
-                      className={`status-toggle ${sede.activo ? 'active' : ''}`}
-                      onClick={() => acciones.alternarActivo(sede)}
-                      title={
-                        sede.activo
-                          ? 'Clic para ocultarla del selector de sedes'
-                          : 'Clic para mostrarla en el selector de sedes'
-                      }
-                      aria-label={`${sede.nombre}: ${sede.activo ? 'visible' : 'oculta'} para el cliente`}
-                      aria-pressed={sede.activo}
-                    />
-                  </div>
-
-                  <div className="admin-table-actions">
-                    <button
-                      className="btn-edit"
-                      onClick={() => modal.abrirEdicion(sede)}
-                      aria-label={`Editar ${sede.nombre}`}
-                    >
-                      <span className="btn-texto">Editar</span>
-                    </button>
-                    <button
-                      className="btn-delete"
-                      onClick={() => acciones.eliminar(sede)}
-                      disabled={productos > 0}
-                      title={
-                        productos > 0
-                          ? 'Tiene productos marcados: sacásela o desactivala'
-                          : 'Eliminar sede'
-                      }
-                      aria-label={`Eliminar ${sede.nombre}`}
-                    >
-                      <span className="btn-texto">Eliminar</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            <DndContext
+              sensors={sensores}
+              collisionDetection={closestCenter}
+              onDragEnd={alSoltar}
+            >
+              <SortableContext
+                items={sedes.map((sede) => sede._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {sedes.map((sede, indice) => (
+                  <SedeFilaSortable
+                    key={sede._id}
+                    sede={sede}
+                    posicion={indice + 1}
+                    productos={productosPorSede[sede._id] || 0}
+                    onEditar={modal.abrirEdicion}
+                    onEliminar={acciones.eliminar}
+                    onAlternarActivo={acciones.alternarActivo}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>

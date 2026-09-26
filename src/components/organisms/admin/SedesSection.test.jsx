@@ -3,10 +3,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificacionProvider } from '../../../context/NotificacionContext';
 
-const { useQueryMock, mutacionMock } = vi.hoisted(() => ({
-  useQueryMock: vi.fn(),
-  mutacionMock: vi.fn(),
-}));
+const { useQueryMock, mutacionMock } = vi.hoisted(() => {
+  const mutacion = vi.fn();
+  // El hook encadena `.withOptimisticUpdate(...)` sobre la mutation de
+  // reordenar. Sin esto en el mock, el componente explota al montar.
+  mutacion.withOptimisticUpdate = () => mutacion;
+
+  return { useQueryMock: vi.fn(), mutacionMock: mutacion };
+});
 
 vi.mock('convex/react', () => ({
   useQuery: useQueryMock,
