@@ -361,6 +361,34 @@
   gap: 0.5rem;
 }
 
+/*
+  Desplegable de tamaño. Toma prestado el borde y el radio de los chips para que
+  no se lea como un control de otra app.
+
+  `font-size: 1rem` y no 0.8125rem como los chips: en iOS un select por debajo de
+  16px hace que Safari zoomee la pantalla al tocarlo, y el cliente queda mirando
+  el modal a medias sin entender por que se movio todo.
+*/
+.detail-select {
+  width: 100%;
+  box-sizing: border-box;
+  /* 44px de alto minimo: se toca con el pulgar, igual que los chips. */
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1.5px solid #E0D5C7;
+  border-radius: 0.75rem;
+  background: #FFF;
+  color: #241C15;
+  font: 500 1rem 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.detail-select:focus {
+  outline: none;
+  border-color: #E11E2B;
+  box-shadow: 0 0 0 0.25rem rgba(225, 30, 43, 0.15);
+}
+
 .detail-chip {
   display: flex;
   flex-direction: column;

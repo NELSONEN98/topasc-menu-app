@@ -116,7 +116,19 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     ],
   };
 
-  const opcion = (texto) => screen.getByRole('button', { name: new RegExp(texto) });
+  // Desplegable y no botones: seis tamaños apilados ocupaban media pantalla del
+  // celular y dejaban el "Agregar" abajo del scroll.
+  const selectorTamano = () => screen.getByLabelText(/Qué tamaño/);
+  const elegirTamano = (usuario, tamano) =>
+    usuario.selectOptions(selectorTamano(), tamano);
+
+  test('el tamaño se elige de un desplegable, no de una fila de botones', () => {
+    abrir(POSTOBON);
+
+    expect(selectorTamano().tagName).toBe('SELECT');
+    // Ningún botón de tamaño: es justamente lo que se saca de la pantalla.
+    expect(screen.queryByRole('button', { name: /350 ml/ })).not.toBeInTheDocument();
+  });
 
   test('pide elegir el tamaño y bloquea el agregar', () => {
     abrir(POSTOBON);
@@ -138,17 +150,25 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     // Los que dejó vacíos no se venden y no tienen que llegar al cliente.
     abrir(POSTOBON);
 
-    expect(opcion('350 ml')).toBeInTheDocument();
-    expect(opcion('2.5 lt')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /250 ml/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /400 ml/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /350 ml/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /2\.5 lt/ })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /250 ml/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /400 ml/ })).not.toBeInTheDocument();
+  });
+
+  test('cada opción muestra su precio', () => {
+    // Es lo que cambia entre un tamaño y otro: esconderlo obliga a abrir el
+    // desplegable varias veces para comparar.
+    abrir(POSTOBON);
+
+    expect(screen.getByRole('option', { name: /350 ml — \$\s?3\.000/ })).toBeInTheDocument();
   });
 
   test('elegir un tamaño cobra SU precio, no el del producto', async () => {
     const usuario = userEvent.setup();
     abrir(POSTOBON);
 
-    await usuario.click(opcion('2.5 lt'));
+    await elegirTamano(usuario, '2.5 lt');
 
     const agregar = screen.getByRole('button', { name: /Agregar/ });
     expect(agregar).toBeEnabled();
@@ -159,9 +179,21 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     const usuario = userEvent.setup();
     abrir(POSTOBON);
 
-    await usuario.click(opcion('350 ml'));
+    await elegirTamano(usuario, '350 ml');
 
     expect(screen.getByRole('button', { name: /Agregar/ })).toHaveTextContent('3.000');
+  });
+
+  test('volver a "Elegí el tamaño" vuelve a bloquear el agregar', async () => {
+    // El desplegable permite des-elegir, los botones no: sin esto el cliente
+    // podría dejarlo en blanco y agregar el producto sin tamaño.
+    const usuario = userEvent.setup();
+    abrir(POSTOBON);
+
+    await elegirTamano(usuario, '2.5 lt');
+    await elegirTamano(usuario, '');
+
+    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeDisabled();
   });
 
   test('un agua de un solo tamaño NO pregunta nada', () => {

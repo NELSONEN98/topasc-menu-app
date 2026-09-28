@@ -244,28 +244,41 @@ export const ProductDetailModal = ({
           {ofreceTamano && (
             <div className="detail-section">
               <div className="detail-section__header">
-                <span className="detail-section__title">¿Qué tamaño?</span>
+                <label className="detail-section__title" htmlFor="detail-tamano">
+                  ¿Qué tamaño?
+                </label>
                 <span className="detail-section__badge detail-section__badge--required">
                   Obligatorio
                 </span>
               </div>
 
-              {/* Solo se muestran los tamaños que el local cargó con precio: los
-                  que dejó vacíos no se venden y no llegan hasta acá. */}
-              <div className="detail-chips" role="group" aria-label="Tamaño de la gaseosa">
+              {/*
+                Desplegable y no botones: una gaseosa puede tener seis tamaños, y
+                seis botones con nombre y precio apilados ocupan media pantalla del
+                celular — el cliente tiene que scrollear para volver a encontrar el
+                "Agregar". Con dos o tres opciones los botones se leen mejor, pero
+                acá el que manda es el caso peor.
+
+                El precio va DENTRO de cada opción: es justamente lo que cambia
+                entre un tamaño y otro, y esconderlo obliga a abrir el desplegable
+                varias veces para comparar.
+
+                Solo se ofrecen los tamaños que el local cargó con precio: los que
+                dejó vacíos no se venden y no llegan hasta acá.
+              */}
+              <select
+                id="detail-tamano"
+                className="detail-select"
+                value={tamano ?? ''}
+                onChange={(e) => setTamano(e.target.value || null)}
+              >
+                <option value="">Elegí el tamaño</option>
                 {presentaciones.map((opcion) => (
-                  <button
-                    key={opcion.tamano}
-                    type="button"
-                    className={`detail-chip ${tamano === opcion.tamano ? 'is-selected' : ''}`}
-                    onClick={() => setTamano(opcion.tamano)}
-                    aria-pressed={tamano === opcion.tamano}
-                  >
-                    <span className="detail-chip__nombre">{opcion.tamano}</span>
-                    <span className="detail-chip__precio">{formatPrice(opcion.precio)}</span>
-                  </button>
+                  <option key={opcion.tamano} value={opcion.tamano}>
+                    {opcion.tamano} — {formatPrice(opcion.precio)}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
           )}
 
