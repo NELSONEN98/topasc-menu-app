@@ -40,6 +40,22 @@ export default defineSchema({
      * que ir a marcar nada, y el campo esta para cuando ese nombre cambie.
      */
     admiteLeche: v.optional(v.boolean()),
+    /**
+     * Los productos de esta categoria son gaseosas de marca (Coca Cola /
+     * Postobon). Decide una sola cosa: si el formulario del producto muestra
+     * marca, sabor y la tabla de presentaciones.
+     *
+     * NO deberia estar prendido junto con `admiteLeche`: una gaseosa no se
+     * prepara con leche y un jugo no tiene marca. Si alguien prende los dos, el
+     * formulario le da prioridad a este y esconde el precio con leche — dos
+     * preguntas de preparacion en el mismo producto no significan nada.
+     *
+     * Optional: las categorias que ya existen no lo tienen. undefined = no es de
+     * gaseosas, salvo que el nombre la delate (ver src/utils/categorias.js). El
+     * respaldo por nombre es lo que hace que la categoria "Gaseosa" que ya esta
+     * cargada funcione sin que nadie tenga que ir a marcarla.
+     */
+    esGaseosa: v.optional(v.boolean()),
     // El indice es lo que hace que `orden` ordene de verdad.
     //
     // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin
@@ -71,6 +87,45 @@ export default defineSchema({
      * nada que se pueda desincronizar.
      */
     precioConLeche: v.optional(v.number()),
+    /**
+     * Marca de la gaseosa. Solo para las categorias marcadas `esGaseosa`.
+     *
+     * Union cerrada y no string libre: es lo que agrupa el catalogo, y un
+     * "postobon" contra un "Postobón" contra un "POSTOBON" serian tres marcas
+     * distintas para el codigo. La etiqueta visible vive aparte, en
+     * src/config/gaseosas.js, asi se puede cambiar sin migrar registros.
+     */
+    marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+    /**
+     * Sabor de la gaseosa (Manzana, Uva, Sprite...).
+     *
+     * String y no union: la lista de sabores vive en el codigo
+     * (src/config/gaseosas.js) y va a crecer. Clavarla aca obligaria a que cada
+     * sabor nuevo sea un cambio de schema, y un schema mas estricto que la lista
+     * rechazaria un sabor que el formulario ya ofrece.
+     */
+    sabor: v.optional(v.string()),
+    /**
+     * Tamaños en los que se vende esta gaseosa, cada uno con SU precio.
+     *
+     * Una 350 ml y una 3 lt no pueden costar lo mismo, asi que el precio vive en
+     * cada presentacion y no en el `precio` del item. Cuando hay presentaciones,
+     * `precio` de arriba pasa a ser el "desde $X" que muestra la tarjeta, y se
+     * calcula como el MINIMO de estas al guardar — derivado, no escrito a mano,
+     * para que no pueda quedar desincronizado.
+     *
+     * Este array ES el interruptor: si tiene elementos, el cliente elige tamaño
+     * antes de agregar el producto. Mismo criterio que `precioConLeche` — no hay
+     * un booleano aparte que pueda contradecir a los datos. Esa leccion se pago
+     * dos veces (`llevaSalsas`, `llevaPresentacion`).
+     *
+     * OJO: es distinto del campo `presentacion` de `pedidos.items`, que guarda
+     * la UNICA presentacion que el cliente eligio. Ese es el snapshot; este es
+     * la oferta.
+     */
+    presentaciones: v.optional(
+      v.array(v.object({ tamano: v.string(), precio: v.number() }))
+    ),
     imagenUrl: v.optional(v.string()),
     disponible: v.boolean(),
     activo: v.boolean(),

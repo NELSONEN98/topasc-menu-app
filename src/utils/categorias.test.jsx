@@ -2,8 +2,10 @@ import { describe, expect, test } from 'vitest';
 import {
   esCategoriaDeBebida,
   esCategoriaConLeche,
+  esCategoriaDeGaseosa,
   categoriaEsBebida,
   categoriaAdmiteLeche,
+  categoriaEsGaseosa,
 } from './categorias';
 
 const CATEGORIAS = [
@@ -114,5 +116,44 @@ describe('valor efectivo — con lo que el formulario hidrata los checkboxes', (
   test('sin categoría (alta nueva) no explota', () => {
     expect(categoriaAdmiteLeche(undefined)).toBe(false);
     expect(categoriaEsBebida(undefined)).toBe(false);
+  });
+});
+
+describe('esCategoriaDeGaseosa — más angosto que "es bebida", otra vez', () => {
+  test('la categoría "Gaseosa" ya cargada funciona sin marcar nada', () => {
+    // Respaldo por nombre: es lo que hace que la categoría que ya existe muestre
+    // marca/sabor/tamaños el día del deploy, sin que nadie vaya a tildarla.
+    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_gaseosa')).toBe(true);
+  });
+
+  test('un jugo natural NO es gaseosa de marca', () => {
+    // El punto de que sea angosto: un jugo no tiene marca ni viene en 3 litros.
+    // Si usara `esCategoriaDeBebida`, el formulario le pediría marca a un jugo.
+    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_jugos')).toBe(false);
+    expect(esCategoriaDeBebida(CATEGORIAS, 'cat_jugos')).toBe(true);
+  });
+
+  test('una categoría de comida no es gaseosa', () => {
+    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_comida')).toBe(false);
+  });
+
+  test('"Bebidas" a secas no alcanza: hay que marcarla', () => {
+    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_bebidas')).toBe(false);
+  });
+
+  test('la marca del panel gana sobre el nombre en los dos sentidos', () => {
+    expect(categoriaEsGaseosa({ nombre: 'LO QUE SEA', esGaseosa: true })).toBe(true);
+    expect(categoriaEsGaseosa({ nombre: 'Gaseosas', esGaseosa: false })).toBe(false);
+  });
+
+  test('una categoría que no existe no es gaseosa', () => {
+    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_inexistente')).toBe(false);
+    expect(categoriaEsGaseosa(undefined)).toBe(false);
+  });
+
+  test('"Gaseosa" nace con el checkbox tildado al abrir la categoría', () => {
+    // Mismo motivo que los otros dos flags: si naciera destildado, renombrarla y
+    // guardar escribiría un false explícito y apagaría marca/sabor/tamaños.
+    expect(categoriaEsGaseosa({ nombre: 'Gaseosa' })).toBe(true);
   });
 });

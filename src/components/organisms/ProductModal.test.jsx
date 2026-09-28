@@ -295,6 +295,178 @@ describe('ProductModal — "precio con leche" solo donde la leche existe', () =>
   });
 });
 
+describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
+  const CATEGORIAS_GASEOSA = [
+    ...CATEGORIAS,
+    { _id: 'cat_gaseosa', nombre: 'Gaseosa' },
+    { _id: 'cat_jugos', nombre: 'JUGOS NATURALES' },
+  ];
+
+  const abrirGaseosa = (props = {}) =>
+    abrir({
+      categorias: CATEGORIAS_GASEOSA,
+      product: { _id: 'item_1', nombre: 'Postobón', categoriaId: 'cat_gaseosa', precio: 3000 },
+      ...props,
+    });
+
+  const selectMarca = () => screen.queryByLabelText(/Marca/);
+  const selectSabor = () => screen.queryByLabelText(/^Sabor/);
+  const campoTamano = (tamano) => screen.getByLabelText(tamano);
+
+  test('el bloque aparece en la categoría Gaseosa', () => {
+    abrirGaseosa();
+
+    expect(selectMarca()).toBeInTheDocument();
+    expect(selectSabor()).toBeInTheDocument();
+    // Los cinco tamaños pedidos, siempre dibujados.
+    for (const tamano of ['350 ml', '500 ml', '1 lt', '2 lt', '3 lt']) {
+      expect(campoTamano(tamano)).toBeInTheDocument();
+    }
+  });
+
+  test('NO aparece en una categoría de comida ni en jugos', () => {
+    // Un jugo natural no tiene marca ni viene en 3 litros, y una salchipapa menos.
+    abrir({ categorias: CATEGORIAS_GASEOSA });
+    expect(selectMarca()).not.toBeInTheDocument();
+
+    abrir({
+      categorias: CATEGORIAS_GASEOSA,
+      product: { _id: 'item_2', nombre: 'Jugo', categoriaId: 'cat_jugos', precio: 1 },
+    });
+    expect(selectMarca()).not.toBeInTheDocument();
+  });
+
+  test('el sabor está bloqueado hasta elegir la marca', () => {
+    // Los sabores dependen de la marca: "Manzana" es de Postobón y no existe en
+    // Coca Cola. Un desplegable habilitado y vacío no se entiende.
+    abrirGaseosa();
+
+    expect(selectSabor()).toBeDisabled();
+  });
+
+  test('elegir la marca carga SUS sabores', async () => {
+    const usuario = userEvent.setup();
+    abrirGaseosa();
+
+    await usuario.selectOptions(selectMarca(), 'postobon');
+
+    expect(selectSabor()).toBeEnabled();
+    expect(screen.getByRole('option', { name: 'Manzana' })).toBeInTheDocument();
+    // Sprite es de la otra marca: no tiene que estar.
+    expect(screen.queryByRole('option', { name: 'Sprite' })).not.toBeInTheDocument();
+  });
+
+  test('cambiar de marca limpia un sabor que ya no existe', async () => {
+    // Sin esto quedaría guardada una "Coca Cola Manzana", que no se vende.
+    const usuario = userEvent.setup();
+    const { onSave } = abrirGaseosa();
+
+    await usuario.selectOptions(selectMarca(), 'postobon');
+    await usuario.selectOptions(selectSabor(), 'Manzana');
+    await usuario.selectOptions(selectMarca(), 'coca-cola');
+
+    expect(selectSabor()).toHaveValue('');
+
+    await usuario.type(campoTamano('1 lt'), '6000');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    // El hook corta el guardado sin sabor, así que no llega al onSave... pero lo
+    // que importa acá es que NO se mandó la combinación inválida.
+    expect(onSave.mock.calls[0]?.[0]?.sabor ?? '').not.toBe('Manzana');
+  });
+
+  test('solo se guardan los tamaños con precio', async () => {
+    // Un tamaño vacío significa "no se vende", no "vale cero": sin esa distinción
+    // una 3 lt que nadie cargó se ofrecería gratis.
+    const usuario = userEvent.setup();
+    const { onSave } = abrirGaseosa();
+
+    await usuario.selectOptions(selectMarca(), 'postobon');
+    await usuario.selectOptions(selectSabor(), 'Manzana');
+    await usuario.type(campoTamano('350 ml'), '3000');
+    await usuario.type(campoTamano('1 lt'), '6000');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(onSave.mock.calls[0][0].presentaciones).toEqual({
+      '350 ml': 3000,
+      '1 lt': 6000,
+    });
+  });
+
+  test('el precio pasa a ser "desde" y se calcula con el más barato', async () => {
+    // El campo es `required`: si quedara editable y vacío, el navegador frenaría
+    // el alta de toda gaseosa.
+    const usuario = userEvent.setup();
+    abrirGaseosa();
+
+    await usuario.type(campoTamano('1 lt'), '6000');
+    await usuario.type(campoTamano('350 ml'), '3000');
+
+    const precio = screen.getByLabelText(/Precio desde/);
+    expect(precio).toHaveValue(3000);
+    expect(precio).toHaveAttribute('readonly');
+  });
+
+  test('pasar una gaseosa a otra categoría le borra marca, sabor y tamaños', async () => {
+    // El trap de siempre: el bloque desaparece del formulario pero los datos
+    // siguen en el estado. Esa salchipapa le pediría al cliente elegir entre
+    // 350 ml y 3 lt.
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS_GASEOSA,
+      product: {
+        _id: 'item_1',
+        nombre: 'Postobón Manzana',
+        categoriaId: 'cat_gaseosa',
+        precio: 3000,
+        marca: 'postobon',
+        sabor: 'Manzana',
+        presentaciones: [{ tamano: '1 lt', precio: 6000 }],
+      },
+    });
+
+    expect(selectMarca()).toHaveValue('postobon');
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_1');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(selectMarca()).not.toBeInTheDocument();
+    expect(onSave.mock.calls[0][0].marca).toBe('');
+    expect(onSave.mock.calls[0][0].sabor).toBe('');
+    expect(onSave.mock.calls[0][0].presentaciones).toEqual({});
+  });
+
+  test('al editar, los tamaños guardados llegan cargados', () => {
+    abrir({
+      categorias: CATEGORIAS_GASEOSA,
+      product: {
+        _id: 'item_1',
+        nombre: 'Postobón Manzana',
+        categoriaId: 'cat_gaseosa',
+        precio: 3000,
+        marca: 'postobon',
+        sabor: 'Manzana',
+        presentaciones: [
+          { tamano: '350 ml', precio: 3000 },
+          { tamano: '2 lt', precio: 9000 },
+        ],
+      },
+    });
+
+    expect(campoTamano('350 ml')).toHaveValue(3000);
+    expect(campoTamano('2 lt')).toHaveValue(9000);
+    // El que no se vende sigue vacío, no en 0.
+    expect(campoTamano('3 lt')).toHaveValue(null);
+  });
+
+  test('en una gaseosa NO se pide precio con leche', () => {
+    // Una gaseosa con leche no existe.
+    abrirGaseosa();
+
+    expect(screen.queryByLabelText(/Precio con leche/)).not.toBeInTheDocument();
+  });
+});
+
 describe('ProductModal — productos que la promo reemplaza', () => {
   const SALCHIPAPA = { _id: 'item_salchi', nombre: 'Salchipapa Sencilla', categoriaId: 'cat_1', precio: 18000 };
   const PAPA_LOCA = { _id: 'item_loca', nombre: 'Papa Loca', categoriaId: 'cat_1', precio: 22000 };

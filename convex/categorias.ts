@@ -56,6 +56,7 @@ export const crear = mutation({
     orden: v.number(),
     esBebida: v.optional(v.boolean()),
     admiteLeche: v.optional(v.boolean()),
+    esGaseosa: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -75,6 +76,7 @@ export const crear = mutation({
       activo: true,
       esBebida: args.esBebida,
       admiteLeche: args.admiteLeche,
+      esGaseosa: args.esGaseosa,
     });
   },
 });
@@ -88,6 +90,7 @@ export const actualizar = mutation({
       activo: v.optional(v.boolean()),
       esBebida: v.optional(v.boolean()),
       admiteLeche: v.optional(v.boolean()),
+      esGaseosa: v.optional(v.boolean()),
     }),
   },
   handler: async (ctx, { id, campos }) => {

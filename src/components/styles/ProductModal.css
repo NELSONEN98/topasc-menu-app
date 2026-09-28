@@ -376,6 +376,33 @@
 }
 
 /* ============================================================
+   TAMAÑOS DE GASEOSA — un renglón por tamaño, con su precio
+   ============================================================ */
+.tamanos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* El tamaño a la izquierda con ancho fijo y el precio al lado: así los cinco
+   campos quedan alineados en columna y se leen de un vistazo, en vez de correrse
+   cada uno según el largo de su etiqueta. */
+.tamanos__fila {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.tamanos__label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #241C15;
+}
+
+/* ============================================================
    LISTA DE SELECCION — muchos items, altura acotada y scroll propio
    ============================================================ */
 .form-subtitulo {

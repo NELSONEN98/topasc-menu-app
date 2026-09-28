@@ -101,6 +101,86 @@ describe('ProductDetailModal — las bebidas nunca piden salsas (regresion)', ()
   });
 });
 
+describe('ProductDetailModal — tamaño de la gaseosa', () => {
+  const POSTOBON = {
+    _id: 'item_gaseosa',
+    nombre: 'Postobón Manzana',
+    categoriaId: 'cat_gaseosa',
+    precio: 3000,
+    marca: 'postobon',
+    sabor: 'Manzana',
+    presentaciones: [
+      { tamano: '350 ml', precio: 3000 },
+      { tamano: '1 lt', precio: 6000 },
+      { tamano: '3 lt', precio: 12000 },
+    ],
+  };
+
+  const opcion = (texto) => screen.getByRole('button', { name: new RegExp(texto) });
+
+  test('pide elegir el tamaño y bloquea el agregar', () => {
+    abrir(POSTOBON);
+
+    expect(screen.getByText(/Qué tamaño/)).toBeInTheDocument();
+    // `product.precio` es el "desde" de la tarjeta, no el precio de ninguna
+    // presentación concreta: sin elegir no hay precio que cobrar.
+    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeDisabled();
+  });
+
+  test('el precio se muestra como "desde" hasta que elige', () => {
+    abrir(POSTOBON);
+
+    // Decir $3.000 a secas sería mentir: la de 3 litros sale 12.000.
+    expect(screen.getByText(/desde/)).toBeInTheDocument();
+  });
+
+  test('solo se ofrecen los tamaños que el local cargó', () => {
+    // Los que dejó vacíos no se venden y no tienen que llegar al cliente.
+    abrir(POSTOBON);
+
+    expect(opcion('350 ml')).toBeInTheDocument();
+    expect(opcion('3 lt')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /500 ml/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /2 lt/ })).not.toBeInTheDocument();
+  });
+
+  test('elegir un tamaño cobra SU precio, no el del producto', async () => {
+    const usuario = userEvent.setup();
+    abrir(POSTOBON);
+
+    await usuario.click(opcion('3 lt'));
+
+    const agregar = screen.getByRole('button', { name: /Agregar/ });
+    expect(agregar).toBeEnabled();
+    expect(agregar).toHaveTextContent('12.000');
+  });
+
+  test('el tamaño más chico cobra el precio de arriba', async () => {
+    const usuario = userEvent.setup();
+    abrir(POSTOBON);
+
+    await usuario.click(opcion('350 ml'));
+
+    expect(screen.getByRole('button', { name: /Agregar/ })).toHaveTextContent('3.000');
+  });
+
+  test('una gaseosa SIN presentaciones no pregunta nada', () => {
+    // La ausencia del array es lo que apaga el selector: no hay un booleano
+    // aparte que pueda contradecir a los datos.
+    abrir({ ...POSTOBON, presentaciones: undefined });
+
+    expect(screen.queryByText(/Qué tamaño/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Agregar/ })).toBeEnabled();
+  });
+
+  test('una gaseosa no pide salsas', () => {
+    // Sigue valiendo la regla de las bebidas: la categoría manda sobre el flag.
+    abrir({ ...POSTOBON, llevaSalsas: true });
+
+    expect(seccionSalsas()).not.toBeInTheDocument();
+  });
+});
+
 describe('ProductDetailModal — preparación del jugo', () => {
   const JUGO = {
     _id: 'item_jugo',

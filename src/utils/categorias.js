@@ -82,3 +82,27 @@ export const categoriaAdmiteLeche = (categoria) => {
 
 export const esCategoriaConLeche = (categorias, categoriaId) =>
   categoriaAdmiteLeche(categorias.find((c) => c._id === categoriaId));
+
+/*
+ * Que categorias son de gaseosas de marca. Decide UNA sola cosa: si el
+ * formulario del producto muestra marca, sabor y la tabla de presentaciones.
+ *
+ * Otra vez mas angosto que `esCategoriaDeBebida`: un jugo natural es bebida y no
+ * tiene marca ni viene en 3 litros. Y otra vez el nombre queda SOLO como
+ * respaldo — "gaseosa" a secas en el codigo ya fallo dos veces en este proyecto
+ * (ver el comentario de arriba), asi que el campo del panel es el que manda.
+ */
+const RAICES_DE_GASEOSA = ['gaseosa', 'refresco'];
+
+export const categoriaEsGaseosa = (categoria) => {
+  if (!categoria) return false;
+
+  if (categoria.esGaseosa !== undefined) return categoria.esGaseosa;
+
+  const clave = (categoria.nombre ?? '').trim().toLowerCase();
+
+  return RAICES_DE_GASEOSA.some((raiz) => clave.includes(raiz));
+};
+
+export const esCategoriaDeGaseosa = (categorias, categoriaId) =>
+  categoriaEsGaseosa(categorias.find((c) => c._id === categoriaId));

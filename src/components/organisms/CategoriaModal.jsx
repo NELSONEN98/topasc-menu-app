@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { categoriaEsBebida, categoriaAdmiteLeche } from '../../utils/categorias';
+import {
+  categoriaEsBebida,
+  categoriaAdmiteLeche,
+  categoriaEsGaseosa,
+} from '../../utils/categorias';
 import '../styles/ProductModal.css';
 
 /**
@@ -18,6 +22,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
     activo: true,
     esBebida: false,
     admiteLeche: false,
+    esGaseosa: false,
   });
 
   useEffect(() => {
@@ -33,6 +38,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         // algo que nadie pidió apagar.
         esBebida: categoriaEsBebida(categoria),
         admiteLeche: categoriaAdmiteLeche(categoria),
+        esGaseosa: categoriaEsGaseosa(categoria),
       });
     } else {
       setFormData({
@@ -40,6 +46,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         activo: true,
         esBebida: false,
         admiteLeche: false,
+        esGaseosa: false,
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
@@ -128,6 +135,25 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
               Solo para los jugos. Es lo que hace aparecer el campo{' '}
               <strong>Precio con leche</strong> al cargar un producto de esta categoría.
               Dejala sin marcar en gaseosas: con leche no existen.
+            </small>
+          </div>
+
+          <div className="form-group form-checkbox">
+            <label htmlFor="categoria-esGaseosa">
+              <input
+                id="categoria-esGaseosa"
+                type="checkbox"
+                name="esGaseosa"
+                checked={formData.esGaseosa}
+                onChange={handleChange}
+              />
+              Son gaseosas de marca
+            </label>
+            <small className="form-ayuda">
+              Coca Cola y Postobón. Al cargar un producto de esta categoría vas a poder
+              elegir <strong>marca</strong>, <strong>sabor</strong> y el precio de cada{' '}
+              <strong>tamaño</strong> (350 ml a 3 lt). No la marques junto con la de arriba:
+              una gaseosa no se prepara con leche.
             </small>
           </div>
 

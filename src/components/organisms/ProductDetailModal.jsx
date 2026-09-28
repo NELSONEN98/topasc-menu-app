@@ -25,6 +25,7 @@ export const ProductDetailModal = ({
   const [comentario, setComentario] = useState('');
   const [cantidad, setCantidad] = useState(1);
   const [preparacion, setPreparacion] = useState(null);
+  const [tamano, setTamano] = useState(null);
 
   /*
    * Una bebida NUNCA pide salsas, sin importar que diga el dato guardado.
@@ -88,13 +89,33 @@ export const ProductDetailModal = ({
 
   const preparacionResuelta = !ofrecePreparacion || preparacionElegida !== null;
 
-  const puedeAgregar = salsaResuelta && preparacionResuelta;
+  /*
+   * Tamaño de la gaseosa: 350 ml, 1 lt, etc.
+   *
+   * La opcion existe si el producto trae `presentaciones` cargadas — ese array ES
+   * el interruptor, igual que `precioConLeche` para los jugos (ver schema.ts). No
+   * hay un booleano aparte que pueda contradecir a los datos, que es la leccion
+   * que dejaron `llevaSalsas` y `llevaPresentacion`.
+   *
+   * Es obligatorio cuando existe: `product.precio` es el "desde $X" de la
+   * tarjeta, no el precio de ninguna presentacion concreta, asi que sin elegir no
+   * hay precio que cobrar.
+   */
+  const presentaciones = product.presentaciones ?? [];
+  const ofreceTamano = presentaciones.length > 0;
+
+  const tamanoElegido = presentaciones.find((p) => p.tamano === tamano) ?? null;
+  const tamanoResuelto = !ofreceTamano || tamanoElegido !== null;
+
+  const puedeAgregar = salsaResuelta && preparacionResuelta && tamanoResuelto;
 
   // El precio de la preparacion REEMPLAZA al del producto, no se suma: el de
-  // agua ya es `product.precio`.
+  // agua ya es `product.precio`. El del tamaño elegido funciona igual.
   const precioBase = preparacionElegida
     ? preparacionElegida.precio
-    : product.precio ?? product.price;
+    : tamanoElegido
+      ? tamanoElegido.precio
+      : product.precio ?? product.price;
   const precioExtras = extrasSeleccionados.reduce((sum, s) => sum + s.precio, 0);
   const total = (precioBase + precioExtras) * cantidad;
 
@@ -136,6 +157,18 @@ export const ProductDetailModal = ({
         precio: s.precio,
       })),
       preparacion: preparacionElegida,
+      // El carrito ya sabe manejar `presentacion`: le reemplaza el precio y la
+      // mete en la clave de linea (para que una 500 ml no se fusione con una
+      // 2 lt), y de ahi viaja al pedido y al mensaje de WhatsApp sin plomeria
+      // nueva. Por eso se arma con la forma que ese contrato espera —
+      // `{ sabor, tamano, precio }` — y el sabor sale del producto.
+      presentacion: tamanoElegido
+        ? {
+            sabor: product.sabor ?? product.nombre ?? product.name,
+            tamano: tamanoElegido.tamano,
+            precio: tamanoElegido.precio,
+          }
+        : null,
       comentario,
       cantidad,
     });
@@ -189,7 +222,40 @@ export const ProductDetailModal = ({
             {ofrecePreparacion && !preparacionElegida && (
               <span className="detail-price__desde"> desde</span>
             )}
+            {/* Igual con los tamaños: el precio del producto es el de la 350 ml,
+                decirlo a secas cuando la 3 lt cuesta el triple seria mentir. */}
+            {ofreceTamano && !tamanoElegido && (
+              <span className="detail-price__desde"> desde</span>
+            )}
           </div>
+
+          {ofreceTamano && (
+            <div className="detail-section">
+              <div className="detail-section__header">
+                <span className="detail-section__title">¿Qué tamaño?</span>
+                <span className="detail-section__badge detail-section__badge--required">
+                  Obligatorio
+                </span>
+              </div>
+
+              {/* Solo se muestran los tamaños que el local cargó con precio: los
+                  que dejó vacíos no se venden y no llegan hasta acá. */}
+              <div className="detail-chips" role="group" aria-label="Tamaño de la gaseosa">
+                {presentaciones.map((opcion) => (
+                  <button
+                    key={opcion.tamano}
+                    type="button"
+                    className={`detail-chip ${tamano === opcion.tamano ? 'is-selected' : ''}`}
+                    onClick={() => setTamano(opcion.tamano)}
+                    aria-pressed={tamano === opcion.tamano}
+                  >
+                    <span className="detail-chip__nombre">{opcion.tamano}</span>
+                    <span className="detail-chip__precio">{formatPrice(opcion.precio)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {ofrecePreparacion && (
             <div className="detail-section">
@@ -335,9 +401,11 @@ export const ProductDetailModal = ({
                   preparacion. */}
               {puedeAgregar
                 ? `Agregar · ${formatPrice(total)}`
-                : !preparacionResuelta
-                  ? 'Elegí la preparación'
-                  : 'Elegí una salsa'}
+                : !tamanoResuelto
+                  ? 'Elegí el tamaño'
+                  : !preparacionResuelta
+                    ? 'Elegí la preparación'
+                    : 'Elegí una salsa'}
             </button>
           </div>
         </div>

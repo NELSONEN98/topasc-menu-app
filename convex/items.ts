@@ -47,6 +47,52 @@ const sinPrecioEnCero = (precio?: number) =>
   precio === undefined || precio <= 0 ? undefined : precio;
 
 /**
+ * Limpia y valida las presentaciones de una gaseosa.
+ *
+ * Saca las que quedaron sin precio: el formulario muestra los cinco tamaños con
+ * el campo vacio, y "vacio" significa "este tamaño no se vende", no "vale cero".
+ * Sin esto una 3 lt sin cargar se ofreceria gratis.
+ *
+ * Una lista que queda vacia se guarda como `undefined`, que es lo que borra el
+ * campo en un patch — y es tambien lo que apaga el selector de tamaño, porque el
+ * array ES el interruptor (ver schema.ts).
+ */
+const sinPresentacionesVacias = (
+  presentaciones?: { tamano: string; precio: number }[]
+) => {
+  if (presentaciones === undefined) return undefined;
+
+  const limpias = presentaciones.filter(
+    (p) => p.tamano.trim() !== "" && p.precio > 0
+  );
+
+  // Dos filas con el mismo tamaño dejarian al cliente eligiendo entre dos
+  // botones identicos con precios distintos.
+  const tamanos = new Set(limpias.map((p) => p.tamano.trim()));
+  if (tamanos.size !== limpias.length) {
+    throw new Error("Hay dos presentaciones con el mismo tamaño");
+  }
+
+  return limpias.length > 0 ? limpias : undefined;
+};
+
+/**
+ * El precio que muestra la tarjeta cuando el producto se vende por tamaños: el
+ * MAS BARATO, que es el que acompaña al "desde $X".
+ *
+ * Se deriva y no se escribe a mano para que no pueda quedar desincronizado: si
+ * el admin cargara el precio de arriba por separado, nada impediria que dijera
+ * "desde $3.000" cuando la presentacion mas barata sale 5.000.
+ */
+const precioDesde = (
+  presentaciones: { tamano: string; precio: number }[] | undefined,
+  precioPorDefecto: number
+) =>
+  presentaciones?.length
+    ? Math.min(...presentaciones.map((p) => p.precio))
+    : precioPorDefecto;
+
+/**
  * Normaliza la lista de productos que una promo tapa mientras esta vigente.
  *
  * Saca duplicados y saca a la promo de su propia lista. Lo segundo es lo que
@@ -130,6 +176,11 @@ export const crear = mutation({
     ingredientes: v.optional(v.array(v.string())),
     precio: v.number(),
     precioConLeche: v.optional(v.number()),
+    marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+    sabor: v.optional(v.string()),
+    presentaciones: v.optional(
+      v.array(v.object({ tamano: v.string(), precio: v.number() }))
+    ),
     imagenUrl: v.optional(v.string()),
     llevaSalsas: v.optional(v.boolean()),
     disponible: v.optional(v.boolean()),
@@ -146,6 +197,8 @@ export const crear = mutation({
     const vigenteHasta = sinFechaVacia(args.vigenteHasta);
     validarVigencia(vigenteDesde, vigenteHasta);
 
+    const presentaciones = sinPresentacionesVacias(args.presentaciones);
+
     return await ctx.db.insert("items", {
       ...args,
       // Se recorta el nombre: los jugos quedaron con un espacio al final
@@ -154,6 +207,10 @@ export const crear = mutation({
       disponible: args.disponible ?? true,
       activo: true,
       precioConLeche: sinPrecioEnCero(args.precioConLeche),
+      presentaciones,
+      // Cuando se vende por tamaños, el precio de arriba es el "desde $X" de la
+      // tarjeta y se deriva del mas barato. Ver `precioDesde`.
+      precio: precioDesde(presentaciones, args.precio),
       // Al crear no puede haber autorreferencia (el id todavia no existe), pero
       // igual pasa por el normalizador para que un array vacio se guarde como
       // ausente y no como `[]`. Mismo dato guardado de una sola forma.
@@ -174,6 +231,11 @@ export const actualizar = mutation({
       ingredientes: v.optional(v.array(v.string())),
       precio: v.optional(v.number()),
       precioConLeche: v.optional(v.number()),
+      marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+      sabor: v.optional(v.string()),
+      presentaciones: v.optional(
+        v.array(v.object({ tamano: v.string(), precio: v.number() }))
+      ),
       imagenUrl: v.optional(v.string()),
       disponible: v.optional(v.boolean()),
       activo: v.optional(v.boolean()),
@@ -204,6 +266,39 @@ export const actualizar = mutation({
     // nada": `undefined` en un patch es lo que borra el campo.
     if (campos.ocultaItemIds !== undefined) {
       campos = { ...campos, ocultaItemIds: sinAutoReferencia(campos.ocultaItemIds, id) };
+    }
+
+    /*
+     * Las presentaciones y el `precio` de arriba se resuelven JUNTOS, nunca por
+     * separado: mientras haya tamaños, `precio` es el "desde $X" derivado del mas
+     * barato. Tratarlos como dos campos independientes deja que un patch cambie
+     * uno y no el otro, y la tarjeta terminaria diciendo "desde $3.000" cuando el
+     * tamaño mas barato sale 5.000.
+     *
+     * El `?? actual.precio` del final cubre el caso en que se vacian las
+     * presentaciones sin mandar un precio nuevo: el item vuelve a tener precio
+     * unico y se queda con el que ya tenia, en vez de con un undefined que el
+     * schema rechaza (`precio` es obligatorio).
+     */
+    if (campos.presentaciones !== undefined) {
+      const actual = await ctx.db.get(id);
+      if (!actual) throw new Error("El producto ya no existe");
+
+      const presentaciones = sinPresentacionesVacias(campos.presentaciones);
+
+      // `||` y no `??` a proposito: cuando el producto se vende por tamaños el
+      // formulario no pide el precio de arriba, asi que llega en 0. Si se le
+      // borran todos los tamaños, `??` dejaria ese 0 como precio real y el
+      // producto pasaria a estar gratis en el menu. Un precio 0 nunca es valido
+      // (el formulario exige > 0 en todo lo demas), asi que tratarlo como
+      // "no vino" es correcto.
+      const precioPrevio = campos.precio || actual.precio;
+
+      campos = {
+        ...campos,
+        presentaciones,
+        precio: precioDesde(presentaciones, precioPrevio),
+      };
     }
 
     const tocaDesde = campos.vigenteDesde !== undefined;

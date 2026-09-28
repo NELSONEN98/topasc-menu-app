@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { resizeImage } from '../../utils/resizeImage';
-import { numeroDeInput } from '../../utils/numeroDeInput';
-import { esCategoriaDeBebida, esCategoriaConLeche } from '../../utils/categorias';
+import { numeroDeInput, aNumero } from '../../utils/numeroDeInput';
+import {
+  esCategoriaDeBebida,
+  esCategoriaConLeche,
+  esCategoriaDeGaseosa,
+} from '../../utils/categorias';
+import { TAMANOS, MARCAS_LISTA, saboresDeMarca } from '../../config/gaseosas';
 import '../styles/ProductModal.css';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
@@ -33,6 +38,14 @@ export const ProductModal = ({
     categoriaId: '',
     precio: '',
     precioConLeche: '',
+    marca: '',
+    sabor: '',
+    // Mapa `tamaño -> precio como texto`, no un array: los cinco tamaños se
+    // dibujan siempre y el admin llena los que se venden. Con un array habria
+    // que buscar el indice de cada fila para editarla, y agregar/sacar filas a
+    // mano para un conjunto de tamaños que es FIJO. Se convierte a array al
+    // guardar (ver useProductosAdmin).
+    presentaciones: {},
     descripcion: '',
     ingredientes: [],
     imagenUrl: '',
@@ -62,6 +75,12 @@ export const ProductModal = ({
         categoriaId: product.categoriaId || '',
         precio: product.precio ?? '',
         precioConLeche: product.precioConLeche ?? '',
+        marca: product.marca || '',
+        sabor: product.sabor || '',
+        // Array guardado -> mapa que el formulario puede editar por tamaño.
+        presentaciones: Object.fromEntries(
+          (product.presentaciones ?? []).map((p) => [p.tamano, p.precio])
+        ),
         descripcion: product.descripcion || '',
         ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
@@ -91,6 +110,9 @@ export const ProductModal = ({
         categoriaId: categoriaInicial,
         precio: '',
         precioConLeche: '',
+        marca: '',
+        sabor: '',
+        presentaciones: {},
         descripcion: '',
         ingredientes: [],
         imagenUrl: '',
@@ -140,6 +162,48 @@ export const ProductModal = ({
   };
 
   /**
+   * El "desde $X" que va a mostrar la tarjeta: el más barato de los tamaños
+   * cargados, o null si el producto no se vende por tamaños.
+   *
+   * Se calcula acá SOLO para mostrarlo. Quien manda es el servidor, que lo
+   * vuelve a derivar al guardar (ver `precioDesde` en convex/items.ts) — si este
+   * número fuera el que se guarda, habría dos fuentes de verdad para el mismo
+   * precio. Mostrarlo igual importa: sin esto el admin ve el campo "Precio"
+   * vacío y no entiende por qué el formulario lo deja guardar así.
+   */
+  const precioDesde = useMemo(() => {
+    const precios = TAMANOS.map((t) => aNumero(formData.presentaciones?.[t])).filter(
+      (p) => p > 0
+    );
+
+    return precios.length > 0 ? Math.min(...precios) : null;
+  }, [formData.presentaciones]);
+
+  /**
+   * Precio de un tamaño de gaseosa.
+   *
+   * Un precio vacío significa "este tamaño no se vende", NO "vale cero": por eso
+   * pasa por `numeroDeInput`, que mantiene '' como estado propio, y por eso el
+   * tamaño se borra del mapa en vez de quedar en 0. Sin esta distinción una 3 lt
+   * que nadie cargó se ofrecería gratis.
+   */
+  const cambiarPrecioDeTamano = (tamano, valor) => {
+    const precio = numeroDeInput(valor);
+
+    setFormData((prev) => {
+      const presentaciones = { ...prev.presentaciones };
+
+      if (precio === '' || precio === 0) {
+        delete presentaciones[tamano];
+      } else {
+        presentaciones[tamano] = precio;
+      }
+
+      return { ...prev, presentaciones };
+    });
+  };
+
+  /**
    * Productos que una promo puede reemplazar, agrupados por categoria.
    *
    * Se sacan de la lista el producto que se esta editando (una promo no se tapa
@@ -175,6 +239,15 @@ export const ProductModal = ({
       type === 'checkbox' ? checked : esCampoDePrecio ? numeroDeInput(value) : value;
 
     setFormData(prev => {
+      // Cambiar de marca invalida el sabor: "Manzana" es de Postobón y no existe
+      // en Coca Cola. Si se conservara, el desplegable mostraria un sabor que no
+      // esta en su lista y se guardaria una combinacion que no se vende.
+      if (name === 'marca') {
+        const sigueValido = saboresDeMarca(newValue).includes(prev.sabor);
+
+        return { ...prev, marca: newValue, sabor: sigueValido ? prev.sabor : '' };
+      }
+
       if (name !== 'categoriaId') return { ...prev, [name]: newValue };
 
       // Las salsas y el bloque de promo se esconden en las categorias de
@@ -190,6 +263,12 @@ export const ProductModal = ({
       // 10.000 en el menú. El campo ES el interruptor de la opción (ver
       // schema.ts), así que vaciarlo es lo que la apaga.
       const admiteLeche = esCategoriaConLeche(categorias, newValue);
+      // Marca, sabor y presentaciones se limpian igual y por el mismo motivo: si
+      // una Coca de tres tamaños se pasa a Salchipapas, los tamaños siguen en el
+      // estado, se guardan, y esa salchipapa le pediria al cliente elegir entre
+      // 350 ml y 3 lt. El array ES el interruptor del selector (ver schema.ts),
+      // asi que vaciarlo es lo que lo apaga.
+      const esGaseosa = esCategoriaDeGaseosa(categorias, newValue);
 
       return {
         ...prev,
@@ -197,6 +276,9 @@ export const ProductModal = ({
         llevaSalsas: aBebidas ? false : prev.llevaSalsas,
         esPromo: aBebidas ? false : prev.esPromo,
         precioConLeche: admiteLeche ? prev.precioConLeche : '',
+        marca: esGaseosa ? prev.marca : '',
+        sabor: esGaseosa ? prev.sabor : '',
+        presentaciones: esGaseosa ? prev.presentaciones : {},
       };
     });
   };
@@ -252,22 +334,40 @@ export const ProductModal = ({
             </div>
 
             <div className="form-row">
+              {/*
+                Cuando el producto se vende por tamaños, este campo pasa a ser
+                de solo lectura y muestra el "desde" calculado.
+
+                Es necesario, no cosmético: el campo es `required`, así que si
+                quedara editable y vacío el navegador frenaría el alta de toda
+                gaseosa — y si quedara editable con valor, habría dos formas de
+                definir el mismo precio y nada impediría que dijera "desde
+                $3.000" con el tamaño más barato en 5.000.
+              */}
               <div className="form-group">
-                <label htmlFor="precio">Precio *</label>
+                <label htmlFor="precio">
+                  {precioDesde === null ? 'Precio *' : 'Precio desde'}
+                </label>
                 <div className="input-con-prefijo">
                   <span className="input-prefijo" aria-hidden="true">$</span>
                   <input
                     id="precio"
                     type="number"
                     name="precio"
-                    value={formData.precio}
+                    value={precioDesde === null ? formData.precio : precioDesde}
                     onChange={handleChange}
                     placeholder="0"
-                    required
+                    required={precioDesde === null}
+                    readOnly={precioDesde !== null}
                     min="0"
                     inputMode="numeric"
                   />
                 </div>
+                {precioDesde !== null && (
+                  <small className="form-ayuda">
+                    Se calcula solo con el tamaño más barato.
+                  </small>
+                )}
               </div>
 
               <div className="form-group">
@@ -294,13 +394,20 @@ export const ProductModal = ({
               con leche no existe, y tener el campo a la vista en toda la carta
               invita a llenarlo por error.
 
-              La segunda condición es una válvula de seguridad: si el producto YA
-              tiene precio con leche, el campo se muestra igual aunque la
-              categoría diga que no. Sin eso, un jugo cargado antes de este
-              cambio quedaría con un precio que el formulario no muestra y nadie
-              podría sacárselo — visible para el cliente e imposible de editar.
+              La segunda condición es una válvula de seguridad, y GANA sobre todo
+              lo demás: si el producto YA tiene precio con leche, el campo se
+              muestra aunque la categoría diga que no corresponde. Sin eso, un
+              producto con un precio viejo pegado quedaría ofreciéndose "en leche"
+              en el menú con el campo invisible en el formulario — imposible de
+              sacar sin entrar a la base.
+
+              El `&& !esGaseosa` solo aplica a una categoría marcada como las dos
+              cosas a la vez, que no debería existir (ver schema.ts): ahí gaseosa
+              manda, porque preguntar tamaño Y preparación en el mismo producto no
+              significa nada.
             */}
-            {(esCategoriaConLeche(categorias, formData.categoriaId) ||
+            {((esCategoriaConLeche(categorias, formData.categoriaId) &&
+              !esCategoriaDeGaseosa(categorias, formData.categoriaId)) ||
               formData.precioConLeche !== '') && (
             <div className="form-group">
               <label htmlFor="precioConLeche">Precio con leche</label>
@@ -325,6 +432,84 @@ export const ProductModal = ({
             </div>
             )}
           </fieldset>
+
+          {/* Solo en las categorías de gaseosas de marca. Un jugo natural no
+              tiene marca ni viene en 3 litros, y una salchipapa menos. */}
+          {esCategoriaDeGaseosa(categorias, formData.categoriaId) && (
+          <fieldset className="form-seccion">
+            <legend className="form-seccion__titulo">Gaseosa</legend>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="marca">Marca</label>
+                <select id="marca" name="marca" value={formData.marca} onChange={handleChange}>
+                  <option value="">Elegí la marca</option>
+                  {MARCAS_LISTA.map((marca) => (
+                    <option key={marca.valor} value={marca.valor}>
+                      {marca.etiqueta}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="sabor">Sabor</label>
+                {/* Desplegable y no texto libre: en producción ya hay "Jugo de
+                    Maracuya" sin tilde y cinco nombres con espacio al final. Un
+                    desplegable no puede escribir mal un sabor. Se deshabilita
+                    hasta elegir marca porque los sabores dependen de ella. */}
+                <select
+                  id="sabor"
+                  name="sabor"
+                  value={formData.sabor}
+                  onChange={handleChange}
+                  disabled={!formData.marca}
+                >
+                  <option value="">
+                    {formData.marca ? 'Elegí el sabor' : 'Elegí la marca primero'}
+                  </option>
+                  {saboresDeMarca(formData.marca).map((sabor) => (
+                    <option key={sabor} value={sabor}>
+                      {sabor}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <span className="form-subtitulo">Precio de cada tamaño</span>
+              <small className="form-ayuda">
+                Llená solo los tamaños que se venden. El que dejes{' '}
+                <strong>vacío no se ofrece</strong>. El precio de arriba pasa a ser el{' '}
+                <strong>"desde"</strong> de la tarjeta y se calcula solo con el más barato:
+                no hace falta tocarlo.
+              </small>
+
+              <div className="tamanos">
+                {TAMANOS.map((tamano) => (
+                  <div key={tamano} className="tamanos__fila">
+                    <label className="tamanos__label" htmlFor={`tamano-${tamano}`}>
+                      {tamano}
+                    </label>
+                    <div className="input-con-prefijo">
+                      <span className="input-prefijo" aria-hidden="true">$</span>
+                      <input
+                        id={`tamano-${tamano}`}
+                        type="number"
+                        value={formData.presentaciones[tamano] ?? ''}
+                        onChange={(e) => cambiarPrecioDeTamano(tamano, e.target.value)}
+                        placeholder="No se vende"
+                        min="0"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </fieldset>
+          )}
 
           <fieldset className="form-seccion">
             <legend className="form-seccion__titulo">Sedes</legend>

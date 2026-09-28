@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api';
 import { useNotificacion } from '../context/NotificacionContext';
 import { mensajeDeError } from '../utils/mensajeDeError';
 import { aNumero } from '../utils/numeroDeInput';
+import { TAMANOS } from '../config/gaseosas';
 import { ADMIN_ITEMS_PER_PAGE, PLACEHOLDER_PRODUCTO } from '../config/settings';
 
 // Referencia estable mientras las queries cargan: un `[]` nuevo por render
@@ -102,9 +103,32 @@ export const useProductosAdmin = () => {
       return;
     }
 
+    /*
+     * El mapa `tamaño -> precio` del formulario se convierte al array que guarda
+     * el schema, respetando el orden de TAMANOS (de 350 ml a 3 lt).
+     *
+     * El orden importa: es el que ve el cliente en el selector, y de chico a
+     * grande es como se lee un precio que sube. Object.keys no lo garantiza para
+     * claves que no son numéricas, así que se recorre TAMANOS y no el mapa.
+     */
+    const presentaciones = TAMANOS.filter(
+      (tamano) => aNumero(formData.presentaciones?.[tamano]) > 0
+    ).map((tamano) => ({ tamano, precio: aNumero(formData.presentaciones[tamano]) }));
+
+    const seVendePorTamano = presentaciones.length > 0;
+
     const precio = aNumero(formData.precio);
-    if (precio <= 0) {
+    // Cuando se vende por tamaños el precio de arriba lo deriva el servidor del
+    // más barato, así que exigirlo acá frenaría un alta perfectamente válida: el
+    // admin llenó los cinco tamaños y no tocó un campo que ya no le pertenece.
+    if (!seVendePorTamano && precio <= 0) {
       notificar.info('El precio debe ser mayor a 0');
+      return;
+    }
+    if (seVendePorTamano && !formData.sabor) {
+      // Sin sabor el pedido diría "Postobón 1 lt" y el local no sabría cuál
+      // sacar de la nevera. El sabor viaja al pedido dentro de `presentacion`.
+      notificar.info('Elegí el sabor de la gaseosa');
       return;
     }
     // Se corta aca a proposito: sin sedes el plato no aparece en ningun menu,
@@ -140,6 +164,13 @@ export const useProductosAdmin = () => {
             // Va como 0 y no como undefined cuando esta vacio: es asi como el
             // server distingue "saca la opcion" de "no la toques".
             precioConLeche: aNumero(formData.precioConLeche),
+            // Van SIEMPRE, también vacíos: es así como el server sabe que hay que
+            // borrarlos cuando el producto deja de venderse por tamaños. Mandarlos
+            // solo cuando tienen valor dejaría los tamaños viejos pegados a un
+            // producto que ya no es gaseosa.
+            marca: formData.marca || undefined,
+            sabor: formData.sabor || undefined,
+            presentaciones,
             descripcion: formData.descripcion,
             ingredientes: formData.ingredientes,
             imagenUrl: formData.imagenUrl,
@@ -166,6 +197,11 @@ export const useProductosAdmin = () => {
           ingredientes: formData.ingredientes,
           precio,
           precioConLeche: aNumero(formData.precioConLeche) || undefined,
+          marca: formData.marca || undefined,
+          sabor: formData.sabor || undefined,
+          // En el alta sí va undefined cuando está vacío: no hay nada previo que
+          // borrar, y así no se guarda un `[]` que significa lo mismo que ausente.
+          presentaciones: seVendePorTamano ? presentaciones : undefined,
           imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
           llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,

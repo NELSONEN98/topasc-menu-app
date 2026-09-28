@@ -109,6 +109,7 @@ export const useCategoriasAdmin = () => {
             activo: formData.activo,
             esBebida: formData.esBebida,
             admiteLeche: formData.admiteLeche,
+            esGaseosa: formData.esGaseosa,
           },
         });
       } else {
@@ -118,6 +119,7 @@ export const useCategoriasAdmin = () => {
           orden: siguienteOrden,
           esBebida: formData.esBebida,
           admiteLeche: formData.admiteLeche,
+          esGaseosa: formData.esGaseosa,
         });
       }
 
