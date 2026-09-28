@@ -39,12 +39,12 @@ export const OrderType = ({ onSelectType, sede = null, onChangeSede }) => {
   const orderTypes = [
     {
       id: 'pickup',
-      label: 'Menú',
+      label: 'Ver Menú',
       icon: MenuIcon,
       // La descripción es la que ahora carga el significado: la etiqueta ya no
       // dice "recoger", así que sin esto el cliente no sabría que lo tiene que
       // ir a buscar al local.
-      description: 'Retira tu pedido en tienda',
+      description: 'Haz tu pedido desde la mesa o pide para llevar.',
     },
     {
       id: 'delivery',

@@ -97,6 +97,30 @@
   line-height: 1.4;
 }
 
+/* El nombre en su propio renglón arriba de la dirección, no pegado al lado:
+   son dos datos que se leen en momentos distintos (a quién buscar, a dónde ir). */
+.pedido-card__direccion strong {
+  display: block;
+}
+
+/* 44px de alto mínimo: es un enlace de llamada que se toca con el pulgar en el
+   celular del mostrador, no un texto para mirar. */
+.pedido-card__telefono {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #E11E2B;
+  text-decoration: none;
+}
+
+.pedido-card__telefono:hover {
+  text-decoration: underline;
+}
+
 .pedido-card__items {
   list-style: none;
   margin: 0;

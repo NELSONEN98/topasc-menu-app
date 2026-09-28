@@ -10,10 +10,11 @@ import { AddressModal } from '../components/organisms/AddressModal';
 import { PickupModal } from '../components/organisms/PickupModal';
 import { BebidasModal } from '../components/organisms/BebidasModal';
 import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
-import { useCart, SIN_SALSAS } from '../context/CartContext';
+import { useCart } from '../context/CartContext';
 import { useNotificacion } from '../context/NotificacionContext';
 import { esCategoriaDeBebida } from '../utils/categorias';
 import { itemsVisibles } from '../utils/menu';
+import { armarMensajePedido } from '../utils/mensajePedido';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
@@ -156,6 +157,12 @@ export const Cart = ({
     // El método de pago viene de la modal de domicilio o de recoger
     const metodoPago = address?.metodoPago ?? pickup?.metodoPago;
 
+    // Nombre y teléfono los piden las dos modales con el mismo componente, así
+    // que salen del que corresponda al tipo de pedido. En mesa no se piden: el
+    // cliente está sentado en un número de mesa conocido y no hay nada que
+    // llevarle ni a quién llamar, así que acá quedan en undefined.
+    const cliente = address ?? pickup;
+
     crearPedido({
       tipoPedido: orderType,
       total,
@@ -164,7 +171,10 @@ export const Cart = ({
       sedeId: sede?._id,
       sedeNombre: sede?.nombre,
       costoDomicilio: orderType === 'delivery' ? deliveryFee : undefined,
-      clienteNombre: pickup?.nombre,
+      // Ya no salen solo de `pickup`: domicilio también los pide, y sin esto el
+      // panel mostraba los pedidos a domicilio sin nombre ni forma de llamar.
+      clienteNombre: cliente?.nombre,
+      clienteTelefono: cliente?.telefono,
       codigoRetiro: pickup?.codigo,
       mesaId: orderType === 'dine-in' ? mesa?._id : undefined,
       mesaNumero: mesaNumeroFinal,
@@ -176,69 +186,24 @@ export const Cart = ({
       console.error('No se pudo guardar el pedido en Convex:', e)
     );
 
-    // Se aclara la sede en el propio texto: mientras las dos compartan el
-    // mismo numero de WhatsApp de pruebas, es la unica forma de saber para
-    // cual de los dos locales es el pedido.
-    //
-    // Formato tipo factura: bloques separados por linea en blanco y titulos
-    // en MAYUSCULA en vez de *negrita*. WhatsApp Web/Desktop no siempre
-    // interpreta el asterisco cuando el texto llega prellenado por un link
-    // wa.me (no tecleado a mano) — queda como asterisco literal en vez de
-    // negrita. Mayuscula funciona siempre, en cualquier plataforma.
-    const encabezadoSede = sede
-      ? `/// PEDIDO PARA ${sede.nombre.toUpperCase()} ///\n\n`
-      : '';
-
-    // Cada item es su propio bloque (nombre, presentacion, salsas, extras,
-    // nota) separado del siguiente por una linea en blanco — como los
-    // renglones de una factura, no una lista apretada de una sola linea.
-    const detalleItems = cartItems
-      .map((item) => {
-        let bloque = `* ${item.name} x${item.quantity}`;
-        // Antes que las salsas: sin el sabor y el tamaño, el local no sabe
-        // que botella servir. WhatsApp es el canal principal del pedido.
-        // Antes que las salsas y en su propia linea: sin esto el local no sabe
-        // si el jugo va en agua o en leche, que es la diferencia entre
-        // prepararlo bien y prepararlo mal.
-        if (item.preparacion) bloque += `\n${item.preparacion.toUpperCase()}`;
-        if (item.presentacion)
-          bloque += `\n${item.presentacion.sabor} · ${item.presentacion.tamano}`;
-        if (item.salsas?.length > 0)
-          bloque +=
-            item.salsas[0] === SIN_SALSAS
-              ? `\n${SIN_SALSAS}`
-              : `\nSALSAS: ${item.salsas.join(', ')}`;
-        if (item.salsasExtra?.length > 0)
-          bloque += `\nEXTRAS: ${item.salsasExtra.map((extra) => extra.nombre).join(', ')}`;
-        if (item.comentario) bloque += `\nNOTA: ${item.comentario}`;
-        return bloque;
-      })
-      .join('\n\n');
-
-    let message = `${encabezadoSede}DETALLES:\n\n${detalleItems}`;
-
-    if (orderType === 'dine-in' && mesaNumeroFinal) {
-      message += `\n\nMESA: ${mesaNumeroFinal}`;
-    }
-
-    if (orderType === 'delivery' && address) {
-      message += `\n\nENTREGAR EN: ${address.direccion}`;
-      if (address.referencia) message += `\nREFERENCIA: ${address.referencia}`;
-    }
-
-    if (orderType === 'pickup' && pickup) {
-      message += `\n\nRECOGE: ${pickup.nombre}`;
-      message += `\nCÓDIGO DE RETIRO: ${pickup.codigo}`;
-    }
-
-    if (metodoPago) {
-      const pagoLabel =
-        metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia';
-      message += `\nMÉTODO DE PAGO: ${pagoLabel}`;
-    }
-
-    // El total va al final, como el renglon de cierre de una factura.
-    message += `\n\nTOTAL: ${formatPrice(total)}`;
+    // El armado vive en src/utils/mensajePedido.js: es el canal PRINCIPAL del
+    // pedido, así que está testeado renglón por renglón en vez de escrito a mano
+    // acá adentro. La sede sigue yendo en el propio texto porque mientras los
+    // locales compartan número de WhatsApp es lo único que dice para cuál es.
+    const message = armarMensajePedido({
+      orderType,
+      items: cartItems,
+      cliente,
+      sede,
+      address,
+      pickup,
+      mesaNumero: mesaNumeroFinal,
+      metodoPago,
+      subtotal,
+      deliveryFee,
+      total,
+      formatearPrecio: formatPrice,
+    });
 
     // sede?.whatsapp: numero propio del local elegido. Sin sede (pedido por
     // QR, ver la nota en App.jsx) cae al numero de pruebas de settings.js.

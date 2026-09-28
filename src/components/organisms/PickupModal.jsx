@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { PaymentSelector } from '../molecules/PaymentSelector';
+import { DatosCliente, validarDatosCliente } from '../molecules/DatosCliente';
 import { useNotificacion } from '../../context/NotificacionContext';
 import './TableNumberModal.css';
 import './AddressModal.css';
@@ -18,21 +19,30 @@ const generarCodigo = () => {
 
 export const PickupModal = ({ onConfirm, onCancel }) => {
   const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [metodoPago, setMetodoPago] = useState(null);
   // Un único código por apertura de la modal
   const codigo = useMemo(() => generarCodigo(), []);
   const { notificar } = useNotificacion();
 
   const handleConfirm = () => {
-    if (!nombre.trim()) {
-      notificar.info('Ingresá tu nombre');
+    // La validación del nombre ya no vive acá: la comparte con el modal de
+    // domicilio, que pide lo mismo con las mismas reglas.
+    const cliente = validarDatosCliente({ nombre, telefono });
+    if (cliente.error) {
+      notificar.info(cliente.error);
       return;
     }
     if (!metodoPago) {
       notificar.info('Elegí el método de pago');
       return;
     }
-    onConfirm({ nombre: nombre.trim(), codigo, metodoPago });
+    onConfirm({
+      nombre: cliente.nombre,
+      telefono: cliente.telefono,
+      codigo,
+      metodoPago,
+    });
   };
 
   return (
@@ -41,16 +51,18 @@ export const PickupModal = ({ onConfirm, onCancel }) => {
         <div className="table-modal-header">
           <h2 className="table-modal-title">Recoger en el local</h2>
           <p className="table-modal-subtitle">¿A nombre de quién preparamos la orden?</p>
+          {/* El teléfono lo pide el DatosCliente de abajo: el subtítulo sigue
+              hablando del nombre porque es el dato que define el pedido. */}
         </div>
 
         <div className="table-modal-body">
           <div className="table-modal-icon">🏃</div>
-          <input
-            type="text"
-            className="address-modal-input"
-            placeholder="Tu nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+
+          <DatosCliente
+            nombre={nombre}
+            telefono={telefono}
+            onNombreChange={setNombre}
+            onTelefonoChange={setTelefono}
             autoFocus
           />
 

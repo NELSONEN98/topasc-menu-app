@@ -88,3 +88,13 @@
   color: #999;
   text-align: center;
 }
+
+/* Vista previa del teléfono ya separado en grupos. Mismo criterio que el modal
+   de sedes: le confirma al cliente que escribió los dígitos que quería ANTES de
+   mandar el pedido, en vez de enterarse cuando el local no lo puede llamar. */
+.datos-cliente__preview {
+  align-self: flex-start;
+  margin-top: -0.375rem;
+  font: 500 0.75rem 'Inter', sans-serif;
+  color: #666;
+}

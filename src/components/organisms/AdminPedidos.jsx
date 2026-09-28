@@ -7,6 +7,7 @@ import {
   formatearPrecio,
   formatearHora,
 } from '../../utils/formatoPedido';
+import { formatearTelefono } from '../../utils/telefonoCliente';
 import './AdminPedidos.css';
 
 export const AdminPedidos = () => {
@@ -77,11 +78,30 @@ export const AdminPedidos = () => {
               )}
               {pedido.tipoPedido === 'delivery' && (
                 <div className="pedido-card__direccion">
-                  <strong>{pedido.direccionEntrega}</strong>
+                  {/* El nombre va arriba de la dirección: los pedidos a
+                      domicilio ahora lo traen, y quien sale a repartir necesita
+                      saber a quién le toca el timbre. */}
+                  {pedido.clienteNombre && (
+                    <strong>{pedido.clienteNombre}</strong>
+                  )}
+                  <span>{pedido.direccionEntrega}</span>
                   {pedido.direccionReferencia && (
                     <span> · {pedido.direccionReferencia}</span>
                   )}
                 </div>
+              )}
+
+              {/* Enlace tel: y no texto plano: en el celular del mostrador es un
+                  toque para llamar, que es exactamente para lo que se pide el
+                  número. Los pedidos anteriores a este campo no lo traen y ahí
+                  no se dibuja nada. */}
+              {pedido.clienteTelefono && (
+                <a
+                  className="pedido-card__telefono"
+                  href={`tel:${pedido.clienteTelefono}`}
+                >
+                  📱 {formatearTelefono(pedido.clienteTelefono)}
+                </a>
               )}
             </div>
 

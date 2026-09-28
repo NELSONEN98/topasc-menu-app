@@ -66,12 +66,14 @@ describe('OrderType — "Menú" sigue siendo un pedido para recoger', () => {
     expect(onSelectType).toHaveBeenCalledWith('pickup');
   });
 
-  test('avisa que se retira en el local', () => {
-    // La etiqueta ya no dice "recoger", así que esta línea es lo único que le
-    // dice al cliente que el pedido no se lo llevan a la casa.
+  test('avisa que el pedido no se lo llevan a la casa', () => {
+    // La etiqueta dice "Ver Menú", que no habla de entrega: esta línea es lo
+    // único que le aclara al cliente que este pedido no es un domicilio. Si
+    // alguien la borra "porque es obvia", el cliente elige mal y el local
+    // termina con un pedido que nadie va a buscar.
     abrir();
 
-    expect(screen.getByText(/Retira tu pedido en tienda/)).toBeInTheDocument();
+    expect(screen.getByText(/pide para llevar/)).toBeInTheDocument();
   });
 
   test('"Domicilio" sigue mandando delivery', async () => {
