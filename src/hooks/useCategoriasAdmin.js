@@ -109,7 +109,13 @@ export const useCategoriasAdmin = () => {
             activo: formData.activo,
             esBebida: formData.esBebida,
             admiteLeche: formData.admiteLeche,
-            esGaseosa: formData.esGaseosa,
+            // '' significa "no vende bebidas envasadas" y va como undefined, que
+            // es lo que BORRA el campo en un patch de Convex.
+            tipoBebida: formData.tipoBebida || undefined,
+            // Se borra el campo viejo en cada guardado: así toda categoría que se
+            // toca deja de depender de él, y cuando no quede ninguna se puede
+            // sacar del schema. Ver la nota en schema.ts.
+            esGaseosa: undefined,
           },
         });
       } else {
@@ -119,7 +125,7 @@ export const useCategoriasAdmin = () => {
           orden: siguienteOrden,
           esBebida: formData.esBebida,
           admiteLeche: formData.admiteLeche,
-          esGaseosa: formData.esGaseosa,
+          tipoBebida: formData.tipoBebida || undefined,
         });
       }
 

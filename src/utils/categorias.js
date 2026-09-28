@@ -84,25 +84,56 @@ export const esCategoriaConLeche = (categorias, categoriaId) =>
   categoriaAdmiteLeche(categorias.find((c) => c._id === categoriaId));
 
 /*
- * Que categorias son de gaseosas de marca. Decide UNA sola cosa: si el
- * formulario del producto muestra marca, sabor y la tabla de presentaciones.
+ * Que tipo de bebida envasada vende una categoria: 'gaseosa', 'agua', 'cerveza'
+ * o null. Decide que tamaños ofrece el formulario del producto y si pregunta
+ * marca y sabor.
  *
  * Otra vez mas angosto que `esCategoriaDeBebida`: un jugo natural es bebida y no
- * tiene marca ni viene en 3 litros. Y otra vez el nombre queda SOLO como
- * respaldo — "gaseosa" a secas en el codigo ya fallo dos veces en este proyecto
- * (ver el comentario de arriba), asi que el campo del panel es el que manda.
+ * viene envasado ni tiene marca. Y otra vez el nombre queda SOLO como respaldo —
+ * buscar "gaseosa" dentro del nombre ya fallo dos veces en este proyecto (ver el
+ * comentario de arriba), asi que el campo del panel es el que manda.
+ *
+ * Las raices por tipo son deliberadamente pocas y obvias. No intentan cubrir todo
+ * lo que el local pueda escribir: para eso esta el desplegable del panel. Estan
+ * para que las categorias YA cargadas sigan funcionando el dia del deploy.
  */
-const RAICES_DE_GASEOSA = ['gaseosa', 'refresco'];
+const RAICES_POR_TIPO = {
+  gaseosa: ['gaseosa', 'refresco'],
+  agua: ['agua'],
+  cerveza: ['cerveza', 'cervez'],
+};
 
-export const categoriaEsGaseosa = (categoria) => {
-  if (!categoria) return false;
+export const tipoBebidaDeCategoria = (categoria) => {
+  if (!categoria) return null;
 
-  if (categoria.esGaseosa !== undefined) return categoria.esGaseosa;
+  // Lo explicito gana, incluida la cadena vacia que el formulario manda para
+  // decir "esta categoria no vende bebidas envasadas".
+  if (categoria.tipoBebida) return categoria.tipoBebida;
+
+  // COMPAT: `esGaseosa` vivio menos de una hora pero llego a produccion. Se lee
+  // como respaldo y ya no se escribe. Ver la nota en schema.ts.
+  if (categoria.esGaseosa === true) return 'gaseosa';
+  if (categoria.esGaseosa === false) return null;
 
   const clave = (categoria.nombre ?? '').trim().toLowerCase();
 
-  return RAICES_DE_GASEOSA.some((raiz) => clave.includes(raiz));
+  for (const [tipo, raices] of Object.entries(RAICES_POR_TIPO)) {
+    if (raices.some((raiz) => clave.includes(raiz))) return tipo;
+  }
+
+  return null;
 };
 
-export const esCategoriaDeGaseosa = (categorias, categoriaId) =>
-  categoriaEsGaseosa(categorias.find((c) => c._id === categoriaId));
+export const tipoBebidaDeItem = (categorias, categoriaId) =>
+  tipoBebidaDeCategoria(categorias.find((c) => c._id === categoriaId));
+
+/**
+ * ¿La categoria vende bebidas envasadas (de cualquier tipo)?
+ *
+ * Es lo que gatilla el bloque de tamaños en el formulario del producto. Se
+ * mantiene como funcion propia y no como `tipo !== null` desparramado por el
+ * codigo: la pregunta "¿muestro el bloque?" se hace en varios lugares y tiene que
+ * dar siempre la misma respuesta.
+ */
+export const esCategoriaEnvasada = (categorias, categoriaId) =>
+  tipoBebidaDeItem(categorias, categoriaId) !== null;

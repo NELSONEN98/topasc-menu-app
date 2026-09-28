@@ -4,7 +4,8 @@ import { api } from '../../convex/_generated/api';
 import { useNotificacion } from '../context/NotificacionContext';
 import { mensajeDeError } from '../utils/mensajeDeError';
 import { aNumero } from '../utils/numeroDeInput';
-import { TAMANOS } from '../config/gaseosas';
+import { TODOS_LOS_TAMANOS, tipoPideMarca } from '../config/bebidas';
+import { tipoBebidaDeItem } from '../utils/categorias';
 import { ADMIN_ITEMS_PER_PAGE, PLACEHOLDER_PRODUCTO } from '../config/settings';
 
 // Referencia estable mientras las queries cargan: un `[]` nuevo por render
@@ -105,13 +106,17 @@ export const useProductosAdmin = () => {
 
     /*
      * El mapa `tamaño -> precio` del formulario se convierte al array que guarda
-     * el schema, respetando el orden de TAMANOS (de 350 ml a 3 lt).
+     * el schema, respetando el orden del catálogo (de menor a mayor).
      *
      * El orden importa: es el que ve el cliente en el selector, y de chico a
      * grande es como se lee un precio que sube. Object.keys no lo garantiza para
-     * claves que no son numéricas, así que se recorre TAMANOS y no el mapa.
+     * claves que no son numéricas, así que se recorre la lista y no el mapa.
+     *
+     * Se recorren TODOS los tamaños de todos los tipos, no los del tipo actual:
+     * si quedara un precio de un tipo anterior, recorrer solo el tipo de ahora lo
+     * dejaría guardado y sin forma de verlo ni borrarlo.
      */
-    const presentaciones = TAMANOS.filter(
+    const presentaciones = TODOS_LOS_TAMANOS.filter(
       (tamano) => aNumero(formData.presentaciones?.[tamano]) > 0
     ).map((tamano) => ({ tamano, precio: aNumero(formData.presentaciones[tamano]) }));
 
@@ -125,8 +130,11 @@ export const useProductosAdmin = () => {
       notificar.info('El precio debe ser mayor a 0');
       return;
     }
-    if (seVendePorTamano && !formData.sabor) {
-      // Sin sabor el pedido diría "Postobón 1 lt" y el local no sabría cuál
+    // Solo se exige sabor donde el tipo lo tiene. El agua y la cerveza no
+    // preguntan sabor, así que pedírselo bloquearía un alta perfectamente válida.
+    const tipoBebida = tipoBebidaDeItem(categorias, formData.categoriaId);
+    if (seVendePorTamano && tipoPideMarca(tipoBebida) && !formData.sabor) {
+      // Sin sabor el pedido diría "Postobón 1.5 lt" y el local no sabría cuál
       // sacar de la nevera. El sabor viaja al pedido dentro de `presentacion`.
       notificar.info('Elegí el sabor de la gaseosa');
       return;

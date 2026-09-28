@@ -41,21 +41,46 @@ export default defineSchema({
      */
     admiteLeche: v.optional(v.boolean()),
     /**
-     * Los productos de esta categoria son gaseosas de marca (Coca Cola /
-     * Postobon). Decide una sola cosa: si el formulario del producto muestra
-     * marca, sabor y la tabla de presentaciones.
+     * COMPAT — reemplazado por `tipoBebida`.
      *
-     * NO deberia estar prendido junto con `admiteLeche`: una gaseosa no se
-     * prepara con leche y un jugo no tiene marca. Si alguien prende los dos, el
+     * Vivio menos de una hora, pero alcanzo a deployarse a produccion, y el
+     * formulario de categorias escribe el valor efectivo al guardar: si alguien
+     * abrio y guardo una categoria en esa ventana, el campo quedo grabado.
+     * Convex rechaza cualquier documento con un campo que el schema no declara
+     * ("extra field"), asi que sacar esta linea romperia el deploy de esas
+     * categorias — paso exactamente eso con `llevaPresentacion` y dejo la
+     * publicacion frenada un dia.
+     *
+     * Se sigue LEYENDO como respaldo: `esGaseosa: true` sin `tipoBebida` se
+     * interpreta como 'gaseosa' (ver src/utils/categorias.js). Ya no se escribe.
+     *
+     * Para retirarlo: una migracion que lo ponga en undefined en todas las
+     * categorias (en prod, no solo en dev) y recien despues borrar esta linea.
+     */
+    esGaseosa: v.optional(v.boolean()),
+    /**
+     * Que tipo de bebida envasada vende esta categoria. Decide dos cosas:
+     *   - que tamaños ofrece el formulario del producto (los del tipo, no todos)
+     *   - si pregunta marca y sabor (hoy solo la gaseosa)
+     *
+     * Es una union y no tres booleanos a proposito: una categoria no puede ser
+     * gaseosa Y agua a la vez, y tres booleanos permitirian justamente ese estado
+     * invalido. Los tamaños y las marcas de cada tipo viven en
+     * src/config/bebidas.js.
+     *
+     * NO deberia convivir con `admiteLeche`: una gaseosa no se prepara con leche
+     * y un jugo no tiene marca ni viene en 2.5 lt. Si alguien pone los dos, el
      * formulario le da prioridad a este y esconde el precio con leche — dos
      * preguntas de preparacion en el mismo producto no significan nada.
      *
-     * Optional: las categorias que ya existen no lo tienen. undefined = no es de
-     * gaseosas, salvo que el nombre la delate (ver src/utils/categorias.js). El
-     * respaldo por nombre es lo que hace que la categoria "Gaseosa" que ya esta
-     * cargada funcione sin que nadie tenga que ir a marcarla.
+     * Optional: las categorias que ya existen no lo tienen. undefined = no vende
+     * bebidas envasadas, salvo que `esGaseosa` o el nombre la delaten (ver
+     * src/utils/categorias.js). Ese respaldo es lo que hace que la categoria
+     * "Gaseosa" ya cargada funcione sin que nadie vaya a marcarla.
      */
-    esGaseosa: v.optional(v.boolean()),
+    tipoBebida: v.optional(
+      v.union(v.literal("gaseosa"), v.literal("agua"), v.literal("cerveza"))
+    ),
     // El indice es lo que hace que `orden` ordene de verdad.
     //
     // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin

@@ -111,8 +111,8 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     sabor: 'Manzana',
     presentaciones: [
       { tamano: '350 ml', precio: 3000 },
-      { tamano: '1 lt', precio: 6000 },
-      { tamano: '3 lt', precio: 12000 },
+      { tamano: '1.5 lt', precio: 7000 },
+      { tamano: '2.5 lt', precio: 11000 },
     ],
   };
 
@@ -139,20 +139,20 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     abrir(POSTOBON);
 
     expect(opcion('350 ml')).toBeInTheDocument();
-    expect(opcion('3 lt')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /500 ml/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /2 lt/ })).not.toBeInTheDocument();
+    expect(opcion('2.5 lt')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /250 ml/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /400 ml/ })).not.toBeInTheDocument();
   });
 
   test('elegir un tamaño cobra SU precio, no el del producto', async () => {
     const usuario = userEvent.setup();
     abrir(POSTOBON);
 
-    await usuario.click(opcion('3 lt'));
+    await usuario.click(opcion('2.5 lt'));
 
     const agregar = screen.getByRole('button', { name: /Agregar/ });
     expect(agregar).toBeEnabled();
-    expect(agregar).toHaveTextContent('12.000');
+    expect(agregar).toHaveTextContent('11.000');
   });
 
   test('el tamaño más chico cobra el precio de arriba', async () => {
@@ -162,6 +162,24 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     await usuario.click(opcion('350 ml'));
 
     expect(screen.getByRole('button', { name: /Agregar/ })).toHaveTextContent('3.000');
+  });
+
+  test('un agua de un solo tamaño NO pregunta nada', () => {
+    // El agua viene solo en 600 ml y la cerveza en 473 ml: mostrarle al cliente un
+    // único botón y bloquearle el "Agregar" hasta que lo toque es fricción pura, y
+    // encima el precio ya sería ese mismo.
+    abrir({
+      _id: 'item_agua',
+      nombre: 'Agua Cristal',
+      categoriaId: 'cat_bebidas',
+      precio: 2500,
+      presentaciones: [{ tamano: '600 ml', precio: 2500 }],
+    });
+
+    expect(screen.queryByText(/Qué tamaño/)).not.toBeInTheDocument();
+    const agregar = screen.getByRole('button', { name: /Agregar/ });
+    expect(agregar).toBeEnabled();
+    expect(agregar).toHaveTextContent('2.500');
   });
 
   test('una gaseosa SIN presentaciones no pregunta nada', () => {

@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   categoriaEsBebida,
   categoriaAdmiteLeche,
-  categoriaEsGaseosa,
+  tipoBebidaDeCategoria,
 } from '../../utils/categorias';
+import { TIPOS_BEBIDA_LISTA } from '../../config/bebidas';
 import '../styles/ProductModal.css';
 
 /**
@@ -22,7 +23,8 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
     activo: true,
     esBebida: false,
     admiteLeche: false,
-    esGaseosa: false,
+    // '' = esta categoria no vende bebidas envasadas.
+    tipoBebida: '',
   });
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         // algo que nadie pidió apagar.
         esBebida: categoriaEsBebida(categoria),
         admiteLeche: categoriaAdmiteLeche(categoria),
-        esGaseosa: categoriaEsGaseosa(categoria),
+        tipoBebida: tipoBebidaDeCategoria(categoria) ?? '',
       });
     } else {
       setFormData({
@@ -46,7 +48,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         activo: true,
         esBebida: false,
         admiteLeche: false,
-        esGaseosa: false,
+        tipoBebida: '',
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
@@ -138,22 +140,30 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
             </small>
           </div>
 
-          <div className="form-group form-checkbox">
-            <label htmlFor="categoria-esGaseosa">
-              <input
-                id="categoria-esGaseosa"
-                type="checkbox"
-                name="esGaseosa"
-                checked={formData.esGaseosa}
-                onChange={handleChange}
-              />
-              Son gaseosas de marca
-            </label>
+          {/* Desplegable y no tres checkboxes: una categoría no puede ser gaseosa
+              Y agua a la vez, y tres casillas permitirían justamente ese estado
+              imposible. */}
+          <div className="form-group">
+            <label htmlFor="categoria-tipoBebida">Bebida envasada</label>
+            <select
+              id="categoria-tipoBebida"
+              name="tipoBebida"
+              value={formData.tipoBebida}
+              onChange={handleChange}
+            >
+              <option value="">No vende bebidas envasadas</option>
+              {TIPOS_BEBIDA_LISTA.map((tipo) => (
+                <option key={tipo.valor} value={tipo.valor}>
+                  {tipo.etiqueta}
+                </option>
+              ))}
+            </select>
             <small className="form-ayuda">
-              Coca Cola y Postobón. Al cargar un producto de esta categoría vas a poder
-              elegir <strong>marca</strong>, <strong>sabor</strong> y el precio de cada{' '}
-              <strong>tamaño</strong> (350 ml a 3 lt). No la marques junto con la de arriba:
-              una gaseosa no se prepara con leche.
+              Al cargar un producto de esta categoría vas a poder ponerle precio a cada
+              tamaño, y el cliente elige el tamaño al pedir. Cada tipo tiene los suyos:{' '}
+              <strong>gaseosa</strong> de 250 ml a 2.5 lt (y además marca y sabor),{' '}
+              <strong>agua</strong> 600 ml, <strong>cerveza</strong> 473 ml. Dejalo en
+              "no vende" para los jugos naturales: esos usan el precio con leche de arriba.
             </small>
           </div>
 

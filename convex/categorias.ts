@@ -56,7 +56,11 @@ export const crear = mutation({
     orden: v.number(),
     esBebida: v.optional(v.boolean()),
     admiteLeche: v.optional(v.boolean()),
-    esGaseosa: v.optional(v.boolean()),
+    // `esGaseosa` ya no se acepta: lo reemplazo `tipoBebida`. Sigue declarado en
+    // el schema solo para que validen las categorias que lo tienen grabado.
+    tipoBebida: v.optional(
+      v.union(v.literal("gaseosa"), v.literal("agua"), v.literal("cerveza"))
+    ),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -76,7 +80,7 @@ export const crear = mutation({
       activo: true,
       esBebida: args.esBebida,
       admiteLeche: args.admiteLeche,
-      esGaseosa: args.esGaseosa,
+      tipoBebida: args.tipoBebida,
     });
   },
 });
@@ -90,6 +94,11 @@ export const actualizar = mutation({
       activo: v.optional(v.boolean()),
       esBebida: v.optional(v.boolean()),
       admiteLeche: v.optional(v.boolean()),
+      tipoBebida: v.optional(
+        v.union(v.literal("gaseosa"), v.literal("agua"), v.literal("cerveza"))
+      ),
+      // Se acepta para poder LIMPIARLO: el formulario manda false y asi la
+      // categoria deja de depender del campo viejo. Ver la nota en schema.ts.
       esGaseosa: v.optional(v.boolean()),
     }),
   },

@@ -2,10 +2,11 @@ import { describe, expect, test } from 'vitest';
 import {
   esCategoriaDeBebida,
   esCategoriaConLeche,
-  esCategoriaDeGaseosa,
+  esCategoriaEnvasada,
+  tipoBebidaDeItem,
+  tipoBebidaDeCategoria,
   categoriaEsBebida,
   categoriaAdmiteLeche,
-  categoriaEsGaseosa,
 } from './categorias';
 
 const CATEGORIAS = [
@@ -119,41 +120,68 @@ describe('valor efectivo — con lo que el formulario hidrata los checkboxes', (
   });
 });
 
-describe('esCategoriaDeGaseosa — más angosto que "es bebida", otra vez', () => {
-  test('la categoría "Gaseosa" ya cargada funciona sin marcar nada', () => {
+
+describe('tipoBebidaDeCategoria — cada tipo tiene sus propios tamaños', () => {
+  test('la categoría "Gaseosa" ya cargada se resuelve sin marcar nada', () => {
     // Respaldo por nombre: es lo que hace que la categoría que ya existe muestre
-    // marca/sabor/tamaños el día del deploy, sin que nadie vaya a tildarla.
-    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_gaseosa')).toBe(true);
+    // marca/sabor/tamaños el día del deploy, sin que nadie vaya a configurarla.
+    expect(tipoBebidaDeItem(CATEGORIAS, 'cat_gaseosa')).toBe('gaseosa');
   });
 
-  test('un jugo natural NO es gaseosa de marca', () => {
-    // El punto de que sea angosto: un jugo no tiene marca ni viene en 3 litros.
-    // Si usara `esCategoriaDeBebida`, el formulario le pediría marca a un jugo.
-    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_jugos')).toBe(false);
+  test('reconoce agua y cerveza por el nombre', () => {
+    expect(tipoBebidaDeCategoria({ nombre: 'Aguas' })).toBe('agua');
+    expect(tipoBebidaDeCategoria({ nombre: 'Cervezas' })).toBe('cerveza');
+  });
+
+  test('un jugo natural NO vende bebidas envasadas', () => {
+    // El punto de que sea angosto: un jugo no viene envasado ni tiene marca. Si
+    // usara `esCategoriaDeBebida`, el formulario le pediría marca a un jugo.
+    expect(tipoBebidaDeItem(CATEGORIAS, 'cat_jugos')).toBe(null);
     expect(esCategoriaDeBebida(CATEGORIAS, 'cat_jugos')).toBe(true);
   });
 
-  test('una categoría de comida no es gaseosa', () => {
-    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_comida')).toBe(false);
+  test('una categoría de comida no vende bebidas envasadas', () => {
+    expect(tipoBebidaDeItem(CATEGORIAS, 'cat_comida')).toBe(null);
+    expect(esCategoriaEnvasada(CATEGORIAS, 'cat_comida')).toBe(false);
   });
 
-  test('"Bebidas" a secas no alcanza: hay que marcarla', () => {
-    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_bebidas')).toBe(false);
+  test('"Bebidas" a secas no alcanza: hay que elegir el tipo', () => {
+    // No se adivina. Una categoría genérica puede tener cualquier cosa adentro.
+    expect(tipoBebidaDeItem(CATEGORIAS, 'cat_bebidas')).toBe(null);
   });
 
-  test('la marca del panel gana sobre el nombre en los dos sentidos', () => {
-    expect(categoriaEsGaseosa({ nombre: 'LO QUE SEA', esGaseosa: true })).toBe(true);
-    expect(categoriaEsGaseosa({ nombre: 'Gaseosas', esGaseosa: false })).toBe(false);
+  test('el desplegable del panel gana sobre el nombre', () => {
+    expect(tipoBebidaDeCategoria({ nombre: 'LO QUE SEA', tipoBebida: 'cerveza' })).toBe(
+      'cerveza'
+    );
+    // Y gana incluso contra un nombre que dice otra cosa.
+    expect(tipoBebidaDeCategoria({ nombre: 'Gaseosas', tipoBebida: 'agua' })).toBe('agua');
   });
 
-  test('una categoría que no existe no es gaseosa', () => {
-    expect(esCategoriaDeGaseosa(CATEGORIAS, 'cat_inexistente')).toBe(false);
-    expect(categoriaEsGaseosa(undefined)).toBe(false);
+  test('una categoría que no existe no vende bebidas envasadas', () => {
+    expect(tipoBebidaDeItem(CATEGORIAS, 'cat_inexistente')).toBe(null);
+    expect(tipoBebidaDeCategoria(undefined)).toBe(null);
+  });
+});
+
+describe('tipoBebidaDeCategoria — compat con el esGaseosa que llegó a producción', () => {
+  test('esGaseosa true sin tipoBebida se lee como gaseosa', () => {
+    // El campo vivió menos de una hora pero alcanzó a deployarse, y el formulario
+    // escribía el valor efectivo al guardar. Si no se leyera, una categoría
+    // guardada en esa ventana perdería marca/sabor/tamaños de golpe.
+    expect(tipoBebidaDeCategoria({ nombre: 'LO QUE SEA', esGaseosa: true })).toBe('gaseosa');
   });
 
-  test('"Gaseosa" nace con el checkbox tildado al abrir la categoría', () => {
-    // Mismo motivo que los otros dos flags: si naciera destildado, renombrarla y
-    // guardar escribiría un false explícito y apagaría marca/sabor/tamaños.
-    expect(categoriaEsGaseosa({ nombre: 'Gaseosa' })).toBe(true);
+  test('esGaseosa false sin tipoBebida apaga el respaldo del nombre', () => {
+    // Era una decisión explícita del admin: respetarla.
+    expect(tipoBebidaDeCategoria({ nombre: 'Gaseosas', esGaseosa: false })).toBe(null);
+  });
+
+  test('tipoBebida GANA sobre el campo viejo', () => {
+    // Orden de lectura: lo nuevo primero. Si fuera al revés, una categoría con el
+    // campo viejo en false no podría pasarse a agua nunca.
+    expect(
+      tipoBebidaDeCategoria({ nombre: 'X', esGaseosa: false, tipoBebida: 'agua' })
+    ).toBe('agua');
   });
 });

@@ -102,9 +102,21 @@ export const ProductDetailModal = ({
    * hay precio que cobrar.
    */
   const presentaciones = product.presentaciones ?? [];
-  const ofreceTamano = presentaciones.length > 0;
 
-  const tamanoElegido = presentaciones.find((p) => p.tamano === tamano) ?? null;
+  /*
+   * Con UN solo tamaño no hay nada que elegir, asi que queda elegido de entrada y
+   * el selector no se dibuja. Es el caso del agua (600 ml) y la cerveza (473 ml):
+   * mostrarle al cliente un unico boton y bloquearle el "Agregar" hasta que lo
+   * toque es friccion pura, y encima el precio ya seria ese mismo.
+   *
+   * Igual se registra: el pedido dice "600 ml" y el local no tiene que deducirlo
+   * del nombre del producto.
+   */
+  const tamanoUnico = presentaciones.length === 1 ? presentaciones[0].tamano : null;
+  const ofreceTamano = presentaciones.length > 1;
+
+  const tamanoElegido =
+    presentaciones.find((p) => p.tamano === (tamano ?? tamanoUnico)) ?? null;
   const tamanoResuelto = !ofreceTamano || tamanoElegido !== null;
 
   const puedeAgregar = salsaResuelta && preparacionResuelta && tamanoResuelto;

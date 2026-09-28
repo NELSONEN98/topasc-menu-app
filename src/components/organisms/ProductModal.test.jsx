@@ -295,10 +295,12 @@ describe('ProductModal — "precio con leche" solo donde la leche existe', () =>
   });
 });
 
-describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
+describe('ProductModal — bebidas envasadas: cada tipo con SUS tamaños', () => {
   const CATEGORIAS_GASEOSA = [
     ...CATEGORIAS,
     { _id: 'cat_gaseosa', nombre: 'Gaseosa' },
+    { _id: 'cat_agua', nombre: 'Aguas' },
+    { _id: 'cat_cerveza', nombre: 'Cervezas' },
     { _id: 'cat_jugos', nombre: 'JUGOS NATURALES' },
   ];
 
@@ -309,31 +311,73 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
       ...props,
     });
 
+  const abrirEn = (categoriaId, extra = {}) =>
+    abrir({
+      categorias: CATEGORIAS_GASEOSA,
+      product: { _id: 'item_1', nombre: 'X', categoriaId, precio: 3000, ...extra },
+    });
+
   const selectMarca = () => screen.queryByLabelText(/Marca/);
   const selectSabor = () => screen.queryByLabelText(/^Sabor/);
-  const campoTamano = (tamano) => screen.getByLabelText(tamano);
+  const campoTamano = (tamano) => screen.queryByLabelText(tamano);
 
-  test('el bloque aparece en la categoría Gaseosa', () => {
+  test('la gaseosa ofrece los seis tamaños pedidos', () => {
     abrirGaseosa();
 
     expect(selectMarca()).toBeInTheDocument();
     expect(selectSabor()).toBeInTheDocument();
-    // Los cinco tamaños pedidos, siempre dibujados.
-    for (const tamano of ['350 ml', '500 ml', '1 lt', '2 lt', '3 lt']) {
+    for (const tamano of ['250 ml', '350 ml', '400 ml', '1.25 lt', '1.5 lt', '2.5 lt']) {
       expect(campoTamano(tamano)).toBeInTheDocument();
     }
   });
 
-  test('NO aparece en una categoría de comida ni en jugos', () => {
-    // Un jugo natural no tiene marca ni viene en 3 litros, y una salchipapa menos.
-    abrir({ categorias: CATEGORIAS_GASEOSA });
-    expect(selectMarca()).not.toBeInTheDocument();
+  test('el agua ofrece SOLO 600 ml, y sin marca ni sabor', () => {
+    // El punto de separar por tipo: un agua no viene en 2.5 lt, y mostrar esa
+    // fila es una que el admin nunca va a llenar y una que puede llenar por error.
+    abrirEn('cat_agua');
 
-    abrir({
-      categorias: CATEGORIAS_GASEOSA,
-      product: { _id: 'item_2', nombre: 'Jugo', categoriaId: 'cat_jugos', precio: 1 },
-    });
+    expect(campoTamano('600 ml')).toBeInTheDocument();
+    expect(campoTamano('2.5 lt')).not.toBeInTheDocument();
+    expect(campoTamano('350 ml')).not.toBeInTheDocument();
     expect(selectMarca()).not.toBeInTheDocument();
+  });
+
+  test('la cerveza ofrece SOLO 473 ml, y sin marca ni sabor', () => {
+    abrirEn('cat_cerveza');
+
+    expect(campoTamano('473 ml')).toBeInTheDocument();
+    expect(campoTamano('600 ml')).not.toBeInTheDocument();
+    expect(selectMarca()).not.toBeInTheDocument();
+  });
+
+  test('NO aparece en una categoría de comida ni en jugos', () => {
+    // Un jugo natural no viene envasado, y una salchipapa menos.
+    abrir({ categorias: CATEGORIAS_GASEOSA });
+    expect(campoTamano('350 ml')).not.toBeInTheDocument();
+
+    abrirEn('cat_jugos');
+    expect(campoTamano('350 ml')).not.toBeInTheDocument();
+  });
+
+  test('pasar de gaseosa a agua BORRA los tamaños del tipo anterior', async () => {
+    // Los tamaños de una gaseosa no existen en un agua: si se conservaran,
+    // quedarían precios guardados para tamaños que el formulario ya no muestra y
+    // que nadie podría ver ni borrar.
+    const usuario = userEvent.setup();
+    const { onSave } = abrirEn('cat_gaseosa', {
+      marca: 'postobon',
+      sabor: 'Manzana',
+      presentaciones: [{ tamano: '1.5 lt', precio: 7000 }],
+    });
+
+    expect(campoTamano('1.5 lt')).toHaveValue(7000);
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_agua');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(onSave.mock.calls[0][0].presentaciones).toEqual({});
+    expect(onSave.mock.calls[0][0].marca).toBe('');
+    expect(onSave.mock.calls[0][0].sabor).toBe('');
   });
 
   test('el sabor está bloqueado hasta elegir la marca', () => {
@@ -367,7 +411,7 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
 
     expect(selectSabor()).toHaveValue('');
 
-    await usuario.type(campoTamano('1 lt'), '6000');
+    await usuario.type(campoTamano('1.5 lt'), '7000');
     await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
 
     // El hook corta el guardado sin sabor, así que no llega al onSave... pero lo
@@ -384,12 +428,12 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
     await usuario.selectOptions(selectMarca(), 'postobon');
     await usuario.selectOptions(selectSabor(), 'Manzana');
     await usuario.type(campoTamano('350 ml'), '3000');
-    await usuario.type(campoTamano('1 lt'), '6000');
+    await usuario.type(campoTamano('1.5 lt'), '7000');
     await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
 
     expect(onSave.mock.calls[0][0].presentaciones).toEqual({
       '350 ml': 3000,
-      '1 lt': 6000,
+      '1.5 lt': 7000,
     });
   });
 
@@ -399,18 +443,18 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
     const usuario = userEvent.setup();
     abrirGaseosa();
 
-    await usuario.type(campoTamano('1 lt'), '6000');
-    await usuario.type(campoTamano('350 ml'), '3000');
+    await usuario.type(campoTamano('1.5 lt'), '7000');
+    await usuario.type(campoTamano('250 ml'), '2500');
 
     const precio = screen.getByLabelText(/Precio desde/);
-    expect(precio).toHaveValue(3000);
+    expect(precio).toHaveValue(2500);
     expect(precio).toHaveAttribute('readonly');
   });
 
   test('pasar una gaseosa a otra categoría le borra marca, sabor y tamaños', async () => {
     // El trap de siempre: el bloque desaparece del formulario pero los datos
     // siguen en el estado. Esa salchipapa le pediría al cliente elegir entre
-    // 350 ml y 3 lt.
+    // 250 ml y 2.5 lt.
     const usuario = userEvent.setup();
     const { onSave } = abrir({
       categorias: CATEGORIAS_GASEOSA,
@@ -421,7 +465,7 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
         precio: 3000,
         marca: 'postobon',
         sabor: 'Manzana',
-        presentaciones: [{ tamano: '1 lt', precio: 6000 }],
+        presentaciones: [{ tamano: '1.5 lt', precio: 7000 }],
       },
     });
 
@@ -447,16 +491,16 @@ describe('ProductModal — gaseosas: marca, sabor y tamaños', () => {
         marca: 'postobon',
         sabor: 'Manzana',
         presentaciones: [
-          { tamano: '350 ml', precio: 3000 },
-          { tamano: '2 lt', precio: 9000 },
+          { tamano: '250 ml', precio: 2500 },
+          { tamano: '2.5 lt', precio: 11000 },
         ],
       },
     });
 
-    expect(campoTamano('350 ml')).toHaveValue(3000);
-    expect(campoTamano('2 lt')).toHaveValue(9000);
+    expect(campoTamano('250 ml')).toHaveValue(2500);
+    expect(campoTamano('2.5 lt')).toHaveValue(11000);
     // El que no se vende sigue vacío, no en 0.
-    expect(campoTamano('3 lt')).toHaveValue(null);
+    expect(campoTamano('1.5 lt')).toHaveValue(null);
   });
 
   test('en una gaseosa NO se pide precio con leche', () => {

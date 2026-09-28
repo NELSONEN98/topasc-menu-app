@@ -4,9 +4,16 @@ import { numeroDeInput, aNumero } from '../../utils/numeroDeInput';
 import {
   esCategoriaDeBebida,
   esCategoriaConLeche,
-  esCategoriaDeGaseosa,
+  tipoBebidaDeItem,
 } from '../../utils/categorias';
-import { TAMANOS, MARCAS_LISTA, saboresDeMarca } from '../../config/gaseosas';
+import {
+  TIPOS_BEBIDA,
+  TODOS_LOS_TAMANOS,
+  tamanosDeTipo,
+  tipoPideMarca,
+  marcasDeTipo,
+  saboresDeMarca,
+} from '../../config/bebidas';
 import '../styles/ProductModal.css';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
@@ -161,6 +168,19 @@ export const ProductModal = ({
     }));
   };
 
+  /*
+   * Qué tipo de bebida envasada vende la categoría elegida: 'gaseosa', 'agua',
+   * 'cerveza' o null. De acá salen los tamaños que se muestran y si se pregunta
+   * marca y sabor.
+   *
+   * Se resuelve una vez y se reusa en el render: preguntarlo en cada lugar donde
+   * hace falta invita a que uno de esos lugares use otra condición y se
+   * desincronice.
+   */
+  const tipoBebida = tipoBebidaDeItem(categorias, formData.categoriaId);
+  const tamanosDelTipo = tamanosDeTipo(tipoBebida);
+  const etiquetaDelTipo = TIPOS_BEBIDA[tipoBebida]?.etiqueta ?? 'Bebida envasada';
+
   /**
    * El "desde $X" que va a mostrar la tarjeta: el más barato de los tamaños
    * cargados, o null si el producto no se vende por tamaños.
@@ -172,9 +192,13 @@ export const ProductModal = ({
    * vacío y no entiende por qué el formulario lo deja guardar así.
    */
   const precioDesde = useMemo(() => {
-    const precios = TAMANOS.map((t) => aNumero(formData.presentaciones?.[t])).filter(
-      (p) => p > 0
-    );
+    // Se recorren TODOS los tamaños y no solo los del tipo actual: si quedara un
+    // precio de un tipo anterior, tiene que entrar en la cuenta igual que entra
+    // en lo que se guarda. Mostrar un "desde" distinto del que se persiste seria
+    // peor que mostrarlo mal.
+    const precios = TODOS_LOS_TAMANOS.map((t) =>
+      aNumero(formData.presentaciones?.[t])
+    ).filter((p) => p > 0);
 
     return precios.length > 0 ? Math.min(...precios) : null;
   }, [formData.presentaciones]);
@@ -243,7 +267,8 @@ export const ProductModal = ({
       // en Coca Cola. Si se conservara, el desplegable mostraria un sabor que no
       // esta en su lista y se guardaria una combinacion que no se vende.
       if (name === 'marca') {
-        const sigueValido = saboresDeMarca(newValue).includes(prev.sabor);
+        const tipo = tipoBebidaDeItem(categorias, prev.categoriaId);
+        const sigueValido = saboresDeMarca(tipo, newValue).includes(prev.sabor);
 
         return { ...prev, marca: newValue, sabor: sigueValido ? prev.sabor : '' };
       }
@@ -268,7 +293,13 @@ export const ProductModal = ({
       // estado, se guardan, y esa salchipapa le pediria al cliente elegir entre
       // 350 ml y 3 lt. El array ES el interruptor del selector (ver schema.ts),
       // asi que vaciarlo es lo que lo apaga.
-      const esGaseosa = esCategoriaDeGaseosa(categorias, newValue);
+      const tipoNuevo = tipoBebidaDeItem(categorias, newValue);
+      const tipoAnterior = tipoBebidaDeItem(categorias, prev.categoriaId);
+      // Los tamaños se conservan SOLO si el tipo no cambio: los de una gaseosa
+      // (250 ml a 2.5 lt) no existen en un agua (600 ml), asi que pasar de una a
+      // otra tiene que vaciarlos. Si no, quedarian precios guardados para tamaños
+      // que el formulario ya no muestra y que nadie podria ver ni borrar.
+      const mismoTipo = tipoNuevo !== null && tipoNuevo === tipoAnterior;
 
       return {
         ...prev,
@@ -276,9 +307,9 @@ export const ProductModal = ({
         llevaSalsas: aBebidas ? false : prev.llevaSalsas,
         esPromo: aBebidas ? false : prev.esPromo,
         precioConLeche: admiteLeche ? prev.precioConLeche : '',
-        marca: esGaseosa ? prev.marca : '',
-        sabor: esGaseosa ? prev.sabor : '',
-        presentaciones: esGaseosa ? prev.presentaciones : {},
+        marca: mismoTipo ? prev.marca : '',
+        sabor: mismoTipo ? prev.sabor : '',
+        presentaciones: mismoTipo ? prev.presentaciones : {},
       };
     });
   };
@@ -401,13 +432,13 @@ export const ProductModal = ({
               en el menú con el campo invisible en el formulario — imposible de
               sacar sin entrar a la base.
 
-              El `&& !esGaseosa` solo aplica a una categoría marcada como las dos
-              cosas a la vez, que no debería existir (ver schema.ts): ahí gaseosa
-              manda, porque preguntar tamaño Y preparación en el mismo producto no
-              significa nada.
+              El chequeo del tipo de bebida solo aplica a una categoría marcada
+              como las dos cosas a la vez, que no debería existir (ver schema.ts):
+              ahí manda el envasado, porque preguntar tamaño Y preparación en el
+              mismo producto no significa nada.
             */}
             {((esCategoriaConLeche(categorias, formData.categoriaId) &&
-              !esCategoriaDeGaseosa(categorias, formData.categoriaId)) ||
+              tipoBebidaDeItem(categorias, formData.categoriaId) === null) ||
               formData.precioConLeche !== '') && (
             <div className="form-group">
               <label htmlFor="precioConLeche">Precio con leche</label>
@@ -433,18 +464,23 @@ export const ProductModal = ({
             )}
           </fieldset>
 
-          {/* Solo en las categorías de gaseosas de marca. Un jugo natural no
-              tiene marca ni viene en 3 litros, y una salchipapa menos. */}
-          {esCategoriaDeGaseosa(categorias, formData.categoriaId) && (
+          {/* Solo en las categorías que venden bebidas envasadas. Un jugo natural
+              no viene envasado, y una salchipapa menos. */}
+          {tipoBebida !== null && (
           <fieldset className="form-seccion">
-            <legend className="form-seccion__titulo">Gaseosa</legend>
+            <legend className="form-seccion__titulo">{etiquetaDelTipo}</legend>
 
+            {/* Marca y sabor solo donde el tipo los tiene. El agua y la cerveza
+                hoy no preguntan nada de esto: el usuario pidió únicamente el
+                tamaño. Agregarles marcas es una línea en config/bebidas.js y este
+                bloque aparece solo. */}
+            {tipoPideMarca(tipoBebida) && (
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="marca">Marca</label>
                 <select id="marca" name="marca" value={formData.marca} onChange={handleChange}>
                   <option value="">Elegí la marca</option>
-                  {MARCAS_LISTA.map((marca) => (
+                  {marcasDeTipo(tipoBebida).map((marca) => (
                     <option key={marca.valor} value={marca.valor}>
                       {marca.etiqueta}
                     </option>
@@ -468,7 +504,7 @@ export const ProductModal = ({
                   <option value="">
                     {formData.marca ? 'Elegí el sabor' : 'Elegí la marca primero'}
                   </option>
-                  {saboresDeMarca(formData.marca).map((sabor) => (
+                  {saboresDeMarca(tipoBebida, formData.marca).map((sabor) => (
                     <option key={sabor} value={sabor}>
                       {sabor}
                     </option>
@@ -476,18 +512,30 @@ export const ProductModal = ({
                 </select>
               </div>
             </div>
+            )}
 
             <div className="form-group">
-              <span className="form-subtitulo">Precio de cada tamaño</span>
+              <span className="form-subtitulo">
+                {tamanosDelTipo.length === 1 ? 'Precio' : 'Precio de cada tamaño'}
+              </span>
               <small className="form-ayuda">
-                Llená solo los tamaños que se venden. El que dejes{' '}
-                <strong>vacío no se ofrece</strong>. El precio de arriba pasa a ser el{' '}
-                <strong>"desde"</strong> de la tarjeta y se calcula solo con el más barato:
-                no hace falta tocarlo.
+                {tamanosDelTipo.length === 1 ? (
+                  <>
+                    Viene en un solo tamaño, así que el cliente no tiene nada que elegir:
+                    se agrega directo al carrito.
+                  </>
+                ) : (
+                  <>
+                    Llená solo los tamaños que se venden. El que dejes{' '}
+                    <strong>vacío no se ofrece</strong>. El precio de arriba pasa a ser el{' '}
+                    <strong>"desde"</strong> de la tarjeta y se calcula solo con el más
+                    barato: no hace falta tocarlo.
+                  </>
+                )}
               </small>
 
               <div className="tamanos">
-                {TAMANOS.map((tamano) => (
+                {tamanosDelTipo.map((tamano) => (
                   <div key={tamano} className="tamanos__fila">
                     <label className="tamanos__label" htmlFor={`tamano-${tamano}`}>
                       {tamano}
