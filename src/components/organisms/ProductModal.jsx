@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { resizeImage } from '../../utils/resizeImage';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { resizeImageToBlob } from '../../utils/resizeImage';
 import { numeroDeInput, aNumero } from '../../utils/numeroDeInput';
 import {
   esCategoriaDeBebida,
@@ -56,6 +58,9 @@ export const ProductModal = ({
     descripcion: '',
     ingredientes: [],
     imagenUrl: '',
+    // '' = no se cambió la foto en esta edición. Se distingue de una foto nueva
+    // porque solo cuando hay id el servidor borra la anterior del storage.
+    imagenStorageId: '',
     disponible: true,
     llevaSalsas: true,
     sedeIds: [],
@@ -67,6 +72,9 @@ export const ProductModal = ({
 
   const [imagePreview, setImagePreview] = useState('');
   const [imageError, setImageError] = useState('');
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+
+  const generarUrlDeSubida = useMutation(api.items.generarUrlDeSubida);
 
   useEffect(() => {
     // Todas las sedes marcadas por defecto: la mayoria de los platos se venden
@@ -91,6 +99,11 @@ export const ProductModal = ({
         descripcion: product.descripcion || '',
         ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
+        // Arranca vacío aunque el producto ya tenga foto: se llena solo si en ESTA
+        // edición se sube una nueva. Hidratarlo con el id existente haría que cada
+        // guardado pareciera un cambio de foto y el servidor borraría del storage
+        // el archivo que se está por volver a guardar.
+        imagenStorageId: '',
         disponible: product.disponible !== false,
         // Una bebida NO lleva salsas, y el default de este campo es al reves
         // (undefined = si lleva), asi que una gaseosa vieja sin el campo
@@ -123,6 +136,7 @@ export const ProductModal = ({
         descripcion: '',
         ingredientes: [],
         imagenUrl: '',
+        imagenStorageId: '',
         disponible: true,
         // Arranca apagado si la categoria que quedo elegida es de bebidas.
         llevaSalsas: !esCategoriaDeBebida(categorias, categoriaInicial),
@@ -314,21 +328,62 @@ export const ProductModal = ({
     });
   };
 
+  /*
+   * La foto va DIRECTO al file storage de Convex, no dentro del documento.
+   *
+   * Antes se guardaba como base64 en `items.imagenUrl`, y eso fue lo que revento
+   * el limite de Database I/O: esa metrica cuenta los bytes que leen las
+   * funciones, y cada mutacion sobre un producto obligaba a releer la tabla
+   * entera con todas las fotos adentro (~5,5 MB por toque del switch de
+   * "disponible"). Ahora el documento guarda un id de ~30 bytes.
+   *
+   * Mismo flujo de tres pasos que la imagen del header (useAparienciaAdmin), que
+   * ya lo hacia bien: URL de un solo uso, POST del archivo, y recien despues se
+   * guarda el id.
+   */
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     try {
       setImageError('');
-      const base64 = await resizeImage(file);
-      setFormData(prev => ({
+      setSubiendoImagen(true);
+
+      const blob = await resizeImageToBlob(file);
+
+      const url = await generarUrlDeSubida();
+      const respuesta = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': blob.type },
+        body: blob,
+      });
+
+      if (!respuesta.ok) {
+        throw new Error('No se pudo subir la imagen. Probá de nuevo.');
+      }
+
+      const { storageId } = await respuesta.json();
+
+      setFormData((prev) => ({
         ...prev,
-        imagenUrl: base64,
+        imagenStorageId: storageId,
+        // Se limpia el base64 viejo: el producto ya tiene la foto en el storage y
+        // dejar los dos mantendria el documento pesado.
+        imagenUrl: '',
       }));
-      setImagePreview(base64);
+      // La vista previa sale del archivo local y no del storage: la URL del
+      // storage tarda en estar disponible, y mostrar un hueco justo despues de
+      // elegir la foto se lee como que fallo.
+      setImagePreview(URL.createObjectURL(blob));
     } catch (error) {
       console.error('Error al procesar la imagen:', error);
-      setImageError('No se pudo procesar la imagen. Probá con otro archivo.');
+      setImageError(
+        error instanceof Error && error.message.startsWith('No se pudo subir')
+          ? error.message
+          : 'No se pudo procesar la imagen. Probá con otro archivo.'
+      );
+    } finally {
+      setSubiendoImagen(false);
     }
   };
 
@@ -631,7 +686,11 @@ export const ProductModal = ({
 
               <div className="campo-imagen__control">
                 <label htmlFor="imageFile" className="campo-imagen__boton">
-                  {imagePreview ? 'Cambiar imagen' : 'Subir imagen'}
+                  {subiendoImagen
+                    ? 'Subiendo...'
+                    : imagePreview
+                      ? 'Cambiar imagen'
+                      : 'Subir imagen'}
                 </label>
                 <input
                   id="imageFile"
@@ -639,6 +698,7 @@ export const ProductModal = ({
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="campo-imagen__input"
+                  disabled={subiendoImagen}
                 />
                 <small className="form-ayuda">
                   Se ajusta automáticamente para subirla liviana.

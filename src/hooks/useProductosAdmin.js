@@ -182,6 +182,10 @@ export const useProductosAdmin = () => {
             descripcion: formData.descripcion,
             ingredientes: formData.ingredientes,
             imagenUrl: formData.imagenUrl,
+            // Solo va si en esta edición se subió una foto nueva. Vacío significa
+            // "no la toqué", y mandarlo igual haría que el servidor borre del
+            // storage el archivo que el producto ya tiene.
+            imagenStorageId: formData.imagenStorageId || undefined,
             disponible: formData.disponible,
             llevaSalsas: formData.llevaSalsas,
             sedeIds: formData.sedeIds,
@@ -210,7 +214,12 @@ export const useProductosAdmin = () => {
           // En el alta sí va undefined cuando está vacío: no hay nada previo que
           // borrar, y así no se guarda un `[]` que significa lo mismo que ausente.
           presentaciones: seVendePorTamano ? presentaciones : undefined,
-          imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
+          // El placeholder solo si no subió foto: con storage el `imagenUrl` queda
+          // vacío a propósito, y la query resuelve la URL desde el id.
+          imagenUrl: formData.imagenStorageId
+            ? undefined
+            : formData.imagenUrl || PLACEHOLDER_PRODUCTO,
+          imagenStorageId: formData.imagenStorageId || undefined,
           llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,
           sedeIds: formData.sedeIds,

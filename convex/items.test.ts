@@ -451,3 +451,128 @@ describe("items — bebidas envasadas (regresion del Server Error)", () => {
     expect(item?.presentaciones).toBeUndefined();
   });
 });
+
+describe("items — la foto sale del documento (Database I/O)", () => {
+  test("listarMenu resuelve la URL del storage en el mismo campo imagenUrl", async () => {
+    // El front no se enteró del cambio de almacenamiento: sigue leyendo
+    // `imagenUrl`. Si la query devolviera otro campo, todas las tarjetas del menú
+    // quedarían sin foto.
+    const t = convexTest(schema, modules);
+    const categoriaId = await conCategoria(t);
+
+    const storageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["foto"])));
+    await t.run(async (ctx) =>
+      ctx.db.insert("items", {
+        categoriaId,
+        nombre: "Con foto en storage",
+        precio: 1000,
+        disponible: true,
+        activo: true,
+        imagenStorageId: storageId,
+      })
+    );
+
+    const menu = await t.query(api.items.listarMenu, {});
+
+    expect(menu[0].imagenUrl).toBeTruthy();
+    // El id no le sirve de nada al cliente: solo la URL.
+    expect("imagenStorageId" in menu[0]).toBe(false);
+  });
+
+  test("un producto con el base64 viejo sigue mostrando su foto", async () => {
+    // La migración es gradual: mientras haya productos sin migrar tienen que
+    // seguir viéndose igual, o el menú aparece a medias.
+    const t = convexTest(schema, modules);
+    const categoriaId = await conCategoria(t);
+
+    await t.run(async (ctx) =>
+      ctx.db.insert("items", {
+        categoriaId,
+        nombre: "Con base64 viejo",
+        precio: 1000,
+        disponible: true,
+        activo: true,
+        imagenUrl: "data:image/jpeg;base64,AAAA",
+      })
+    );
+
+    const menu = await t.query(api.items.listarMenu, {});
+
+    expect(menu[0].imagenUrl).toBe("data:image/jpeg;base64,AAAA");
+  });
+
+  test("cambiar la foto borra la anterior del storage", async () => {
+    // Sin esto cada cambio deja un archivo colgado para siempre, llenando justo la
+    // casilla a la que acabamos de mudar las fotos.
+    const t = convexTest(schema, modules);
+    const categoriaId = await conCategoria(t);
+
+    const vieja = await t.run(async (ctx) => ctx.storage.store(new Blob(["vieja"])));
+    const nueva = await t.run(async (ctx) => ctx.storage.store(new Blob(["nueva"])));
+
+    const id = await comoAdmin(t).mutation(api.items.crear, {
+      categoriaId,
+      nombre: "Producto",
+      precio: 1000,
+      imagenStorageId: vieja,
+    });
+
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { imagenStorageId: nueva },
+    });
+
+    const archivos = await t.run(async (ctx) =>
+      (await ctx.db.system.query("_storage").collect()).map((f) => f._id)
+    );
+
+    expect(archivos).not.toContain(vieja);
+    expect(archivos).toContain(nueva);
+  });
+
+  test("borrar el producto se lleva su foto", async () => {
+    const t = convexTest(schema, modules);
+    const categoriaId = await conCategoria(t);
+    const storageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["foto"])));
+
+    const id = await comoAdmin(t).mutation(api.items.crear, {
+      categoriaId,
+      nombre: "Producto",
+      precio: 1000,
+      imagenStorageId: storageId,
+    });
+
+    await comoAdmin(t).mutation(api.items.borrar, { id });
+
+    const archivos = await t.run(async (ctx) =>
+      (await ctx.db.system.query("_storage").collect()).map((f) => f._id)
+    );
+
+    expect(archivos).not.toContain(storageId);
+  });
+
+  test("subir una foto nueva borra el base64 del documento", async () => {
+    // Es el punto de todo esto: si quedaran los dos, el documento seguiría pesando
+    // los ~120 KB del base64 y el Database I/O no bajaría.
+    const t = convexTest(schema, modules);
+    const categoriaId = await conCategoria(t);
+
+    const id = await comoAdmin(t).mutation(api.items.crear, {
+      categoriaId,
+      nombre: "Producto",
+      precio: 1000,
+      imagenUrl: "data:image/jpeg;base64,AAAA",
+    });
+
+    const storageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["foto"])));
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { imagenStorageId: storageId },
+    });
+
+    const item = await t.run(async (ctx) => ctx.db.get(id));
+
+    expect(item?.imagenUrl).toBeUndefined();
+    expect(item?.imagenStorageId).toBe(storageId);
+  });
+});

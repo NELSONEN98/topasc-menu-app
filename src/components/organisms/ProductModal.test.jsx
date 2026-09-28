@@ -1,7 +1,20 @@
 import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ProductModal } from './ProductModal';
+
+// El modal pide una URL de subida para mandar la foto DIRECTO al file storage (no
+// dentro del documento, que es lo que reventó el Database I/O). Sin el mock no hay
+// ConvexProvider y el componente explota al montar.
+const { subirMock } = vi.hoisted(() => ({
+  subirMock: vi.fn(async () => 'https://storage.test/upload'),
+}));
+
+vi.mock('convex/react', () => ({
+  useMutation: () => subirMock,
+  useQuery: vi.fn(),
+}));
+
+const { ProductModal } = await import('./ProductModal');
 
 const CATEGORIAS = [{ _id: 'cat_1', nombre: 'Salchipapas' }];
 const CATEGORIAS_CON_BEBIDAS = [

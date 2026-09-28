@@ -1,5 +1,7 @@
-import { mutation, internalMutation } from "./_generated/server";
+import { mutation, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { requerirAdmin } from "./guardias";
 
 // Migracion de un solo uso: el flujo de 6 estados se reduce a
@@ -97,5 +99,102 @@ export const ponerPrecioConLeche = internalMutation({
     }
 
     return { recargo, actualizados, yaTenian };
+  },
+});
+
+/* ============================================================================
+ * Fotos de base64 dentro del documento -> file storage de Convex.
+ *
+ * POR QUE: el limite que se revento es Database I/O (1.12 GB de 1 GB). Esa
+ * metrica cuenta los bytes que LEEN las funciones, y `.collect()` lee el
+ * documento completo. Con ~120 KB de base64 por producto la tabla `items` pesaba
+ * ~5,5 MB, y CADA mutacion invalida el cache y obliga a releerla entera: tocar el
+ * switch de "disponible" costaba 5,5 MB. Doscientas ediciones = 1 GB.
+ *
+ * Despues de migrar el documento guarda solo un id de ~30 bytes y la misma
+ * lectura cuesta ~50 KB. El File Storage estaba al 0,02% de 1 GB, o sea que es
+ * mover datos de la casilla que reventó a la que esta vacia.
+ *
+ * COMO CORRERLA:
+ *   npx convex run migraciones:migrarFotosAStorage
+ *   npx convex run migraciones:migrarFotosAStorage --prod
+ *
+ * Es idempotente: solo toca los items cuyo `imagenUrl` empieza con "data:", asi
+ * que correrla dos veces no duplica archivos. Y procesa de a tandas — si corta a
+ * mitad de camino, lo ya migrado queda migrado y se sigue desde ahi.
+ * ========================================================================== */
+
+/** Items que todavia tienen la foto como base64 dentro del documento. */
+export const fotosPendientes = internalQuery({
+  args: { limite: v.optional(v.number()) },
+  handler: async (ctx, { limite = 10 }) => {
+    const items = await ctx.db.query("items").collect();
+
+    return items
+      .filter((item) => item.imagenUrl?.startsWith("data:"))
+      .slice(0, limite)
+      .map((item) => ({ id: item._id, nombre: item.nombre, base64: item.imagenUrl! }));
+  },
+});
+
+/**
+ * Deja el id del archivo y borra el base64.
+ *
+ * Los dos cambios van JUNTOS en la misma mutation a proposito: si se guardara el
+ * id primero y el borrado quedara para despues, una interrupcion dejaria el
+ * documento con las dos cosas — o sea pesado igual, que es justo lo que se viene
+ * a arreglar.
+ */
+export const asentarFoto = internalMutation({
+  args: { id: v.id("items"), storageId: v.id("_storage") },
+  handler: async (ctx, { id, storageId }) => {
+    await ctx.db.patch(id, { imagenStorageId: storageId, imagenUrl: undefined });
+  },
+});
+
+export const migrarFotosAStorage = internalAction({
+  args: { tanda: v.optional(v.number()) },
+  handler: async (ctx, { tanda = 10 }) => {
+    const migrados: string[] = [];
+    const fallados: { nombre: string; motivo: string }[] = [];
+
+    // Se vuelve a pedir la lista en cada vuelta y no se recorre una sola tanda:
+    // asi el corte por "todavia tiene base64" se reevalua contra el estado real y
+    // no contra una foto de hace diez segundos.
+    for (;;) {
+      const pendientes: { id: Id<"items">; nombre: string; base64: string }[] =
+        await ctx.runQuery(internal.migraciones.fotosPendientes, { limite: tanda });
+
+      if (pendientes.length === 0) break;
+
+      for (const item of pendientes) {
+        try {
+          // El data URI se convierte a Blob con fetch, que sabe leerlos. Es mas
+          // corto y mas seguro que partir la cadena y decodificar a mano.
+          const blob = await (await fetch(item.base64)).blob();
+          const storageId = await ctx.storage.store(blob);
+
+          await ctx.runMutation(internal.migraciones.asentarFoto, {
+            id: item.id,
+            storageId,
+          });
+          migrados.push(item.nombre);
+        } catch (error) {
+          // Un item con el base64 cortado no puede frenar a los otros 43: se
+          // anota y se sigue. Si no, un solo dato malo deja la migracion a medias
+          // sin decir cual fue.
+          fallados.push({
+            nombre: item.nombre,
+            motivo: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      // Si toda la tanda fallo, seguir es un bucle infinito: los mismos items
+      // volverian a salir como pendientes para siempre.
+      if (migrados.length === 0 && fallados.length >= pendientes.length) break;
+    }
+
+    return { migrados: migrados.length, detalle: migrados, fallados };
   },
 });

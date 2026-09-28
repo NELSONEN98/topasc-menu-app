@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import type { Doc, Id } from "./_generated/dataModel";
 import { requerirAdmin } from "./guardias";
 
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
@@ -129,15 +130,45 @@ const sinAutoReferencia = <T extends string>(
 // `sedeId` opcional y no obligatorio: el flujo por QR llega sin sede (las
 // mesas todavia no la tienen, ver App.jsx). Sin sede se devuelve el menu
 // completo — es preferible mostrar de mas que dejar la pantalla en blanco.
+/**
+ * Resuelve la foto a una URL, venga del file storage o del base64 viejo.
+ *
+ * Devuelve la URL en `imagenUrl` a proposito, el mismo campo de siempre: el front
+ * no se enteró del cambio de almacenamiento y no hay que tocar ni una tarjeta ni
+ * un modal. Todo lo que lee una foto sigue leyendo `imagenUrl`.
+ *
+ * `imagenStorageId` gana sobre el base64: si un producto tiene los dos es porque
+ * la migracion lo subio y todavia no le limpio el campo viejo, y el storage es el
+ * dato nuevo. Se saca `imagenStorageId` del resultado porque al cliente no le
+ * sirve de nada — solo la URL.
+ */
+const conImagen = async (
+  ctx: { storage: { getUrl: (id: Id<"_storage">) => Promise<string | null> } },
+  item: Doc<"items">
+) => {
+  const { imagenStorageId, ...resto } = item;
+
+  if (!imagenStorageId) return resto;
+
+  return {
+    ...resto,
+    // `?? imagenUrl`: si el archivo se borro del storage, mejor caer a lo que
+    // hubiera antes que dejar la tarjeta sin imagen y sin explicacion.
+    imagenUrl: (await ctx.storage.getUrl(imagenStorageId)) ?? item.imagenUrl,
+  };
+};
+
 export const listarMenu = query({
   args: { sedeId: v.optional(v.id("sedes")) },
   handler: async (ctx, { sedeId }) => {
-    const items = await ctx.db
+    const crudos = await ctx.db
       .query("items")
       .filter((q) =>
         q.and(q.eq(q.field("activo"), true), q.eq(q.field("disponible"), true))
       )
       .collect();
+
+    const items = await Promise.all(crudos.map((item) => conImagen(ctx, item)));
 
     if (!sedeId) return items;
 
@@ -161,10 +192,28 @@ export const listarTodos = query({
   handler: async (ctx) => {
     await requerirAdmin(ctx);
 
-    return await ctx.db
+    const crudos = await ctx.db
       .query("items")
       .filter((q) => q.eq(q.field("activo"), true))
       .collect();
+
+    return await Promise.all(crudos.map((item) => conImagen(ctx, item)));
+  },
+});
+
+/**
+ * URL de un solo uso para subir la foto de un producto.
+ *
+ * El archivo va del navegador DIRECTO al storage de Convex, sin pasar por una
+ * mutation: por eso las fotos ya no inflan el documento ni el Database I/O.
+ * Mismo patron que `configuracion:generarUrlDeSubida`.
+ */
+export const generarUrlDeSubida = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requerirAdmin(ctx);
+
+    return await ctx.storage.generateUploadUrl();
   },
 });
 
@@ -185,6 +234,7 @@ export const crear = mutation({
       v.array(v.object({ tamano: v.string(), precio: v.number() }))
     ),
     imagenUrl: v.optional(v.string()),
+    imagenStorageId: v.optional(v.id("_storage")),
     llevaSalsas: v.optional(v.boolean()),
     disponible: v.optional(v.boolean()),
     sedeIds: v.optional(v.array(v.id("sedes"))),
@@ -240,6 +290,7 @@ export const actualizar = mutation({
         v.array(v.object({ tamano: v.string(), precio: v.number() }))
       ),
       imagenUrl: v.optional(v.string()),
+      imagenStorageId: v.optional(v.id("_storage")),
       disponible: v.optional(v.boolean()),
       activo: v.optional(v.boolean()),
       llevaSalsas: v.optional(v.boolean()),
@@ -263,6 +314,29 @@ export const actualizar = mutation({
     // opcion": `undefined` en un patch es justamente lo que borra el campo.
     if (campos.precioConLeche !== undefined) {
       campos = { ...campos, precioConLeche: sinPrecioEnCero(campos.precioConLeche) };
+    }
+
+    /*
+     * Foto nueva: se borra la anterior del storage.
+     *
+     * Sin esto cada cambio de imagen deja el archivo viejo colgado para siempre.
+     * No rompe nada visible —nadie lo referencia— pero va llenando el File
+     * Storage, que es justo la casilla a la que acabamos de mudar las fotos para
+     * salir del limite. Mismo criterio que `configuracion:guardarImagenHeader`.
+     *
+     * Tambien se limpia el `imagenUrl` base64: el producto ya tiene la foto en el
+     * storage, y dejar los dos mantendria el documento pesado — que es todo el
+     * problema que esto viene a resolver.
+     */
+    if (campos.imagenStorageId !== undefined) {
+      const actual = await ctx.db.get(id);
+      if (!actual) throw new Error("El producto ya no existe");
+
+      if (actual.imagenStorageId && actual.imagenStorageId !== campos.imagenStorageId) {
+        await ctx.storage.delete(actual.imagenStorageId);
+      }
+
+      campos = { ...campos, imagenUrl: undefined };
     }
 
     // Destildar todos los productos llega como `[]` y significa "no tapes
@@ -341,6 +415,13 @@ export const borrar = mutation({
   args: { id: v.id("items") },
   handler: async (ctx, { id }) => {
     await requerirAdmin(ctx);
+
+    // La foto se va con el producto: si no, queda un archivo que nadie
+    // referencia ocupando File Storage para siempre.
+    const item = await ctx.db.get(id);
+    if (item?.imagenStorageId) {
+      await ctx.storage.delete(item.imagenStorageId);
+    }
 
     await ctx.db.delete(id);
   },

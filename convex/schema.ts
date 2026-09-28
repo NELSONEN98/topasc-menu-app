@@ -165,7 +165,33 @@ export default defineSchema({
     presentaciones: v.optional(
       v.array(v.object({ tamano: v.string(), precio: v.number() }))
     ),
+    /**
+     * LEGACY en retirada — la foto como data URI base64 DENTRO del documento.
+     *
+     * Es lo que revento el limite de Database I/O (1.12 GB de 1 GB): esa metrica
+     * cuenta los bytes que LEEN las funciones, y `.collect()` lee el documento
+     * completo. Con ~120 KB de base64 por producto la tabla `items` pesaba ~5,5 MB,
+     * y cada mutacion (tocar el switch de "disponible", editar un precio) invalida
+     * el cache y obliga a releerla entera. Doscientas ediciones = 1 GB.
+     *
+     * Las fotos nuevas van a `imagenStorageId`. Este campo se sigue leyendo para
+     * los productos que todavia no migraron, y queda en undefined cuando migran.
+     * Cuando no quede ninguno con base64 se puede borrar.
+     *
+     * Sigue aceptando una URL comun: PLACEHOLDER_PRODUCTO es una, no un base64.
+     */
     imagenUrl: v.optional(v.string()),
+    /**
+     * La foto en el file storage de Convex, que se cobra aparte y NO entra en el
+     * Database I/O de cada lectura. El documento guarda solo este id (~30 bytes),
+     * asi que leer la tabla entera pasa de ~5,5 MB a ~50 KB.
+     *
+     * Las queries resuelven la URL con `ctx.storage.getUrl` y la devuelven como
+     * `imagenUrl`, asi el front no cambia: sigue leyendo el mismo campo.
+     *
+     * Mismo patron que `configuracion.imagenHeaderId`, que ya lo hacia bien.
+     */
+    imagenStorageId: v.optional(v.id("_storage")),
     disponible: v.boolean(),
     activo: v.boolean(),
     // undefined = lleva salsas (default); false = bebidas, postres, etc.
