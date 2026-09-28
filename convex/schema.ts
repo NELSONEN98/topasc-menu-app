@@ -118,19 +118,28 @@ export default defineSchema({
      */
     precioConLeche: v.optional(v.number()),
     /**
-     * Marca de la gaseosa. Solo para las categorias marcadas `esGaseosa`.
+     * Marca de la bebida envasada (coca-cola, postobon, hit, del-valle...). Solo
+     * para las categorias con `tipoBebida`.
      *
-     * Union cerrada y no string libre: es lo que agrupa el catalogo, y un
-     * "postobon" contra un "Postobón" contra un "POSTOBON" serian tres marcas
-     * distintas para el codigo. La etiqueta visible vive aparte, en
-     * src/config/gaseosas.js, asi se puede cambiar sin migrar registros.
+     * String y NO union cerrada, por el mismo motivo que `sabor` de abajo: la
+     * lista de marcas vive en el codigo (src/config/bebidas.js) y va a crecer.
+     *
+     * Empezo siendo `union("coca-cola", "postobon")` y duro hasta la primera marca
+     * nueva: agregar Hit al catalogo del formulario hacia que `items:crear`
+     * rechazara el producto con un "Server Error" opaco, porque Convex redacta el
+     * mensaje del validador en produccion. Un schema mas estricto que la lista
+     * rechaza un valor que el formulario ya ofrece, y el error no dice por que.
+     *
+     * Lo que mantiene los valores canonicos es el DESPLEGABLE, que solo ofrece
+     * claves del catalogo — no la union. La etiqueta visible ("Postobón") vive
+     * aparte, asi se puede cambiar sin migrar registros.
      */
-    marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+    marca: v.optional(v.string()),
     /**
-     * Sabor de la gaseosa (Manzana, Uva, Sprite...).
+     * Sabor de la bebida (Manzana, Uva, Mora, Sprite...).
      *
      * String y no union: la lista de sabores vive en el codigo
-     * (src/config/gaseosas.js) y va a crecer. Clavarla aca obligaria a que cada
+     * (src/config/bebidas.js) y va a crecer. Clavarla aca obligaria a que cada
      * sabor nuevo sea un cambio de schema, y un schema mas estricto que la lista
      * rechazaria un sabor que el formulario ya ofrece.
      */

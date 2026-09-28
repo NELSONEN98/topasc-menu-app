@@ -176,7 +176,10 @@ export const crear = mutation({
     ingredientes: v.optional(v.array(v.string())),
     precio: v.number(),
     precioConLeche: v.optional(v.number()),
-    marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+    // String y no union: la lista de marcas vive en src/config/bebidas.js y crece.
+    // Una union aca rechazaria una marca que el formulario ya ofrece, con un
+    // "Server Error" opaco. Ver la nota en schema.ts.
+    marca: v.optional(v.string()),
     sabor: v.optional(v.string()),
     presentaciones: v.optional(
       v.array(v.object({ tamano: v.string(), precio: v.number() }))
@@ -231,7 +234,7 @@ export const actualizar = mutation({
       ingredientes: v.optional(v.array(v.string())),
       precio: v.optional(v.number()),
       precioConLeche: v.optional(v.number()),
-      marca: v.optional(v.union(v.literal("coca-cola"), v.literal("postobon"))),
+      marca: v.optional(v.string()),
       sabor: v.optional(v.string()),
       presentaciones: v.optional(
         v.array(v.object({ tamano: v.string(), precio: v.number() }))

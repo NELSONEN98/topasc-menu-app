@@ -354,3 +354,100 @@ describe("items — preparacion del jugo (agua o leche)", () => {
     expect((await t.query(api.items.listarMenu, {}))[0].nombre).toBe("Jugo de Lulo");
   });
 });
+
+describe("items — bebidas envasadas (regresion del Server Error)", () => {
+  const crearBebida = async (
+    t: ReturnType<typeof convexTest>,
+    extra: Record<string, unknown> = {}
+  ) => {
+    const categoriaId = await conCategoria(t);
+
+    return await comoAdmin(t).mutation(api.items.crear, {
+      categoriaId,
+      nombre: "Jugo Hit",
+      precio: 0,
+      ...extra,
+    });
+  };
+
+  test("una marca que el formulario ofrece NO puede rebotar en el backend", async () => {
+    // EL BUG: `items.marca` era `union("coca-cola", "postobon")`. Al agregar Hit al
+    // catalogo del formulario, crear el producto fallaba con un "Server Error"
+    // opaco — Convex redacta el mensaje del validador en produccion, asi que el
+    // error no decia nada.
+    //
+    // Los tests del ProductModal no lo agarraron porque solo miran que `onSave`
+    // reciba los datos: nunca tocan Convex. Este si.
+    const t = convexTest(schema, modules);
+
+    for (const marca of ["coca-cola", "postobon", "hit", "del-valle"]) {
+      const id = await crearBebida(t, {
+        marca,
+        sabor: "Mora",
+        presentaciones: [{ tamano: "500 ml", precio: 4000 }],
+      });
+
+      const item = await t.run(async (ctx) => ctx.db.get(id));
+      expect(item?.marca).toBe(marca);
+    }
+  });
+
+  test("el precio del item se deriva del tamaño mas barato", async () => {
+    // Es el "desde $X" de la tarjeta. Se deriva y no se escribe a mano para que no
+    // pueda decir "desde $2.500" con el tamaño mas barato en 4.000.
+    const t = convexTest(schema, modules);
+    const id = await crearBebida(t, {
+      precio: 0,
+      presentaciones: [
+        { tamano: "1.5 lt", precio: 7000 },
+        { tamano: "500 ml", precio: 4000 },
+        { tamano: "2 lt", precio: 9000 },
+      ],
+    });
+
+    const item = await t.run(async (ctx) => ctx.db.get(id));
+
+    // `precio: 0` llega asi porque el formulario lo muestra de solo lectura: el
+    // servidor es el que lo resuelve.
+    expect(item?.precio).toBe(4000);
+  });
+
+  test("un tamaño sin precio no se guarda: vacio es 'no se vende', no 'gratis'", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearBebida(t, {
+      presentaciones: [
+        { tamano: "500 ml", precio: 4000 },
+        { tamano: "2 lt", precio: 0 },
+      ],
+    });
+
+    const item = await t.run(async (ctx) => ctx.db.get(id));
+
+    expect(item?.presentaciones).toEqual([{ tamano: "500 ml", precio: 4000 }]);
+  });
+
+  test("dos presentaciones con el mismo tamaño se rechazan", async () => {
+    // Dejarian al cliente eligiendo entre dos botones identicos con precios
+    // distintos.
+    const t = convexTest(schema, modules);
+
+    await expect(
+      crearBebida(t, {
+        presentaciones: [
+          { tamano: "500 ml", precio: 4000 },
+          { tamano: "500 ml", precio: 5000 },
+        ],
+      })
+    ).rejects.toThrow(/mismo tamaño/);
+  });
+
+  test("sin presentaciones el precio del item queda como vino", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearBebida(t, { precio: 3500 });
+
+    const item = await t.run(async (ctx) => ctx.db.get(id));
+
+    expect(item?.precio).toBe(3500);
+    expect(item?.presentaciones).toBeUndefined();
+  });
+});
