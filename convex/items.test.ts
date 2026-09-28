@@ -278,3 +278,79 @@ describe("items — promocion del dia", () => {
     expect(await t.query(api.items.listarMenu, {})).toHaveLength(1);
   });
 });
+
+describe("items — preparacion del jugo (agua o leche)", () => {
+  const crearJugo = async (
+    t: ReturnType<typeof convexTest>,
+    extra: Record<string, unknown> = {}
+  ) => {
+    const categoriaId = await conCategoria(t);
+
+    return await comoAdmin(t).mutation(api.items.crear, {
+      categoriaId,
+      nombre: "Jugo de Mango",
+      precio: 7000,
+      ...extra,
+    });
+  };
+
+  test("guarda el precio con leche y deja el otro como el de agua", async () => {
+    const t = convexTest(schema, modules);
+    await crearJugo(t, { precioConLeche: 10000 });
+
+    const [jugo] = await t.query(api.items.listarMenu, {});
+
+    expect(jugo.precio).toBe(7000);
+    expect(jugo.precioConLeche).toBe(10000);
+  });
+
+  test("sin precio con leche el producto no ofrece la opcion", async () => {
+    const t = convexTest(schema, modules);
+    await crearJugo(t);
+
+    const [jugo] = await t.query(api.items.listarMenu, {});
+
+    // La ausencia del campo ES el interruptor: no hay booleano que pueda
+    // contradecirlo.
+    expect(jugo.precioConLeche).toBeUndefined();
+  });
+
+  test("un precio en cero se guarda como sin opcion", async () => {
+    const t = convexTest(schema, modules);
+    // El campo vacio del formulario llega como 0: si se guardara tal cual, el
+    // jugo ofreceria "en leche" gratis.
+    await crearJugo(t, { precioConLeche: 0 });
+
+    const [jugo] = await t.query(api.items.listarMenu, {});
+    expect(jugo.precioConLeche).toBeUndefined();
+  });
+
+  test("se le puede QUITAR la opcion a un jugo que ya la tenia", async () => {
+    const t = convexTest(schema, modules);
+    const id = await crearJugo(t, { precioConLeche: 10000 });
+
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { precioConLeche: 0 },
+    });
+
+    const [jugo] = await t.query(api.items.listarMenu, {});
+    expect(jugo.precioConLeche).toBeUndefined();
+  });
+
+  test("recorta el nombre al crear y al editar", async () => {
+    const t = convexTest(schema, modules);
+    // Los jugos de produccion quedaron con un espacio al final despues de
+    // sacarles el " en agua" a mano.
+    const id = await crearJugo(t, { nombre: "Jugo de Mango " });
+
+    expect((await t.query(api.items.listarMenu, {}))[0].nombre).toBe("Jugo de Mango");
+
+    await comoAdmin(t).mutation(api.items.actualizar, {
+      id,
+      campos: { nombre: "  Jugo de Lulo  " },
+    });
+
+    expect((await t.query(api.items.listarMenu, {}))[0].nombre).toBe("Jugo de Lulo");
+  });
+});

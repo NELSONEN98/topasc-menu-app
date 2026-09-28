@@ -137,6 +137,9 @@ export const useProductosAdmin = () => {
             nombre: formData.nombre,
             categoriaId: formData.categoriaId,
             precio,
+            // Va como 0 y no como undefined cuando esta vacio: es asi como el
+            // server distingue "saca la opcion" de "no la toques".
+            precioConLeche: aNumero(formData.precioConLeche),
             descripcion: formData.descripcion,
             ingredientes: formData.ingredientes,
             imagenUrl: formData.imagenUrl,
@@ -157,6 +160,7 @@ export const useProductosAdmin = () => {
           descripcion: formData.descripcion,
           ingredientes: formData.ingredientes,
           precio,
+          precioConLeche: aNumero(formData.precioConLeche) || undefined,
           imagenUrl: formData.imagenUrl || PLACEHOLDER_PRODUCTO,
           llevaSalsas: formData.llevaSalsas,
           disponible: formData.disponible,

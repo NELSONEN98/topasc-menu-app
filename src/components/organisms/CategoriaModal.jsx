@@ -99,7 +99,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
             </label>
             <small className="form-ayuda">
               Marcala para gaseosas, jugos, limonadas. Sus productos aparecen en el botón
-              "¿Algo para tomar?" del carrito y nunca piden salsas.
+              "¿Desea agregar bebida?" del carrito y nunca piden salsas.
             </small>
           </div>
 

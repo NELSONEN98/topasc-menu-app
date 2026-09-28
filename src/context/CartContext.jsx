@@ -24,12 +24,18 @@ const toCartItem = (product, opciones = {}) => {
     salsasExtra = [],
     comentario = '',
     presentacion = null,
+    preparacion = null,
   } = opciones;
   const id = product._id ?? product.id;
   // La presentacion de gaseosa REEMPLAZA el precio del producto, no lo suma.
   // El `precio` del item es el "desde $X" de la grilla; el precio real de la
   // linea es el de la combinacion de sabor y tamaño que quedo elegida.
-  const precioBase = presentacion ? presentacion.precio : product.precio ?? product.price;
+  //
+  // La preparacion del jugo (en agua / en leche) funciona igual: el precio de
+  // la opcion elegida reemplaza al del producto.
+  const precioBase =
+    preparacion?.precio ??
+    (presentacion ? presentacion.precio : product.precio ?? product.price);
   const precioExtras = salsasExtra.reduce((sum, s) => sum + s.precio, 0);
   const salsasKey = [...salsas].sort().join(',');
   const extrasKey = salsasExtra
@@ -42,9 +48,13 @@ const toCartItem = (product, opciones = {}) => {
   const presentacionKey = presentacion
     ? `${presentacion.sabor}|${presentacion.tamano}`
     : '';
+  // La preparacion tambien entra en la clave. Sin esto, el mismo jugo en agua y
+  // en leche se fusionarian en una linea y el segundo se cobraria al precio del
+  // primero.
+  const preparacionKey = preparacion?.etiqueta ?? '';
 
   return {
-    lineId: `${id}::${salsasKey}::${extrasKey}::${presentacionKey}::${comentario.trim()}`,
+    lineId: `${id}::${salsasKey}::${extrasKey}::${presentacionKey}::${preparacionKey}::${comentario.trim()}`,
     id,
     name: product.nombre ?? product.name,
     price: precioBase + precioExtras,
@@ -56,6 +66,9 @@ const toCartItem = (product, opciones = {}) => {
     presentacion: presentacion
       ? { sabor: presentacion.sabor, tamano: presentacion.tamano }
       : null,
+    // Solo la etiqueta: el precio ya quedo aplicado arriba y repetirlo seria
+    // una segunda fuente de verdad que puede desincronizarse.
+    preparacion: preparacion?.etiqueta ?? null,
     comentario: comentario.trim(),
   };
 };

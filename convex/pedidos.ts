@@ -13,6 +13,9 @@ const itemValidator = v.object({
   ),
   // Sabor y tamaño de gaseosa, congelados como texto. El precio elegido ya
   // viaja en `precioSnapshot` de esta misma linea.
+  // Como se preparo el jugo: "En agua" o "En leche". Es lo que lee la cocina,
+  // asi que viaja como snapshot igual que el nombre y el precio.
+  preparacion: v.optional(v.string()),
   presentacion: v.optional(
     v.object({ sabor: v.string(), tamano: v.string() })
   ),

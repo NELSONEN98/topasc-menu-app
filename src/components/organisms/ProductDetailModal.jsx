@@ -7,6 +7,11 @@ import { esCategoriaDeBebida } from '../../utils/categorias';
 // default de una prop.
 const SIN_DATOS = [];
 
+// Las dos preparaciones posibles de un jugo. Viajan como texto al pedido y al
+// mensaje de WhatsApp, asi que son lo que lee la cocina.
+export const EN_AGUA = 'En agua';
+export const EN_LECHE = 'En leche';
+
 export const ProductDetailModal = ({
   product,
   salsas = SIN_DATOS,
@@ -19,6 +24,7 @@ export const ProductDetailModal = ({
   const [extrasSeleccionados, setExtrasSeleccionados] = useState([]);
   const [comentario, setComentario] = useState('');
   const [cantidad, setCantidad] = useState(1);
+  const [preparacion, setPreparacion] = useState(null);
 
   /*
    * Una bebida NUNCA pide salsas, sin importar que diga el dato guardado.
@@ -57,9 +63,38 @@ export const ProductDetailModal = ({
     extrasSeleccionados.length > 0 ||
     sinSalsas;
 
-  const puedeAgregar = salsaResuelta;
+  /*
+   * Preparacion del jugo: en agua o en leche.
+   *
+   * La opcion existe si el producto tiene `precioConLeche` cargado — ese campo
+   * ES el interruptor, no hay un booleano aparte que pueda contradecirlo (ver
+   * la nota en schema.ts).
+   *
+   * Es obligatoria cuando existe: sin elegir, el local no sabe que preparar y
+   * el precio de la linea seria una adivinanza.
+   */
+  const precioConLeche = product.precioConLeche;
+  const ofrecePreparacion = precioConLeche != null && precioConLeche > 0;
 
-  const precioBase = product.precio ?? product.price;
+  const preparaciones = ofrecePreparacion
+    ? [
+        { etiqueta: EN_AGUA, precio: product.precio ?? product.price },
+        { etiqueta: EN_LECHE, precio: precioConLeche },
+      ]
+    : [];
+
+  const preparacionElegida =
+    preparaciones.find((p) => p.etiqueta === preparacion) ?? null;
+
+  const preparacionResuelta = !ofrecePreparacion || preparacionElegida !== null;
+
+  const puedeAgregar = salsaResuelta && preparacionResuelta;
+
+  // El precio de la preparacion REEMPLAZA al del producto, no se suma: el de
+  // agua ya es `product.precio`.
+  const precioBase = preparacionElegida
+    ? preparacionElegida.precio
+    : product.precio ?? product.price;
   const precioExtras = extrasSeleccionados.reduce((sum, s) => sum + s.precio, 0);
   const total = (precioBase + precioExtras) * cantidad;
 
@@ -100,6 +135,7 @@ export const ProductDetailModal = ({
         nombre: s.nombre,
         precio: s.precio,
       })),
+      preparacion: preparacionElegida,
       comentario,
       cantidad,
     });
@@ -148,7 +184,43 @@ export const ProductDetailModal = ({
 
           <div className="detail-price">
             {formatPrice(precioBase)}
+            {/* Mientras no eligio, el precio del jugo es un "desde": decirlo a
+                secas seria mentir, porque con leche cuesta mas. */}
+            {ofrecePreparacion && !preparacionElegida && (
+              <span className="detail-price__desde"> desde</span>
+            )}
           </div>
+
+          {ofrecePreparacion && (
+            <div className="detail-section">
+              <div className="detail-section__header">
+                <span className="detail-section__title">¿Cómo lo preparamos?</span>
+                <span className="detail-section__badge detail-section__badge--required">
+                  Obligatorio
+                </span>
+              </div>
+
+              {/* El precio va en cada opcion: es justamente lo que cambia entre
+                  una y otra, y esconderlo obliga a tocar las dos para saber
+                  cuanto sale. */}
+              <div className="detail-chips" role="group" aria-label="Preparación del jugo">
+                {preparaciones.map((opcion) => (
+                  <button
+                    key={opcion.etiqueta}
+                    type="button"
+                    className={`detail-chip ${
+                      preparacion === opcion.etiqueta ? 'is-selected' : ''
+                    }`}
+                    onClick={() => setPreparacion(opcion.etiqueta)}
+                    aria-pressed={preparacion === opcion.etiqueta}
+                  >
+                    <span className="detail-chip__nombre">{opcion.etiqueta}</span>
+                    <span className="detail-chip__precio">{formatPrice(opcion.precio)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {requiereSalsa && (
             <div className="detail-section">
@@ -258,9 +330,14 @@ export const ProductDetailModal = ({
               onClick={handleAgregar}
               disabled={!puedeAgregar}
             >
+              {/* El texto dice QUE falta. Un "Elegí una salsa" fijo mandaba a
+                  buscar salsas en un jugo al que solo le faltaba la
+                  preparacion. */}
               {puedeAgregar
                 ? `Agregar · ${formatPrice(total)}`
-                : 'Elegí una salsa'}
+                : !preparacionResuelta
+                  ? 'Elegí la preparación'
+                  : 'Elegí una salsa'}
             </button>
           </div>
         </div>

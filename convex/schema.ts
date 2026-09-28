@@ -39,6 +39,22 @@ export default defineSchema({
     // Lista real, no un string con comas: permite filtrar y renderizar por unidad
     ingredientes: v.optional(v.array(v.string())),
     precio: v.number(),
+    /**
+     * Precio del mismo jugo preparado con leche. `precio` es el de siempre, o
+     * sea el de agua.
+     *
+     * Este campo ES el interruptor de la opcion: si tiene valor, el cliente
+     * elige "en agua" o "en leche" antes de poder agregarlo, y la eleccion
+     * define el precio de la linea. Si esta ausente, el producto va como
+     * siempre, sin preguntar nada.
+     *
+     * Se modela asi, y NO con un booleano aparte mas el precio, porque un flag
+     * y el dato que describe pueden terminar diciendo cosas distintas. Ya paso
+     * dos veces en este proyecto (`llevaSalsas` y `llevaPresentacion` quedaron
+     * en true sobre productos que no correspondian). Con un solo campo no hay
+     * nada que se pueda desincronizar.
+     */
+    precioConLeche: v.optional(v.number()),
     imagenUrl: v.optional(v.string()),
     disponible: v.boolean(),
     activo: v.boolean(),
@@ -255,6 +271,11 @@ export default defineSchema({
         salsasExtra: v.optional(
           v.array(v.object({ nombre: v.string(), precio: v.number() }))
         ),
+        // Como se preparo el jugo: "En agua" o "En leche". Congelado igual que
+        // el nombre y el precio — es lo que le dice a la cocina que hacer, y un
+        // pedido de hace un mes tiene que seguir diciendolo aunque el producto
+        // ya no ofrezca la opcion.
+        preparacion: v.optional(v.string()),
         // SOLO HISTORICO: ya no se escribe. El modulo de gaseosas se
         // elimino y cada sabor/tamaño es ahora su propio producto, asi que
         // ningun pedido nuevo trae este campo.

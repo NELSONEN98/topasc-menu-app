@@ -23,6 +23,7 @@ export const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
       />
       <div className="cart-item__info">
         <h4 className="cart-item__name">{item.name}</h4>
+        {item.preparacion && <p className="cart-item__option">{item.preparacion}</p>}
         {item.presentacion && (
           <p className="cart-item__option">
             {item.presentacion.sabor} · {item.presentacion.tamano}

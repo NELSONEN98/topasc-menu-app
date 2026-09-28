@@ -1,6 +1,6 @@
 /*
  * Que categorias cuentan como "bebida". Decide dos cosas:
- *   - el boton "¿Algo para tomar?" del carrito ofrece estos productos
+ *   - el boton "¿Desea agregar bebida?" del carrito ofrece estos productos
  *   - una bebida nunca pide salsas, ni en el menu ni en el formulario del admin
  *
  * Manda el campo `esBebida` de la categoria, que se marca desde el panel.

@@ -37,6 +37,15 @@ const validarVigencia = (desde?: string, hasta?: string) => {
  */
 const sinFechaVacia = (fecha?: string) => fecha || undefined;
 
+/**
+ * Normaliza el precio con leche: 0 o vacio significan "no ofrece la opcion".
+ *
+ * El formulario manda '' cuando el campo esta vacio y `aNumero` lo convierte en
+ * 0, asi que sin esto un jugo quedaria ofreciendo "en leche" a precio cero.
+ */
+const sinPrecioEnCero = (precio?: number) =>
+  precio === undefined || precio <= 0 ? undefined : precio;
+
 // Publica: es el menu que ve el cliente al escanear el QR.
 //
 // Filtra por `disponible` ademas de `activo`. Son dos cosas distintas:
@@ -95,6 +104,7 @@ export const crear = mutation({
     descripcion: v.optional(v.string()),
     ingredientes: v.optional(v.array(v.string())),
     precio: v.number(),
+    precioConLeche: v.optional(v.number()),
     imagenUrl: v.optional(v.string()),
     llevaSalsas: v.optional(v.boolean()),
     disponible: v.optional(v.boolean()),
@@ -112,8 +122,12 @@ export const crear = mutation({
 
     return await ctx.db.insert("items", {
       ...args,
+      // Se recorta el nombre: los jugos quedaron con un espacio al final
+      // despues de sacarles el " en agua" a mano.
+      nombre: args.nombre.trim(),
       disponible: args.disponible ?? true,
       activo: true,
+      precioConLeche: sinPrecioEnCero(args.precioConLeche),
       vigenteDesde,
       vigenteHasta,
     });
@@ -129,6 +143,7 @@ export const actualizar = mutation({
       descripcion: v.optional(v.string()),
       ingredientes: v.optional(v.array(v.string())),
       precio: v.optional(v.number()),
+      precioConLeche: v.optional(v.number()),
       imagenUrl: v.optional(v.string()),
       disponible: v.optional(v.boolean()),
       activo: v.optional(v.boolean()),
@@ -141,6 +156,18 @@ export const actualizar = mutation({
   },
   handler: async (ctx, { id, campos }) => {
     await requerirAdmin(ctx);
+
+    if (campos.nombre !== undefined) {
+      // Se recorta el nombre: los jugos quedaron con un espacio al final
+      // despues de sacarles el " en agua" a mano. Se limpia solo al guardar.
+      campos = { ...campos, nombre: campos.nombre.trim() };
+    }
+
+    // Vaciar el campo en el formulario llega como 0 y significa "saca la
+    // opcion": `undefined` en un patch es justamente lo que borra el campo.
+    if (campos.precioConLeche !== undefined) {
+      campos = { ...campos, precioConLeche: sinPrecioEnCero(campos.precioConLeche) };
+    }
 
     const tocaDesde = campos.vigenteDesde !== undefined;
     const tocaHasta = campos.vigenteHasta !== undefined;

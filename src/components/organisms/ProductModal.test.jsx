@@ -37,7 +37,8 @@ const checkboxSede = (nombre) => screen.getByRole('checkbox', { name: new RegExp
 /** Completa los campos obligatorios y envia. */
 const guardar = async (usuario, textoBoton) => {
   await usuario.type(screen.getByLabelText(/Nombre/), 'Salchipapa Sencilla');
-  await usuario.type(screen.getByLabelText(/Precio/), '18000');
+  // `/Precio/` a secas ahora matchea tambien "Precio con leche".
+  await usuario.type(screen.getByLabelText('Precio *'), '18000');
   await usuario.click(screen.getByRole('button', { name: textoBoton }));
 };
 

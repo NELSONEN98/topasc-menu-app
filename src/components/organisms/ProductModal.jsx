@@ -28,6 +28,7 @@ export const ProductModal = ({
     nombre: '',
     categoriaId: '',
     precio: '',
+    precioConLeche: '',
     descripcion: '',
     ingredientes: [],
     imagenUrl: '',
@@ -55,6 +56,7 @@ export const ProductModal = ({
         nombre: product.nombre || '',
         categoriaId: product.categoriaId || '',
         precio: product.precio ?? '',
+        precioConLeche: product.precioConLeche ?? '',
         descripcion: product.descripcion || '',
         ingredientes: product.ingredientes || [],
         imagenUrl: product.imagenUrl || '',
@@ -82,6 +84,7 @@ export const ProductModal = ({
         nombre: '',
         categoriaId: categoriaInicial,
         precio: '',
+        precioConLeche: '',
         descripcion: '',
         ingredientes: [],
         imagenUrl: '',
@@ -128,8 +131,11 @@ export const ProductModal = ({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    // Los dos precios pasan por `numeroDeInput`, que mantiene '' como estado
+    // propio: vacio NO es cero. Sin eso el campo no se puede borrar.
+    const esCampoDePrecio = name === 'precio' || name === 'precioConLeche';
     const newValue =
-      type === 'checkbox' ? checked : name === 'precio' ? numeroDeInput(value) : value;
+      type === 'checkbox' ? checked : esCampoDePrecio ? numeroDeInput(value) : value;
 
     setFormData(prev => {
       if (name !== 'categoriaId') return { ...prev, [name]: newValue };
@@ -236,6 +242,28 @@ export const ProductModal = ({
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="precioConLeche">Precio con leche</label>
+              <div className="input-con-prefijo">
+                <span className="input-prefijo" aria-hidden="true">$</span>
+                <input
+                  id="precioConLeche"
+                  type="number"
+                  name="precioConLeche"
+                  value={formData.precioConLeche}
+                  onChange={handleChange}
+                  placeholder="Vacío = no ofrece la opción"
+                  min="0"
+                  inputMode="numeric"
+                />
+              </div>
+              <small className="form-ayuda">
+                Para los jugos. Si le pones precio, el cliente elige{' '}
+                <strong>en agua</strong> o <strong>en leche</strong> antes de agregarlo, y el
+                precio de arriba pasa a ser el de agua. Dejalo vacío en todo lo demás.
+              </small>
             </div>
           </fieldset>
 

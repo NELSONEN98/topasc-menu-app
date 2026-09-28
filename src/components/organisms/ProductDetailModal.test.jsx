@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ProductDetailModal } from './ProductDetailModal';
 import { CartProvider } from '../../context/CartContext';
 
@@ -97,5 +98,62 @@ describe('ProductDetailModal — las bebidas nunca piden salsas (regresion)', ()
 
     expect(seccionSalsas()).not.toBeInTheDocument();
     expect(botonAgregar()).toBeEnabled();
+  });
+});
+
+describe('ProductDetailModal — preparación del jugo', () => {
+  const JUGO = {
+    _id: 'item_jugo',
+    nombre: 'Jugo de Mango',
+    categoriaId: 'cat_bebidas',
+    precio: 7000,
+    precioConLeche: 10000,
+  };
+
+  const opcion = (texto) => screen.getByRole('button', { name: new RegExp(texto) });
+
+  test('un jugo con precio con leche pide elegir y bloquea el agregar', () => {
+    abrir(JUGO);
+
+    expect(screen.getByText(/Cómo lo preparamos/)).toBeInTheDocument();
+    // Sin elegir, el local no sabria que preparar ni a que precio cobrarlo.
+    expect(screen.getByRole('button', { name: /Elegí la preparación/ })).toBeDisabled();
+  });
+
+  test('el precio se muestra como "desde" hasta que elige', () => {
+    abrir(JUGO);
+
+    // Decir $7.000 a secas seria mentir: con leche cuesta 10.000.
+    expect(screen.getByText(/desde/)).toBeInTheDocument();
+  });
+
+  test('elegir en leche cobra el precio con leche', async () => {
+    const usuario = userEvent.setup();
+    abrir(JUGO);
+
+    await usuario.click(opcion('En leche'));
+
+    // Se mira el boton de agregar y no cualquier texto con el precio: ese
+    // numero tambien aparece dentro de la opcion elegida.
+    const agregar = screen.getByRole('button', { name: /Agregar/ });
+    expect(agregar).toBeEnabled();
+    expect(agregar).toHaveTextContent('10.000');
+  });
+
+  test('elegir en agua cobra el precio de siempre', async () => {
+    const usuario = userEvent.setup();
+    abrir(JUGO);
+
+    await usuario.click(opcion('En agua'));
+
+    expect(screen.getByRole('button', { name: /Agregar/ })).toHaveTextContent('7.000');
+  });
+
+  test('un jugo SIN precio con leche no pregunta nada', () => {
+    // La ausencia del campo es lo que apaga la opcion.
+    abrir({ ...JUGO, precioConLeche: undefined });
+
+    expect(screen.queryByText(/Cómo lo preparamos/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Agregar/ })).toBeEnabled();
   });
 });

@@ -137,6 +137,7 @@ export const Cart = ({
       cantidad: item.quantity,
       salsasBase: item.salsas?.length ? item.salsas : undefined,
       salsasExtra: item.salsasExtra?.length ? item.salsasExtra : undefined,
+      preparacion: item.preparacion ?? undefined,
       presentacion: item.presentacion ?? undefined,
       notas: item.comentario || undefined,
     }));
@@ -189,6 +190,10 @@ export const Cart = ({
         let bloque = `* ${item.name} x${item.quantity}`;
         // Antes que las salsas: sin el sabor y el tamaño, el local no sabe
         // que botella servir. WhatsApp es el canal principal del pedido.
+        // Antes que las salsas y en su propia linea: sin esto el local no sabe
+        // si el jugo va en agua o en leche, que es la diferencia entre
+        // prepararlo bien y prepararlo mal.
+        if (item.preparacion) bloque += `\n${item.preparacion.toUpperCase()}`;
         if (item.presentacion)
           bloque += `\n${item.presentacion.sabor} · ${item.presentacion.tamano}`;
         if (item.salsas?.length > 0)
@@ -304,7 +309,7 @@ export const Cart = ({
             >
               <span className="cart__bebidas-icono" aria-hidden="true">🥤</span>
               <span className="cart__bebidas-texto">
-                <strong>¿Algo para tomar?</strong>
+                <strong>¿Desea agregar bebida?</strong>
                 <small>Agregá una bebida a tu orden</small>
               </span>
               <span className="cart__bebidas-mas" aria-hidden="true">+</span>
