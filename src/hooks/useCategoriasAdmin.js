@@ -108,6 +108,7 @@ export const useCategoriasAdmin = () => {
             nombre: formData.nombre,
             activo: formData.activo,
             esBebida: formData.esBebida,
+            admiteLeche: formData.admiteLeche,
           },
         });
       } else {
@@ -116,6 +117,7 @@ export const useCategoriasAdmin = () => {
           nombre: formData.nombre,
           orden: siguienteOrden,
           esBebida: formData.esBebida,
+          admiteLeche: formData.admiteLeche,
         });
       }
 

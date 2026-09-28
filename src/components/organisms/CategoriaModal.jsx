@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { categoriaEsBebida, categoriaAdmiteLeche } from '../../utils/categorias';
 import '../styles/ProductModal.css';
 
 /**
@@ -16,6 +17,7 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
     nombre: '',
     activo: true,
     esBebida: false,
+    admiteLeche: false,
   });
 
   useEffect(() => {
@@ -23,13 +25,21 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
       setFormData({
         nombre: categoria.nombre || '',
         activo: categoria.activo !== false,
-        esBebida: categoria.esBebida === true,
+        // Los dos se hidratan con el valor EFECTIVO y no con el campo crudo. Una
+        // categoría vieja sin el campo (como "JUGOS NATURALES" en producción)
+        // funciona hoy por el respaldo del nombre: si el checkbox naciera
+        // destildado, abrirla para renombrarla y guardar le escribiría un
+        // `false` explícito, el campo le ganaría al nombre y se apagaría solo
+        // algo que nadie pidió apagar.
+        esBebida: categoriaEsBebida(categoria),
+        admiteLeche: categoriaAdmiteLeche(categoria),
       });
     } else {
       setFormData({
         nombre: '',
         activo: true,
         esBebida: false,
+        admiteLeche: false,
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
@@ -100,6 +110,24 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
             <small className="form-ayuda">
               Marcala para gaseosas, jugos, limonadas. Sus productos aparecen en el botón
               "¿Desea agregar bebida?" del carrito y nunca piden salsas.
+            </small>
+          </div>
+
+          <div className="form-group form-checkbox">
+            <label htmlFor="categoria-admiteLeche">
+              <input
+                id="categoria-admiteLeche"
+                type="checkbox"
+                name="admiteLeche"
+                checked={formData.admiteLeche}
+                onChange={handleChange}
+              />
+              Se puede pedir en agua o en leche
+            </label>
+            <small className="form-ayuda">
+              Solo para los jugos. Es lo que hace aparecer el campo{' '}
+              <strong>Precio con leche</strong> al cargar un producto de esta categoría.
+              Dejala sin marcar en gaseosas: con leche no existen.
             </small>
           </div>
 

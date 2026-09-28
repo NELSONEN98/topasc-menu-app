@@ -24,6 +24,22 @@ export default defineSchema({
      * las que todavia nadie marco).
      */
     esBebida: v.optional(v.boolean()),
+    /**
+     * Los productos de esta categoria se pueden pedir en agua o en leche.
+     *
+     * Decide una sola cosa: si el formulario del producto muestra el campo
+     * "Precio con leche". Es mas angosto que `esBebida` a proposito — una
+     * gaseosa ES bebida y con leche no existe, asi que usar `esBebida` para esto
+     * esconderia el campo tambien en los jugos, que son los unicos que lo
+     * necesitan.
+     *
+     * Optional: las categorias que ya existen no lo tienen. undefined = no
+     * admite leche, salvo que el nombre la delate (ver
+     * src/utils/categorias.js). Ese respaldo por nombre es lo que hace que en
+     * produccion "JUGOS NATURALES" siga ofreciendo la opcion sin que nadie tenga
+     * que ir a marcar nada, y el campo esta para cuando ese nombre cambie.
+     */
+    admiteLeche: v.optional(v.boolean()),
     // El indice es lo que hace que `orden` ordene de verdad.
     //
     // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin

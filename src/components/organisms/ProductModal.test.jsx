@@ -192,6 +192,109 @@ describe('ProductModal — "lleva salsas" no va en Bebidas', () => {
   });
 });
 
+describe('ProductModal — "precio con leche" solo donde la leche existe', () => {
+  const CATEGORIAS_CON_JUGOS = [
+    ...CATEGORIAS,
+    { _id: 'cat_gaseosa', nombre: 'Gaseosa' },
+    { _id: 'cat_jugos', nombre: 'JUGOS NATURALES' },
+  ];
+
+  const campoLeche = () => screen.queryByLabelText(/Precio con leche/);
+
+  test('NO aparece en la categoría Gaseosa', () => {
+    // Lo pedido: una gaseosa con leche no existe, y tener el campo a la vista
+    // invita a llenarlo por error.
+    abrir({
+      categorias: CATEGORIAS_CON_JUGOS,
+      product: { _id: 'item_1', nombre: 'Pepsi', categoriaId: 'cat_gaseosa', precio: 1 },
+    });
+
+    expect(campoLeche()).not.toBeInTheDocument();
+  });
+
+  test('SÍ aparece en "JUGOS NATURALES" sin marcar nada', () => {
+    // Regresión de producción: los jugos viven en esa categoría. Si el respaldo
+    // por nombre no la reconociera, este cambio apagaría la opción de agua/leche
+    // en producción el día del deploy.
+    abrir({
+      categorias: CATEGORIAS_CON_JUGOS,
+      product: { _id: 'item_1', nombre: 'Jugo de Mango', categoriaId: 'cat_jugos', precio: 7000 },
+    });
+
+    expect(campoLeche()).toBeInTheDocument();
+  });
+
+  test('tampoco aparece en una categoría de comida', () => {
+    // El campo estaba a la vista en TODA la carta, no solo en gaseosas.
+    abrir({ categorias: CATEGORIAS_CON_JUGOS });
+
+    expect(campoLeche()).not.toBeInTheDocument();
+  });
+
+  test('un producto que YA tiene precio con leche muestra el campo igual', () => {
+    // Válvula de seguridad: sin esto, un jugo cargado en una categoría que no
+    // admite leche quedaría con un precio visible para el cliente que el
+    // formulario no muestra y nadie podría sacarle.
+    abrir({
+      categorias: CATEGORIAS_CON_JUGOS,
+      product: {
+        _id: 'item_1',
+        nombre: 'Jugo viejo',
+        categoriaId: 'cat_gaseosa',
+        precio: 7000,
+        precioConLeche: 10000,
+      },
+    });
+
+    expect(campoLeche()).toBeInTheDocument();
+    expect(campoLeche()).toHaveValue(10000);
+  });
+
+  test('pasar un jugo a Gaseosas le BORRA el precio con leche', async () => {
+    // El bug que esto evita es el peor de todos: el campo desaparece del
+    // formulario pero el valor sigue en el estado, y esa gaseosa quedaría
+    // ofreciéndose "en leche" a 10.000 en el menú del cliente. Mismo trap que
+    // llevaPresentacion.
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: CATEGORIAS_CON_JUGOS,
+      product: {
+        _id: 'item_1',
+        nombre: 'Jugo de Mango',
+        categoriaId: 'cat_jugos',
+        precio: 7000,
+        precioConLeche: 10000,
+      },
+    });
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_gaseosa');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    expect(campoLeche()).not.toBeInTheDocument();
+    expect(onSave.mock.calls[0][0].precioConLeche).toBe('');
+  });
+
+  test('pasar un jugo a otra categoría de jugos le conserva el precio', async () => {
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({
+      categorias: [...CATEGORIAS_CON_JUGOS, { _id: 'cat_jugos2', nombre: 'Jugos del día' }],
+      product: {
+        _id: 'item_1',
+        nombre: 'Jugo de Mango',
+        categoriaId: 'cat_jugos',
+        precio: 7000,
+        precioConLeche: 10000,
+      },
+    });
+
+    await usuario.selectOptions(screen.getByLabelText(/Categoría/), 'cat_jugos2');
+    await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
+
+    // Mover un jugo entre categorías de jugos no puede costarle el precio.
+    expect(onSave.mock.calls[0][0].precioConLeche).toBe(10000);
+  });
+});
+
 describe('ProductModal — productos que la promo reemplaza', () => {
   const SALCHIPAPA = { _id: 'item_salchi', nombre: 'Salchipapa Sencilla', categoriaId: 'cat_1', precio: 18000 };
   const PAPA_LOCA = { _id: 'item_loca', nombre: 'Papa Loca', categoriaId: 'cat_1', precio: 22000 };

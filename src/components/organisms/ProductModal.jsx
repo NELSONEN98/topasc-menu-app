@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
-import { esCategoriaDeBebida } from '../../utils/categorias';
+import { esCategoriaDeBebida, esCategoriaConLeche } from '../../utils/categorias';
 import '../styles/ProductModal.css';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
@@ -183,12 +183,20 @@ export const ProductModal = ({
       // quien edita ya no ve: una gaseosa pidiendole salsas al cliente, o
       // metida en el carrusel de promociones.
       const aBebidas = esCategoriaDeBebida(categorias, newValue);
+      // Mismo razonamiento para el precio con leche, y acá el daño es peor que
+      // un checkbox mal guardado: si se pasa un jugo de 10.000 con leche a la
+      // categoría Gaseosas, el campo desaparece del formulario pero el valor
+      // sigue en el estado, y esa gaseosa quedaría ofreciéndose "en leche" a
+      // 10.000 en el menú. El campo ES el interruptor de la opción (ver
+      // schema.ts), así que vaciarlo es lo que la apaga.
+      const admiteLeche = esCategoriaConLeche(categorias, newValue);
 
       return {
         ...prev,
         categoriaId: newValue,
         llevaSalsas: aBebidas ? false : prev.llevaSalsas,
         esPromo: aBebidas ? false : prev.esPromo,
+        precioConLeche: admiteLeche ? prev.precioConLeche : '',
       };
     });
   };
@@ -281,6 +289,19 @@ export const ProductModal = ({
               </div>
             </div>
 
+            {/*
+              Solo en las categorías que se piden en agua o en leche. Una gaseosa
+              con leche no existe, y tener el campo a la vista en toda la carta
+              invita a llenarlo por error.
+
+              La segunda condición es una válvula de seguridad: si el producto YA
+              tiene precio con leche, el campo se muestra igual aunque la
+              categoría diga que no. Sin eso, un jugo cargado antes de este
+              cambio quedaría con un precio que el formulario no muestra y nadie
+              podría sacárselo — visible para el cliente e imposible de editar.
+            */}
+            {(esCategoriaConLeche(categorias, formData.categoriaId) ||
+              formData.precioConLeche !== '') && (
             <div className="form-group">
               <label htmlFor="precioConLeche">Precio con leche</label>
               <div className="input-con-prefijo">
@@ -302,6 +323,7 @@ export const ProductModal = ({
                 precio de arriba pasa a ser el de agua. Dejalo vacío en todo lo demás.
               </small>
             </div>
+            )}
           </fieldset>
 
           <fieldset className="form-seccion">
