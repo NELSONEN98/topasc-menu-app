@@ -9,28 +9,48 @@ const DeliveryIcon = () => (
   </svg>
 );
 
-const PickupIcon = () => (
+// La carta: una tarjeta con su título y sus renglones. Se eligió esto y no un
+// cubierto porque el botón dice "Menú", y un tenedor leería como "comer acá" —
+// que es justo el tipo de pedido que NO se elige desde esta pantalla (a dine-in
+// se entra por el QR de la mesa).
+const MenuIcon = () => (
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 16H38V40C38 41.1046 37.1046 42 36 42H12C10.8954 42 10 41.1046 10 40V16Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M14 16V12C14 10.8954 14.8954 10 16 10H32C33.1046 10 34 10.8954 34 12V16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M18 26L24 32L36 20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="12" y="6" width="24" height="36" rx="3" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
+    {/* Renglón del título, más corto y centrado: es lo que hace que la tarjeta
+        se lea como una carta y no como una hoja cualquiera. */}
+    <path d="M19 15H29" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M17 24H31" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M17 30H31" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M17 36H26" stroke="white" strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
 
 export const OrderType = ({ onSelectType, sede = null, onChangeSede }) => {
   // 'dine-in' ya no se elige acá: se entra automáticamente por el QR de la mesa
+  //
+  // El orden del array ES el orden en pantalla: "Menú" va primero porque es la
+  // opción que se elige casi siempre.
+  //
+  // El `id` sigue siendo 'pickup' y no se renombra junto con la etiqueta: viaja
+  // al pedido como `tipoPedido`, está en la unión del schema de Convex y es lo
+  // que el panel traduce con TIPO_LABEL. Cambiarlo dejaría los pedidos ya
+  // guardados con un tipo que la app no sabe leer. Lo que cambió es cómo se le
+  // presenta al cliente, no qué tipo de pedido es.
   const orderTypes = [
+    {
+      id: 'pickup',
+      label: 'Menú',
+      icon: MenuIcon,
+      // La descripción es la que ahora carga el significado: la etiqueta ya no
+      // dice "recoger", así que sin esto el cliente no sabría que lo tiene que
+      // ir a buscar al local.
+      description: 'Retira tu pedido en tienda',
+    },
     {
       id: 'delivery',
       label: 'Domicilio',
       icon: DeliveryIcon,
       description: 'Recibe tu pedido en casa',
-    },
-    {
-      id: 'pickup',
-      label: 'Recoger',
-      icon: PickupIcon,
-      description: 'Retira tu pedido en tienda',
     },
   ];
 
