@@ -65,6 +65,32 @@ export const TIPOS_BEBIDA = {
       },
     },
   },
+  'jugo-envasado': {
+    etiqueta: 'Jugo envasado',
+    // Hit, Del Valle y compañia: jugo de botella o caja. NO es el jugo natural
+    // que se prepara en el local — ese usa `admiteLeche` y se pide en agua o en
+    // leche, que para un Hit no significa nada.
+    tamanos: ['200 ml', '250 ml', '500 ml', '1 lt', '1.5 lt', '2 lt'],
+    marcas: {
+      hit: {
+        etiqueta: 'Hit',
+        sabores: [
+          'Mora',
+          'Naranja Piña',
+          'Lulo',
+          'Mango',
+          'Durazno',
+          'Manzana',
+          'Tropical',
+          'Naranja',
+        ],
+      },
+      'del-valle': {
+        etiqueta: 'Del Valle',
+        sabores: ['Naranja', 'Mango', 'Durazno', 'Manzana', 'Mora'],
+      },
+    },
+  },
   agua: {
     etiqueta: 'Agua',
     tamanos: ['600 ml'],

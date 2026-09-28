@@ -185,3 +185,41 @@ describe('tipoBebidaDeCategoria — compat con el esGaseosa que llegó a producc
     ).toBe('agua');
   });
 });
+
+describe('jugo envasado vs jugo natural — la confusion mas peligrosa', () => {
+  test('el tipo NO se adivina por el nombre: hay que elegirlo en el panel', () => {
+    // A proposito no hay respaldo por nombre para este tipo. Si "jugo" fuera una
+    // raiz, "JUGOS NATURALES" en produccion resolveria a jugo envasado y se
+    // apagaria la opcion de agua/leche de los 5 jugos que ya estan cargados.
+    expect(tipoBebidaDeCategoria({ nombre: 'Jugos Hit' })).toBe(null);
+    expect(tipoBebidaDeCategoria({ nombre: 'JUGOS NATURALES' })).toBe(null);
+  });
+
+  test('"JUGOS NATURALES" sigue siendo de agua o leche', () => {
+    // La regresion que protege lo de arriba.
+    expect(categoriaAdmiteLeche({ nombre: 'JUGOS NATURALES' })).toBe(true);
+  });
+
+  test('una categoria con tipo envasado NO admite leche, aunque se llame "Jugos"', () => {
+    // "Jugos Hit" contiene "jugo", asi que el respaldo la marcaria como de agua o
+    // leche. Un Hit viene en botella: preguntarle al cliente si lo quiere en leche
+    // no significa nada.
+    expect(
+      categoriaAdmiteLeche({ nombre: 'Jugos Hit', tipoBebida: 'jugo-envasado' })
+    ).toBe(false);
+  });
+
+  test('el tipo gana incluso contra un admiteLeche explicito', () => {
+    // Si alguien dejo el tilde puesto antes de elegir el tipo, el tipo manda: es
+    // el dato mas especifico y el mas reciente.
+    expect(
+      categoriaAdmiteLeche({ nombre: 'X', admiteLeche: true, tipoBebida: 'jugo-envasado' })
+    ).toBe(false);
+  });
+
+  test('el jugo envasado se elige explicitamente y funciona', () => {
+    expect(tipoBebidaDeCategoria({ nombre: 'Jugos Hit', tipoBebida: 'jugo-envasado' })).toBe(
+      'jugo-envasado'
+    );
+  });
+});

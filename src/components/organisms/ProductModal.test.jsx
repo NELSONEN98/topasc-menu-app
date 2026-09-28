@@ -302,6 +302,10 @@ describe('ProductModal — bebidas envasadas: cada tipo con SUS tamaños', () =>
     { _id: 'cat_agua', nombre: 'Aguas' },
     { _id: 'cat_cerveza', nombre: 'Cervezas' },
     { _id: 'cat_jugos', nombre: 'JUGOS NATURALES' },
+    // El tipo va explícito: a propósito NO se adivina por el nombre, porque
+    // "jugo" como raíz haría que "JUGOS NATURALES" resolviera acá y se apagaría
+    // la opción de agua/leche en producción.
+    { _id: 'cat_hit', nombre: 'Jugos Hit', tipoBebida: 'jugo-envasado' },
   ];
 
   const abrirGaseosa = (props = {}) =>
@@ -340,6 +344,38 @@ describe('ProductModal — bebidas envasadas: cada tipo con SUS tamaños', () =>
     expect(campoTamano('2.5 lt')).not.toBeInTheDocument();
     expect(campoTamano('350 ml')).not.toBeInTheDocument();
     expect(selectMarca()).not.toBeInTheDocument();
+  });
+
+  test('el jugo envasado ofrece 500 ml, con marca y sabor', () => {
+    // El caso que lo motivó: "Jugo Hit 500ml". Ese tamaño no existía en ninguno de
+    // los otros tres tipos, así que ninguna categoría podía ofrecerlo.
+    abrirEn('cat_hit');
+
+    expect(campoTamano('500 ml')).toBeInTheDocument();
+    expect(campoTamano('200 ml')).toBeInTheDocument();
+    expect(campoTamano('2 lt')).toBeInTheDocument();
+    // No se mezcla con los de gaseosa.
+    expect(campoTamano('2.5 lt')).not.toBeInTheDocument();
+    expect(selectMarca()).toBeInTheDocument();
+  });
+
+  test('el jugo envasado trae las marcas de jugo, no las de gaseosa', async () => {
+    const usuario = userEvent.setup();
+    abrirEn('cat_hit');
+
+    await usuario.selectOptions(selectMarca(), 'hit');
+
+    expect(screen.getByRole('option', { name: 'Mora' })).toBeInTheDocument();
+    // Postobón es marca de gaseosa: no tiene que estar acá.
+    expect(screen.queryByRole('option', { name: 'Postobón' })).not.toBeInTheDocument();
+  });
+
+  test('en un jugo ENVASADO no se pide precio con leche', () => {
+    // La confusión peligrosa: un Hit viene en botella, no se prepara con leche.
+    // Y su categoría se llama "Jugos Hit", que contiene la palabra "jugo".
+    abrirEn('cat_hit');
+
+    expect(screen.queryByLabelText(/Precio con leche/)).not.toBeInTheDocument();
   });
 
   test('la cerveza ofrece SOLO 473 ml, y sin marca ni sabor', () => {

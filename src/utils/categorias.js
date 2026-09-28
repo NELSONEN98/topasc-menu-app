@@ -73,6 +73,19 @@ const RAICES_CON_LECHE = ['jugo'];
 export const categoriaAdmiteLeche = (categoria) => {
   if (!categoria) return false;
 
+  /*
+   * Una categoria que vende bebidas ENVASADAS no prepara nada en leche, y esto se
+   * chequea antes del nombre por un caso concreto: una categoria "Jugos Hit"
+   * contiene la palabra "jugo", asi que el respaldo la marcaria como de agua o
+   * leche. Un Hit viene en botella — preguntarle al cliente si lo quiere en leche
+   * no significa nada.
+   *
+   * Va aca y no solo en el formulario del producto para que el checkbox del panel
+   * tampoco nazca tildado: un tilde que contradice al tipo elegido dos campos mas
+   * arriba es una contradiccion que el admin no puede resolver.
+   */
+  if (categoria.tipoBebida) return false;
+
   if (categoria.admiteLeche !== undefined) return categoria.admiteLeche;
 
   const clave = (categoria.nombre ?? '').trim().toLowerCase();

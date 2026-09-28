@@ -79,7 +79,12 @@ export default defineSchema({
      * "Gaseosa" ya cargada funcione sin que nadie vaya a marcarla.
      */
     tipoBebida: v.optional(
-      v.union(v.literal("gaseosa"), v.literal("agua"), v.literal("cerveza"))
+      v.union(
+        v.literal("gaseosa"),
+        v.literal("jugo-envasado"),
+        v.literal("agua"),
+        v.literal("cerveza")
+      )
     ),
     // El indice es lo que hace que `orden` ordene de verdad.
     //

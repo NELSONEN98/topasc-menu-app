@@ -161,9 +161,11 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
             <small className="form-ayuda">
               Al cargar un producto de esta categoría vas a poder ponerle precio a cada
               tamaño, y el cliente elige el tamaño al pedir. Cada tipo tiene los suyos:{' '}
-              <strong>gaseosa</strong> de 250 ml a 2.5 lt (y además marca y sabor),{' '}
-              <strong>agua</strong> 600 ml, <strong>cerveza</strong> 473 ml. Dejalo en
-              "no vende" para los jugos naturales: esos usan el precio con leche de arriba.
+              <strong>gaseosa</strong> 250 ml a 2.5 lt, <strong>jugo envasado</strong>{' '}
+              (Hit, Del Valle) 200 ml a 2 lt, <strong>agua</strong> 600 ml,{' '}
+              <strong>cerveza</strong> 473 ml. Los dos primeros además piden marca y sabor.
+              Dejalo en "no vende" para los <strong>jugos naturales</strong> que se preparan
+              en el local: esos usan el precio con leche de arriba.
             </small>
           </div>
 
