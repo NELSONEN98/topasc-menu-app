@@ -192,6 +192,101 @@ describe('ProductModal — "lleva salsas" no va en Bebidas', () => {
   });
 });
 
+describe('ProductModal — productos que la promo reemplaza', () => {
+  const SALCHIPAPA = { _id: 'item_salchi', nombre: 'Salchipapa Sencilla', categoriaId: 'cat_1', precio: 18000 };
+  const PAPA_LOCA = { _id: 'item_loca', nombre: 'Papa Loca', categoriaId: 'cat_1', precio: 22000 };
+  const OTRA_PROMO = { _id: 'item_promo2', nombre: '2x1 viejo', categoriaId: 'cat_1', precio: 30000, esPromo: true };
+
+  const MENU = [SALCHIPAPA, PAPA_LOCA, OTRA_PROMO];
+
+  const checkboxOculta = (nombre) =>
+    screen.queryByRole('checkbox', { name: new RegExp(nombre) });
+
+  const abrirPromo = (props = {}) =>
+    abrir({ productos: MENU, defaults: { esPromo: true }, ...props });
+
+  test('el selector no se ve si el producto no es promo', async () => {
+    // En un plato normal sería un bloque más para completar sin motivo.
+    abrir({ productos: MENU });
+
+    expect(screen.queryByText(/Productos que reemplaza/)).not.toBeInTheDocument();
+  });
+
+  test('marcando "es promoción del día" aparece el selector', async () => {
+    abrirPromo();
+
+    expect(screen.getByText(/Productos que reemplaza/)).toBeInTheDocument();
+    expect(checkboxOculta('Salchipapa Sencilla')).toBeInTheDocument();
+  });
+
+  test('no se ofrece a sí misma', async () => {
+    // Una promo que se tapa a sí misma desaparece del menú el día que arranca,
+    // y desde el panel se ve perfecta. Mejor que ni se pueda elegir.
+    abrirPromo({
+      product: { _id: 'item_salchi', nombre: 'Salchipapa Sencilla', categoriaId: 'cat_1', precio: 1, esPromo: true },
+    });
+
+    expect(checkboxOculta('Salchipapa Sencilla')).not.toBeInTheDocument();
+    expect(checkboxOculta('Papa Loca')).toBeInTheDocument();
+  });
+
+  test('no ofrece las otras promos', async () => {
+    // Tapar una promo con otra no resuelve nada y solo alarga una lista que en
+    // una carta real ya tiene decenas de items.
+    abrirPromo();
+
+    expect(checkboxOculta('2x1 viejo')).not.toBeInTheDocument();
+  });
+
+  test('lo tildado viaja en ocultaItemIds', async () => {
+    const usuario = userEvent.setup();
+    const { onSave } = abrirPromo();
+
+    await usuario.click(checkboxOculta('Salchipapa Sencilla'));
+    await guardar(usuario, /Agregar producto/);
+
+    expect(onSave.mock.calls[0][0].ocultaItemIds).toEqual(['item_salchi']);
+  });
+
+  test('destildar lo saca de la lista', async () => {
+    const usuario = userEvent.setup();
+    const { onSave } = abrirPromo();
+
+    await usuario.click(checkboxOculta('Papa Loca'));
+    await usuario.click(checkboxOculta('Papa Loca'));
+    await guardar(usuario, /Agregar producto/);
+
+    expect(onSave.mock.calls[0][0].ocultaItemIds).toEqual([]);
+  });
+
+  test('al editar, llega tildado lo que ya tenía guardado', async () => {
+    abrirPromo({
+      product: {
+        _id: 'item_promo',
+        nombre: '2x1 en Salchipapas',
+        categoriaId: 'cat_1',
+        precio: 30000,
+        esPromo: true,
+        ocultaItemIds: ['item_salchi'],
+      },
+    });
+
+    // Si no se hidratara, abrir la promo para cambiarle el precio y guardar
+    // liberaría los productos que estaba tapando, sin que nadie lo pida.
+    expect(checkboxOculta('Salchipapa Sencilla')).toBeChecked();
+    expect(checkboxOculta('Papa Loca')).not.toBeChecked();
+  });
+
+  test('sin la prop productos el formulario sigue funcionando', async () => {
+    // La lista es opcional: mientras la query no resuelve llega vacía y el
+    // bloque simplemente no se dibuja, en vez de romper el modal entero.
+    abrir({ defaults: { esPromo: true } });
+
+    expect(screen.queryByText(/Productos que reemplaza/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Agregar producto/ })).toBeInTheDocument();
+  });
+});
+
 describe('ProductModal — que se guarda', () => {
   test('destildar una sede la saca de lo que se envia', async () => {
     const usuario = userEvent.setup();

@@ -151,6 +151,11 @@ export const useProductosAdmin = () => {
             // server distingue "sacale la fecha" de "no la toques".
             vigenteDesde: formData.esPromo ? formData.vigenteDesde : '',
             vigenteHasta: formData.esPromo ? formData.vigenteHasta : '',
+            // Igual que las fechas: `[]` es como se le dice al server "no tapes
+            // nada". Sacarle el check de promo tiene que liberar los productos
+            // que tapaba — si no, quedarian escondidos por una promo que ya no
+            // existe y nadie sabria donde buscar el motivo.
+            ocultaItemIds: formData.esPromo ? formData.ocultaItemIds ?? [] : [],
           },
         });
       } else {
@@ -168,6 +173,10 @@ export const useProductosAdmin = () => {
           esPromo: formData.esPromo,
           vigenteDesde: formData.esPromo ? formData.vigenteDesde || undefined : undefined,
           vigenteHasta: formData.esPromo ? formData.vigenteHasta || undefined : undefined,
+          ocultaItemIds:
+            formData.esPromo && formData.ocultaItemIds?.length
+              ? formData.ocultaItemIds
+              : undefined,
         });
       }
 

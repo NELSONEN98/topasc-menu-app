@@ -106,6 +106,21 @@ export default defineSchema({
      */
     esPromo: v.optional(v.boolean()),
     /**
+     * Productos que esta promo REEMPLAZA: mientras la promo este vigente, se
+     * esconden del menu.
+     *
+     * Para que el cliente no pueda pedir la salchipapa suelta cuando esta
+     * corriendo el 2x1 de salchipapas. Es opcional: una promo puede no tapar
+     * nada.
+     *
+     * Solo tiene sentido con `esPromo`, y el ocultamiento dura exactamente lo
+     * que dura la promo — lo decide la vigencia, que se resuelve en el cliente
+     * con su fecha local (ver src/utils/menu.js). Por eso NO se filtra en
+     * `listarMenu`: el servidor corre en UTC y taparia productos un dia de mas
+     * o de menos.
+     */
+    ocultaItemIds: v.optional(v.array(v.id("items"))),
+    /**
      * Ventana de vigencia de la promo, en formato "YYYY-MM-DD". Las dos son
      * opcionales:
      *   ninguna    -> la promo corre hasta que la apaguen con `disponible`

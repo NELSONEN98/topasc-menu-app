@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { resizeImage } from '../../utils/resizeImage';
 import { numeroDeInput } from '../../utils/numeroDeInput';
 import { esCategoriaDeBebida } from '../../utils/categorias';
@@ -18,6 +18,10 @@ export const ProductModal = ({
   product,
   categorias,
   sedes = SIN_DATOS,
+  // El resto del menu, para elegir que productos reemplaza una promo. Solo se
+  // usa dentro del bloque de promocion; sin esta prop el selector no se dibuja
+  // y el formulario sigue funcionando igual.
+  productos = SIN_DATOS,
   // Valores con los que nace un producto NUEVO. Lo usa la pestaña de
   // Promociones para que "+ Agregar promo" abra el form ya marcado como promo,
   // en vez de pedirle al admin que tilde el check que acaba de apretar.
@@ -38,6 +42,7 @@ export const ProductModal = ({
     esPromo: false,
     vigenteDesde: '',
     vigenteHasta: '',
+    ocultaItemIds: [],
   });
 
   const [imagePreview, setImagePreview] = useState('');
@@ -75,6 +80,7 @@ export const ProductModal = ({
           product.esPromo === true,
         vigenteDesde: product.vigenteDesde || '',
         vigenteHasta: product.vigenteHasta || '',
+        ocultaItemIds: product.ocultaItemIds ?? [],
       });
       setImagePreview(product.imagenUrl || '');
     } else {
@@ -95,6 +101,7 @@ export const ProductModal = ({
         esPromo: false,
         vigenteDesde: '',
         vigenteHasta: '',
+        ocultaItemIds: [],
         ...defaults,
       });
       setImagePreview('');
@@ -120,14 +127,44 @@ export const ProductModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?._id, isOpen, sedes.length]);
 
-  const alternarSede = (sedeId) => {
+  // Prende o apaga un id dentro de un campo que es lista (sedes, productos que
+  // la promo tapa). Generico porque son la misma operacion: dos copias de esto
+  // es una que se arregla y otra que no.
+  const alternarEnLista = (campo, id) => {
     setFormData((prev) => ({
       ...prev,
-      sedeIds: prev.sedeIds.includes(sedeId)
-        ? prev.sedeIds.filter((id) => id !== sedeId)
-        : [...prev.sedeIds, sedeId],
+      [campo]: prev[campo].includes(id)
+        ? prev[campo].filter((actual) => actual !== id)
+        : [...prev[campo], id],
     }));
   };
+
+  /**
+   * Productos que una promo puede reemplazar, agrupados por categoria.
+   *
+   * Se sacan de la lista el producto que se esta editando (una promo no se tapa
+   * a si misma, desapareceria el dia que arranca) y las otras promos: tapar una
+   * promo con otra no resuelve nada y solo alarga una lista que ya es larga.
+   *
+   * Agrupado por categoria porque la carta tiene decenas de items: una lista
+   * plana de checkboxes es imposible de leer y se termina tildando el que no era.
+   */
+  const candidatosAOcultar = useMemo(() => {
+    const porCategoria = new Map();
+
+    for (const candidato of productos) {
+      if (candidato._id === product?._id) continue;
+      if (candidato.esPromo === true) continue;
+
+      const categoria = categorias.find((c) => c._id === candidato.categoriaId);
+      const nombre = categoria?.nombre ?? 'Sin categoría';
+
+      if (!porCategoria.has(nombre)) porCategoria.set(nombre, []);
+      porCategoria.get(nombre).push(candidato);
+    }
+
+    return [...porCategoria.entries()];
+  }, [productos, categorias, product?._id]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -280,7 +317,7 @@ export const ProductModal = ({
                   id={`sede-${sede._id}`}
                   type="checkbox"
                   checked={formData.sedeIds.includes(sede._id)}
-                  onChange={() => alternarSede(sede._id)}
+                  onChange={() => alternarEnLista('sedeIds', sede._id)}
                 />
                 <span className="opcion-tarjeta__texto">
                   <strong>{sede.nombre}</strong>
@@ -415,6 +452,53 @@ export const ProductModal = ({
                   un solo día, poné la misma fecha en las dos. Si las dejás vacías, corre
                   hasta que la saques de promo o la marques como no disponible.
                 </small>
+
+                {/* Opcional: si no se tilda nada, la promo simplemente se suma
+                    al menú sin sacar nada de circulación. */}
+                {candidatosAOcultar.length > 0 && (
+                  <div className="form-group">
+                    <span className="form-subtitulo">
+                      Productos que reemplaza
+                      {formData.ocultaItemIds.length > 0 && (
+                        <span className="form-contador">
+                          {formData.ocultaItemIds.length} seleccionado
+                          {formData.ocultaItemIds.length === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </span>
+
+                    <small className="form-ayuda">
+                      Lo que tildés acá <strong>desaparece del menú</strong> mientras la promo
+                      esté corriendo, y vuelve solo cuando la promo se vence o se apaga. Es
+                      para que el cliente no pueda pedir el producto suelto al precio de
+                      siempre. Es opcional: si no tildás nada, no se saca nada.
+                    </small>
+
+                    <div className="lista-seleccion">
+                      {candidatosAOcultar.map(([categoria, items]) => (
+                        <div key={categoria} className="lista-seleccion__grupo">
+                          <p className="lista-seleccion__categoria">{categoria}</p>
+
+                          {items.map((item) => (
+                            <label
+                              key={item._id}
+                              className="lista-seleccion__opcion"
+                              htmlFor={`oculta-${item._id}`}
+                            >
+                              <input
+                                id={`oculta-${item._id}`}
+                                type="checkbox"
+                                checked={formData.ocultaItemIds.includes(item._id)}
+                                onChange={() => alternarEnLista('ocultaItemIds', item._id)}
+                              />
+                              <span>{item.nombre}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </fieldset>

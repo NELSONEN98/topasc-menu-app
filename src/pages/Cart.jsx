@@ -13,6 +13,7 @@ import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { useCart, SIN_SALSAS } from '../context/CartContext';
 import { useNotificacion } from '../context/NotificacionContext';
 import { esCategoriaDeBebida } from '../utils/categorias';
+import { itemsVisibles } from '../utils/menu';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
 
@@ -49,8 +50,14 @@ export const Cart = ({
   // hay regla que lo impida.
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
 
+  // `itemsVisibles` va tambien aca y no solo en el menu: si una promo vigente
+  // tapa un jugo, ofrecerlo igual desde el carrito deja la promo sin efecto —
+  // el cliente lo pediria al precio de siempre por la puerta de atras.
   const bebidas = useMemo(
-    () => items.filter((item) => esCategoriaDeBebida(categorias, item.categoriaId)),
+    () =>
+      itemsVisibles(items).filter((item) =>
+        esCategoriaDeBebida(categorias, item.categoriaId)
+      ),
     [items, categorias]
   );
 

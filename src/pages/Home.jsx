@@ -9,6 +9,7 @@ import { ProductDetailModal } from '../components/organisms/ProductDetailModal';
 import { PromocionesCarouselModal } from '../components/organisms/PromocionesCarouselModal';
 import { useCart } from '../context/CartContext';
 import { estaVigente } from '../utils/vigencia';
+import { itemsVisibles } from '../utils/menu';
 import './Home.css';
 
 // Referencia estable mientras las queries cargan: un `[]` nuevo por render
@@ -47,6 +48,13 @@ export const Home = ({
   const allItems = allItemsCargando ?? SIN_DATOS;
   const allCategorias = allCategoriasCargando ?? SIN_DATOS;
   const salsas = useQuery(api.salsas.listarDisponibles) ?? SIN_DATOS;
+
+  // Una promo vigente puede tapar los productos que reemplaza: mientras corre
+  // el 2x1, la salchipapa suelta no se ofrece. El corte se hace UNA vez y aca
+  // arriba, asi lo heredan todas las listas de abajo (Todos, cada categoria y
+  // las promos) sin repetir el filtro en cada una. Ver src/utils/menu.js.
+  const itemsDelMenu = useMemo(() => itemsVisibles(allItems), [allItems]);
+
   // Las promos son items como cualquier otro: salen de la misma query, se
   // agregan al carrito igual y viajan al pedido igual. `esPromo` solo cambia
   // DONDE se muestran.
@@ -57,8 +65,8 @@ export const Home = ({
   // asi que una promo que vence hoy se apagaria sola en plena hora pico.
   // Mismo criterio que StatusBar.jsx. Ver src/utils/vigencia.js.
   const promociones = useMemo(
-    () => allItems.filter((item) => item.esPromo === true && estaVigente(item)),
-    [allItems]
+    () => itemsDelMenu.filter((item) => item.esPromo === true && estaVigente(item)),
+    [itemsDelMenu]
   );
 
   const hayPromos = promociones.length > 0;
@@ -74,8 +82,8 @@ export const Home = ({
   const filteredProducts = esFiltroPromos
     ? promociones
     : activeCategory === 'Todos'
-      ? allItems
-      : allItems.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
+      ? itemsDelMenu
+      : itemsDelMenu.filter((p) => p.categoriaId && allCategorias.find(cat => cat._id === p.categoriaId && cat.nombre === activeCategory));
 
 
   return (

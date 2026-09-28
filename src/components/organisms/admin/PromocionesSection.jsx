@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ProductModal } from '../ProductModal';
 import { SeccionHeader } from './SeccionHeader';
 import { useProductosAdmin } from '../../../hooks/useProductosAdmin';
@@ -36,6 +37,18 @@ export const PromocionesSection = () => {
 
   const promos = todosLosItems.filter((item) => item.esPromo === true);
 
+  // Para traducir los ids que la promo tapa a nombres. Un producto borrado deja
+  // un id colgado en la lista: no se muestra nada para el en vez de un "undefined".
+  const nombrePorId = useMemo(
+    () => new Map(todosLosItems.map((item) => [item._id, item.nombre])),
+    [todosLosItems]
+  );
+
+  const nombresQueReemplaza = (promo) =>
+    (promo.ocultaItemIds ?? [])
+      .map((id) => nombrePorId.get(id))
+      .filter(Boolean);
+
   return (
     <div>
       <SeccionHeader
@@ -67,7 +80,10 @@ export const PromocionesSection = () => {
               Todavía no hay promociones. Creá una o marcá un producto existente como promo.
             </p>
           ) : (
-            promos.map((promo) => (
+            promos.map((promo) => {
+              const reemplaza = nombresQueReemplaza(promo);
+
+              return (
               <div key={promo._id} className="admin-table-row admin-table-row-promos">
                 {promo.imagenUrl ? (
                   <img src={promo.imagenUrl} alt={promo.nombre} className="admin-table-img" />
@@ -82,6 +98,12 @@ export const PromocionesSection = () => {
                   {AVISO_VIGENCIA[estadoVigencia({ ...promo, activa: promo.disponible })] && (
                     <span className="admin-table-noimg">
                       {AVISO_VIGENCIA[estadoVigencia({ ...promo, activa: promo.disponible })]}
+                    </span>
+                  )}
+                  {reemplaza.length > 0 && (
+                    <span className="admin-table-tapado" title={reemplaza.join(', ')}>
+                      Reemplaza {reemplaza.length}{' '}
+                      {reemplaza.length === 1 ? 'producto' : 'productos'}
                     </span>
                   )}
                 </div>
@@ -121,7 +143,8 @@ export const PromocionesSection = () => {
                   </button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -132,6 +155,7 @@ export const PromocionesSection = () => {
         product={modal.editando}
         categorias={categorias}
         sedes={sedes}
+        productos={todosLosItems}
         defaults={{ esPromo: true }}
         onSave={acciones.guardar}
       />

@@ -376,6 +376,95 @@
 }
 
 /* ============================================================
+   LISTA DE SELECCION — muchos items, altura acotada y scroll propio
+   ============================================================ */
+.form-subtitulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #241C15;
+}
+
+.form-contador {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #FFFBF0;
+  border: 1px solid #FFB81C;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8A6100;
+  white-space: nowrap;
+}
+
+/*
+  Se acota el alto y scrollea adentro: la carta tiene decenas de productos y sin
+  este corte la lista empuja las acciones del modal fuera de la pantalla, que es
+  justo donde esta el boton de guardar.
+*/
+.lista-seleccion {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid #E0D5C7;
+  border-radius: 8px;
+  padding: 4px;
+  /* En mobile el modal tambien scrollea: sin esto los dos scrolls se pelean y
+     el gesto se va al de atras al llegar al final de la lista. */
+  overscroll-behavior: contain;
+}
+
+.lista-seleccion__grupo + .lista-seleccion__grupo {
+  margin-top: 6px;
+  border-top: 1px solid #F0EAE2;
+  padding-top: 6px;
+}
+
+.lista-seleccion__categoria {
+  margin: 0;
+  padding: 6px 8px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #999;
+}
+
+/* 44px de alto minimo: es una lista larga que se toca con el pulgar, no un
+   check suelto de escritorio. */
+.lista-seleccion__opcion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #241C15;
+  cursor: pointer;
+}
+
+.lista-seleccion__opcion:hover {
+  background: #FAFAF8;
+}
+
+.lista-seleccion__opcion:has(input:checked) {
+  background: #FFFBF0;
+  font-weight: 600;
+}
+
+.lista-seleccion__opcion input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #E11E2B;
+}
+
+/* ============================================================
    MOBILE — el modal ocupa la pantalla y las acciones quedan fijas
    ============================================================ */
 @media (max-width: 640px) {

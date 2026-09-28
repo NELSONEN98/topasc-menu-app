@@ -46,6 +46,31 @@ const sinFechaVacia = (fecha?: string) => fecha || undefined;
 const sinPrecioEnCero = (precio?: number) =>
   precio === undefined || precio <= 0 ? undefined : precio;
 
+/**
+ * Normaliza la lista de productos que una promo tapa mientras esta vigente.
+ *
+ * Saca duplicados y saca a la promo de su propia lista. Lo segundo es lo que
+ * importa: una promo que se tapa a si misma desaparece del menu justo el dia
+ * que arranca, y desde el panel se ve perfecta. El formulario ya no se ofrece
+ * en la lista, pero la regla tiene que vivir en el servidor — es el unico lugar
+ * por el que pasa todo, incluido un id mandado a mano.
+ *
+ * Una lista vacia se guarda como `undefined`: destildar todo es lo mismo que no
+ * haber elegido nunca nada, y en un patch `undefined` borra el campo.
+ */
+// Generico sobre T para no perder el `Id<"items">` de Convex: tipar los ids como
+// string suelto haria que el insert/patch dejara de validarlos.
+const sinAutoReferencia = <T extends string>(
+  ids: T[] | undefined,
+  propioId: string
+): T[] | undefined => {
+  if (ids === undefined) return undefined;
+
+  const limpios = [...new Set(ids)].filter((id) => id !== propioId);
+
+  return limpios.length > 0 ? limpios : undefined;
+};
+
 // Publica: es el menu que ve el cliente al escanear el QR.
 //
 // Filtra por `disponible` ademas de `activo`. Son dos cosas distintas:
@@ -112,6 +137,7 @@ export const crear = mutation({
     esPromo: v.optional(v.boolean()),
     vigenteDesde: v.optional(v.string()),
     vigenteHasta: v.optional(v.string()),
+    ocultaItemIds: v.optional(v.array(v.id("items"))),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -128,6 +154,10 @@ export const crear = mutation({
       disponible: args.disponible ?? true,
       activo: true,
       precioConLeche: sinPrecioEnCero(args.precioConLeche),
+      // Al crear no puede haber autorreferencia (el id todavia no existe), pero
+      // igual pasa por el normalizador para que un array vacio se guarde como
+      // ausente y no como `[]`. Mismo dato guardado de una sola forma.
+      ocultaItemIds: sinAutoReferencia(args.ocultaItemIds, ""),
       vigenteDesde,
       vigenteHasta,
     });
@@ -152,6 +182,7 @@ export const actualizar = mutation({
       esPromo: v.optional(v.boolean()),
       vigenteDesde: v.optional(v.string()),
       vigenteHasta: v.optional(v.string()),
+      ocultaItemIds: v.optional(v.array(v.id("items"))),
     }),
   },
   handler: async (ctx, { id, campos }) => {
@@ -167,6 +198,12 @@ export const actualizar = mutation({
     // opcion": `undefined` en un patch es justamente lo que borra el campo.
     if (campos.precioConLeche !== undefined) {
       campos = { ...campos, precioConLeche: sinPrecioEnCero(campos.precioConLeche) };
+    }
+
+    // Destildar todos los productos llega como `[]` y significa "no tapes
+    // nada": `undefined` en un patch es lo que borra el campo.
+    if (campos.ocultaItemIds !== undefined) {
+      campos = { ...campos, ocultaItemIds: sinAutoReferencia(campos.ocultaItemIds, id) };
     }
 
     const tocaDesde = campos.vigenteDesde !== undefined;

@@ -243,6 +243,17 @@ input, select { font-family: 'Inter', sans-serif; }
   color: #C0392B;
 }
 
+/* Un producto tapado por una promo, o la promo que lo tapa. En ámbar y no en
+   rojo a propósito: no es un error ni algo que haya que arreglar, es el estado
+   que el admin pidió. Es un AVISO, para que no busque el problema en otra parte. */
+.admin-table-tapado {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8A6100;
+}
+
 .admin-table-row:hover { background: #FAFAF8; }
 
 .admin-table-cell-name { font-weight: 500; font-size: 13px; color: var(--dark-bg); }

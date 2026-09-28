@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { ProductModal } from '../ProductModal';
 import { Pagination } from '../../molecules/Pagination';
 import { SeccionHeader } from './SeccionHeader';
 import { useProductosAdmin } from '../../../hooks/useProductosAdmin';
+import { promosQueOcultan } from '../../../utils/menu';
 
 const sinImagen = (item) => !item.imagenUrl || item.imagenUrl.trim() === '';
 
@@ -18,7 +20,15 @@ export const ProductosSection = () => {
     filtros,
     modal,
     acciones,
+    todosLosItems,
   } = useProductosAdmin();
+
+  // Un producto tapado por una promo sigue figurando "disponible" acá, porque lo
+  // está: lo que lo saca del menú es la promo, no su propio toggle. Sin este
+  // aviso el admin ve el producto activo, el cliente no lo ve, y no hay ninguna
+  // pista de dónde mirar. El toggle se deja como está a propósito — apagarlo
+  // sería mentir sobre el estado del producto.
+  const tapadoPor = useMemo(() => promosQueOcultan(todosLosItems), [todosLosItems]);
 
   return (
     <div>
@@ -103,6 +113,14 @@ export const ProductosSection = () => {
                   {sinImagen(item) && (
                     <span className="admin-table-noimg">Falta imagen</span>
                   )}
+                  {tapadoPor.has(item._id) && (
+                    <span
+                      className="admin-table-tapado"
+                      title="Vuelve al menú cuando la promo se venza o se apague."
+                    >
+                      Oculto por: {tapadoPor.get(item._id).join(', ')}
+                    </span>
+                  )}
                 </div>
 
                 <div className="admin-table-cell-category" data-label="Categoría">
@@ -147,12 +165,16 @@ export const ProductosSection = () => {
 
       <Pagination currentPage={pagina} totalPages={totalPaginas} onPageChange={setPagina} />
 
+      {/* `productos` va con la lista COMPLETA y no con `paginados`: si una promo
+          se crea desde acá, el selector de productos que reemplaza tiene que
+          ofrecer toda la carta, no solo los que quedaron en la página actual. */}
       <ProductModal
         isOpen={modal.abierto}
         onClose={modal.cerrar}
         product={modal.editando}
         categorias={categorias}
         sedes={sedes}
+        productos={todosLosItems}
         onSave={acciones.guardar}
       />
     </div>
