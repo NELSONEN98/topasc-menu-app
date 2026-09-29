@@ -393,6 +393,19 @@
   white-space: nowrap;
 }
 
+/*
+  Las salsas incluidas, en una línea corrida separadas por puntos.
+
+  Interlineado holgado porque en un celular esa línea envuelve en dos o tres, y
+  apretadas se leen como un bloque en vez de como una lista.
+*/
+.detail-salsas-lectura {
+  margin: 0;
+  font: 500 0.875rem 'Inter', sans-serif;
+  color: #241C15;
+  line-height: 1.6;
+}
+
 /* Cierra el modal diciendo qué hacer, en vez de terminar en la nada donde antes
    estaba el botón de agregar. */
 .detail-solo-lectura {

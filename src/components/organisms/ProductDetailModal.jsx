@@ -357,6 +357,51 @@ export const ProductDetailModal = ({
             </div>
           )}
 
+          {/*
+            En la carta las salsas se MUESTRAN, no se eligen. Mismo criterio que los
+            tamaños: el cliente quiere saber con qué viene el plato para pedírselo al
+            mozo, y elegirlas es un paso del pedido que acá no existe.
+
+            Las incluidas van en una línea corrida y no como lista vertical: son
+            cinco o seis nombres cortos, y una fila por cada uno estiraría el modal
+            sin agregar nada.
+          */}
+          {soloLectura && salsasBase.length > 0 && (
+            <div className="detail-section">
+              <div className="detail-section__header">
+                <span className="detail-section__title">Salsas a elección</span>
+                <span className="detail-section__badge">Incluidas</span>
+              </div>
+
+              <p className="detail-salsas-lectura">
+                {salsasBase.map((salsa) => salsa.nombre).join(' · ')}
+              </p>
+            </div>
+          )}
+
+          {/* Las especiales van con su precio, igual que los tamaños: es lo que
+              cambia entre una y otra y lo que el cliente necesita saber antes de
+              pedirla. */}
+          {soloLectura && salsasEspeciales.length > 0 && (
+            <div className="detail-section">
+              <div className="detail-section__header">
+                <span className="detail-section__title">Salsas especiales</span>
+                <span className="detail-section__badge">Tienen costo</span>
+              </div>
+
+              <ul className="detail-lista-precios">
+                {salsasEspeciales.map((salsa) => (
+                  <li key={salsa._id} className="detail-lista-precios__fila">
+                    <span>{salsa.nombre}</span>
+                    <span className="detail-lista-precios__precio">
+                      + {formatPrice(salsa.precio)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {requiereSalsa && !soloLectura && (
             <div className="detail-section">
               <div className="detail-section__header">

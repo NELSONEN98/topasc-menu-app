@@ -387,3 +387,82 @@ describe('ProductDetailModal — carta de solo lectura (/menu)', () => {
     expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeInTheDocument();
   });
 });
+
+describe('ProductDetailModal — las salsas se MUESTRAN en la carta', () => {
+  const SALSAS_COMPLETAS = [
+    { _id: 's1', nombre: 'Salsa Roja', tipo: 'base', precio: 0 },
+    { _id: 's2', nombre: 'Salsa Rosada', tipo: 'base', precio: 0 },
+    { _id: 's3', nombre: 'Salsa de Ajo', tipo: 'base', precio: 0 },
+    { _id: 's4', nombre: 'Salsa de Queso', tipo: 'especial', precio: 2000 },
+    { _id: 's5', nombre: 'Miel Mostaza', tipo: 'especial', precio: 2500 },
+  ];
+
+  const PLATO = {
+    _id: 'item_salchi',
+    nombre: 'Salchipapa Sencilla',
+    categoriaId: 'cat_comida',
+    precio: 18000,
+    llevaSalsas: true,
+  };
+
+  const leerPlato = (product = PLATO) =>
+    abrir(product, { soloLectura: true, salsas: SALSAS_COMPLETAS });
+
+  test('lista las salsas incluidas', () => {
+    // El cliente quiere saber con qué viene el plato para pedírselo al mozo.
+    leerPlato();
+
+    expect(screen.getByText(/Salsas a elección/)).toBeInTheDocument();
+    expect(screen.getByText(/Salsa Roja · Salsa Rosada · Salsa de Ajo/)).toBeInTheDocument();
+  });
+
+  test('pero NO se pueden elegir', () => {
+    // Es el punto de la vista: se ven, no se escogen. Un checkbox acá sería un
+    // paso de pedido que no lleva a ninguna parte.
+    leerPlato();
+
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    expect(screen.queryByText(/Elegí tus salsas/)).not.toBeInTheDocument();
+  });
+
+  test('las especiales muestran su precio', () => {
+    // Es lo que cambia entre una y otra y lo que hay que saber antes de pedirla.
+    leerPlato();
+
+    expect(screen.getByText('Salsa de Queso')).toBeInTheDocument();
+    expect(screen.getByText(/2\.000/)).toBeInTheDocument();
+    expect(screen.getByText('Miel Mostaza')).toBeInTheDocument();
+  });
+
+  test('aclara qué está incluido y qué se paga', () => {
+    // Sin esa distinción el cliente pide la de queso creyendo que viene gratis.
+    leerPlato();
+
+    expect(screen.getByText('Incluidas')).toBeInTheDocument();
+    expect(screen.getByText('Tienen costo')).toBeInTheDocument();
+  });
+
+  test('una bebida NO muestra salsas', () => {
+    // Sigue valiendo la regla de siempre: la categoría manda sobre el flag.
+    leerPlato({
+      _id: 'item_gaseosa',
+      nombre: 'Postobón Manzana',
+      categoriaId: 'cat_gaseosa',
+      precio: 2500,
+      llevaSalsas: true,
+    });
+
+    expect(screen.queryByText(/Salsas a elección/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Salsas especiales/)).not.toBeInTheDocument();
+  });
+
+  test('en el modo normal se siguen eligiendo', () => {
+    // El otro lado del contrato: la carta no puede haber apagado el pedido real.
+    abrir(PLATO, { salsas: SALSAS_COMPLETAS });
+
+    expect(screen.getByText(/Elegí tus salsas/)).toBeInTheDocument();
+    expect(screen.queryAllByRole('checkbox').length).toBeGreaterThan(0);
+    // Y no aparece la versión de lectura.
+    expect(screen.queryByText(/Salsas a elección/)).not.toBeInTheDocument();
+  });
+});
