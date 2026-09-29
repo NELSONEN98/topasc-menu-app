@@ -92,6 +92,51 @@ const ClientApp = ({ mesa = null }) => {
   );
 };
 
+/*
+ * /menu — la carta de SOLO LECTURA.
+ *
+ * El cliente lee y le pide al restaurante: no hay carrito, ni botón de agregar,
+ * ni pedido por WhatsApp. Sirve para el QR de la mesa o de la pared en un local
+ * donde el pedido se toma a mano.
+ *
+ * Es un componente aparte y NO una bandera dentro de ClientApp a proposito: ahi
+ * vive toda la maquina de estados del pedido (tipo de orden, carrito, navegacion
+ * al checkout) y nada de eso aplica. Meterlo como `if` habria dejado ese estado
+ * colgando sin usar, que es justo donde se cuelan los bugs de "se puede pedir por
+ * un camino que nadie miro".
+ *
+ * Pide la sede igual que el flujo normal, y eso NO es friccion al balde: los
+ * productos y los precios se filtran por local, asi que sin elegirla el cliente
+ * podria estar leyendo una carta que no es la de donde esta sentado — y pedirle al
+ * mozo algo que ese local no vende.
+ */
+const MenuApp = () => {
+  const [sede, setSede] = useState(null);
+
+  if (!sede) return (
+    <div className="phone-shell">
+      <div className="scroll-area">
+        <SedeSelect onSelectSede={setSede} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="phone-shell">
+      <StatusBar sede={sede} />
+      <div className="scroll-area">
+        <Home
+          sede={sede}
+          soloLectura
+          // Vuelve a elegir sede en vez de ir al tipo de orden: es la unica
+          // navegacion que tiene sentido en una carta.
+          onNavigateBack={() => setSede(null)}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Entrada por QR: /mesa/:codigo → identifica la mesa y arranca en dine-in.
 const MesaApp = () => {
   const { codigo } = useParams();
@@ -210,6 +255,8 @@ export const App = () => {
         <CartProvider>
           <Routes>
             <Route path="/" element={<ClientApp />} />
+            {/* Carta de solo lectura: se lee y se pide en el local. */}
+            <Route path="/menu" element={<MenuApp />} />
             <Route path="/mesa/:codigo" element={<MesaApp />} />
             <Route path="/admin" element={<AdminApp />} />
             <Route path="*" element={<Navigate to="/" />} />

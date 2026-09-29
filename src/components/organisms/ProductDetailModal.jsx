@@ -17,6 +17,18 @@ export const ProductDetailModal = ({
   salsas = SIN_DATOS,
   categorias = SIN_DATOS,
   onClose,
+  /*
+   * `soloLectura`: la carta de /menu, donde el cliente lee y le pide al mozo.
+   *
+   * Se esconde TODO lo que es armar un pedido —salsas, preparación, tamaño,
+   * cantidad, comentarios y el botón de agregar— y queda lo que uno quiere saber
+   * de un plato antes de pedirlo: qué lleva y cuánto sale.
+   *
+   * Los precios de cada tamaño pasan a mostrarse como lista de lectura en vez de
+   * un desplegable para elegir: en una carta eso es justamente la información,
+   * no un paso del pedido.
+   */
+  soloLectura = false,
 }) => {
   const { addToCart } = useCart();
   const [salsasSeleccionadas, setSalsasSeleccionadas] = useState([]);
@@ -241,7 +253,39 @@ export const ProductDetailModal = ({
             )}
           </div>
 
-          {ofreceTamano && (
+          {/*
+            En la carta los precios por tamaño son INFORMACIÓN, no un paso del
+            pedido: van como lista de lectura y no como desplegable. Así el cliente
+            ve de una todo lo que puede pedirle al mozo, sin tener que abrir nada.
+          */}
+          {soloLectura && presentaciones.length > 0 && (
+            <ul className="detail-lista-precios">
+              {presentaciones.map((opcion) => (
+                <li key={opcion.tamano} className="detail-lista-precios__fila">
+                  <span>{opcion.tamano}</span>
+                  <span className="detail-lista-precios__precio">
+                    {formatPrice(opcion.precio)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Mismo criterio para los jugos: en agua y en leche con su precio. */}
+          {soloLectura && ofrecePreparacion && (
+            <ul className="detail-lista-precios">
+              {preparaciones.map((opcion) => (
+                <li key={opcion.etiqueta} className="detail-lista-precios__fila">
+                  <span>{opcion.etiqueta}</span>
+                  <span className="detail-lista-precios__precio">
+                    {formatPrice(opcion.precio)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {ofreceTamano && !soloLectura && (
             <div className="detail-section">
               <div className="detail-section__header">
                 <label className="detail-section__title" htmlFor="detail-tamano">
@@ -282,7 +326,7 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          {ofrecePreparacion && (
+          {ofrecePreparacion && !soloLectura && (
             <div className="detail-section">
               <div className="detail-section__header">
                 <span className="detail-section__title">¿Cómo lo preparamos?</span>
@@ -313,7 +357,7 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          {requiereSalsa && (
+          {requiereSalsa && !soloLectura && (
             <div className="detail-section">
               <div className="detail-section__header">
                 <span className="detail-section__title">Elegí tus salsas</span>
@@ -347,7 +391,7 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          {salsasEspeciales.length > 0 && (
+          {salsasEspeciales.length > 0 && !soloLectura && (
             <div className="detail-section">
               <div className="detail-section__header">
                 <span className="detail-section__title">Salsas especiales</span>
@@ -373,6 +417,9 @@ export const ProductDetailModal = ({
             </div>
           )}
 
+          {/* Los comentarios son para el pedido: en la carta no hay pedido al que
+              agregarlos. */}
+          {!soloLectura && (
           <div className="detail-section">
             <div className="detail-section__header">
               <span className="detail-section__title">Comentarios</span>
@@ -387,9 +434,25 @@ export const ProductDetailModal = ({
               rows={2}
             />
           </div>
+          )}
 
         </div>
 
+        {/*
+          En la carta el pie cambia por completo: no hay cantidad ni botón de
+          agregar, y en su lugar se le dice al cliente qué tiene que hacer.
+
+          Sin esa línea el modal termina en la nada y queda la duda de si falta
+          un botón que no cargó — es justo el momento en que hay que decirle "esto
+          se pide en el mostrador", no dejarlo adivinando.
+        */}
+        {soloLectura ? (
+          <div className="detail-footer">
+            <p className="detail-solo-lectura">
+              Para pedir este producto, mostrale la carta a quien te atiende.
+            </p>
+          </div>
+        ) : (
         <div className="detail-footer">
           {cantidad > 1 && llevaSalsas && (
             <p className="detail-hint">
@@ -434,6 +497,7 @@ export const ProductDetailModal = ({
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

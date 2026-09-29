@@ -27,6 +27,17 @@ export const Home = ({
   onNavigateBack,
   mesa = null,
   sede = null,
+  /*
+   * `soloLectura`: la carta de /menu. El cliente lee y le pide al restaurante.
+   *
+   * Se apagan las tres puertas al carrito: el botón "Agregar" de cada tarjeta, la
+   * barra flotante del carrito, y el carrusel de promos — ese último porque su
+   * botón es "Pedir esta promo", que acá no lleva a ninguna parte, y porque abrirse
+   * solo tapando la carta es lo contrario de dejar leer tranquilo.
+   *
+   * Las promos siguen visibles en la grilla y en su filtro: son parte de la carta.
+   */
+  soloLectura = false,
 }) => {
   const { cartItems, addToCart, getItemCount } = useCart();
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -98,7 +109,12 @@ export const Home = ({
 
       {onNavigateBack && (
         <div className="home__back">
-          <BackButton onClick={onNavigateBack} label="Cambiar tipo de orden" />
+          {/* En la carta no hay tipo de orden que cambiar: lo único que se puede
+              volver a elegir es el local. */}
+          <BackButton
+            onClick={onNavigateBack}
+            label={soloLectura ? 'Cambiar de sede' : 'Cambiar tipo de orden'}
+          />
         </div>
       )}
 
@@ -130,6 +146,7 @@ export const Home = ({
             <ProductGrid
               products={filteredProducts}
               onProductClick={setSelectedProduct}
+              soloLectura={soloLectura}
             />
           )}
 
@@ -137,7 +154,7 @@ export const Home = ({
           <div className="home__products-spacer"></div>
         </div>
 
-        {getItemCount() > 0 && (
+        {!soloLectura && getItemCount() > 0 && (
           <CartBar
             itemCount={getItemCount()}
             total={cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)}
@@ -153,10 +170,11 @@ export const Home = ({
           salsas={salsas}
           categorias={allCategorias}
           onClose={() => setSelectedProduct(null)}
+          soloLectura={soloLectura}
         />
       )}
 
-      {hayPromos && !promoCerrada && (
+      {hayPromos && !promoCerrada && !soloLectura && (
         <PromocionesCarouselModal
           promociones={promociones}
           onClose={() => setPromoCerrada(true)}

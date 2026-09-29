@@ -1,7 +1,7 @@
 import './ProductGrid.css';
 import { ProductGridCard } from '../molecules/ProductGridCard';
 
-export const ProductGrid = ({ products, onProductClick }) => {
+export const ProductGrid = ({ products, onProductClick, soloLectura = false }) => {
   return (
     <div className="product-grid">
       {products.map((product) => (
@@ -9,6 +9,7 @@ export const ProductGrid = ({ products, onProductClick }) => {
           key={product._id || product.id}
           product={product}
           onProductClick={onProductClick}
+          soloLectura={soloLectura}
         />
       ))}
     </div>

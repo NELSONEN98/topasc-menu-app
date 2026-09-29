@@ -361,6 +361,48 @@
   gap: 0.5rem;
 }
 
+/* ============================================================
+   CARTA DE SOLO LECTURA (/menu) — los precios se leen, no se eligen
+   ============================================================ */
+
+/*
+  Lista de tamaños con su precio, estilo carta de restaurante: el nombre a la
+  izquierda, el precio a la derecha, con el espacio en medio. Es la forma en que
+  se lee una carta en papel, y acá el cliente no elige — lee para pedirle al mozo.
+*/
+.detail-lista-precios {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border-top: 1px solid #F0EAE2;
+}
+
+.detail-lista-precios__fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #F0EAE2;
+  font: 500 0.875rem 'Inter', sans-serif;
+  color: #241C15;
+}
+
+.detail-lista-precios__precio {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Cierra el modal diciendo qué hacer, en vez de terminar en la nada donde antes
+   estaba el botón de agregar. */
+.detail-solo-lectura {
+  margin: 0;
+  text-align: center;
+  font: 500 0.8125rem 'Inter', sans-serif;
+  color: #666;
+  line-height: 1.45;
+}
+
 /*
   Desplegable de tamaño. Toma prestado el borde y el radio de los chips para que
   no se lea como un control de otra app.

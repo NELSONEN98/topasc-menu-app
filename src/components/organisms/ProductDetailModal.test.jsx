@@ -15,7 +15,7 @@ const SALSAS = [
   { _id: 's2', nombre: 'Salsa Rosada', tipo: 'base', precio: 0 },
 ];
 
-const abrir = (product) =>
+const abrir = (product, props = {}) =>
   render(
     <CartProvider>
       <ProductDetailModal
@@ -23,6 +23,7 @@ const abrir = (product) =>
         salsas={SALSAS}
         categorias={CATEGORIAS}
         onClose={() => {}}
+        {...props}
       />
     </CartProvider>
   );
@@ -285,5 +286,104 @@ describe('ProductDetailModal — preparación del jugo', () => {
 
     expect(screen.queryByText(/Cómo lo preparamos/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Agregar/ })).toBeEnabled();
+  });
+});
+
+describe('ProductDetailModal — carta de solo lectura (/menu)', () => {
+  const SALCHI = {
+    _id: 'item_salchi',
+    nombre: 'Salchipapa Sencilla',
+    categoriaId: 'cat_comida',
+    precio: 18000,
+    descripcion: 'Papa francesa con salchicha',
+    ingredientes: ['Papa', 'Salchicha', 'Queso'],
+    llevaSalsas: true,
+  };
+
+  const POSTOBON = {
+    _id: 'item_gaseosa',
+    nombre: 'Postobón Manzana',
+    categoriaId: 'cat_gaseosa',
+    precio: 2500,
+    sabor: 'Manzana',
+    presentaciones: [
+      { tamano: '250 ml', precio: 2500 },
+      { tamano: '1.5 lt', precio: 7000 },
+    ],
+  };
+
+  const leer = (product) => abrir(product, { soloLectura: true });
+
+  test('NO hay ninguna forma de agregar al carrito', () => {
+    // Es el contrato de la vista: el cliente lee y le pide al mozo. Un solo botón
+    // que agregue rompe todo el sentido de /menu.
+    leer(SALCHI);
+
+    expect(screen.queryByRole('button', { name: /Agregar/ })).not.toBeInTheDocument();
+  });
+
+  test('tampoco pide salsas ni comentarios', () => {
+    // Son pasos de un pedido que acá no existe.
+    leer(SALCHI);
+
+    expect(screen.queryByText(/Elegí tus salsas/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Comentarios/)).not.toBeInTheDocument();
+  });
+
+  test('no hay selector de cantidad', () => {
+    leer(SALCHI);
+
+    expect(screen.queryByRole('button', { name: /Aumentar cantidad/ })).not.toBeInTheDocument();
+  });
+
+  test('SÍ muestra lo que uno quiere leer de un plato', () => {
+    // Si escondiera esto, la carta no serviría para nada: el cliente abre el
+    // detalle justamente para saber qué lleva.
+    leer(SALCHI);
+
+    expect(screen.getByText(/Papa francesa con salchicha/)).toBeInTheDocument();
+    expect(screen.getByText('Queso')).toBeInTheDocument();
+  });
+
+  test('dice qué hacer para pedir', () => {
+    // Sin esta línea el modal termina en la nada donde antes estaba el botón, y
+    // queda la duda de si falta algo que no cargó.
+    leer(SALCHI);
+
+    expect(screen.getByText(/mostrale la carta a quien te atiende/i)).toBeInTheDocument();
+  });
+
+  test('los tamaños se LEEN con su precio, no se eligen', () => {
+    // En una carta los precios por tamaño son la información, no un paso del
+    // pedido: van como lista y no como desplegable.
+    leer(POSTOBON);
+
+    expect(screen.queryByLabelText(/Qué tamaño/)).not.toBeInTheDocument();
+    expect(screen.getByText('250 ml')).toBeInTheDocument();
+    expect(screen.getByText('1.5 lt')).toBeInTheDocument();
+    expect(screen.getByText(/7\.000/)).toBeInTheDocument();
+  });
+
+  test('los jugos muestran el precio en agua y en leche', () => {
+    leer({
+      _id: 'item_jugo',
+      nombre: 'Jugo de Mango',
+      categoriaId: 'cat_bebidas',
+      precio: 7000,
+      precioConLeche: 10000,
+    });
+
+    expect(screen.queryByRole('button', { name: /En leche/ })).not.toBeInTheDocument();
+    expect(screen.getByText('En agua')).toBeInTheDocument();
+    expect(screen.getByText('En leche')).toBeInTheDocument();
+    expect(screen.getByText(/10\.000/)).toBeInTheDocument();
+  });
+
+  test('el modo normal sigue intacto', () => {
+    // El otro lado del contrato: esto no puede haber apagado el pedido real.
+    abrir(POSTOBON);
+
+    expect(screen.getByLabelText(/Qué tamaño/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeInTheDocument();
   });
 });
