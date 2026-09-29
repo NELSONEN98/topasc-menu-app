@@ -124,6 +124,44 @@ export const ponerPrecioConLeche = internalMutation({
  * mitad de camino, lo ya migrado queda migrado y se sigue desde ahi.
  * ========================================================================== */
 
+/**
+ * Convierte un data URI base64 en un Blob.
+ *
+ * A mano y NO con `fetch(dataUri)`, que fue el primer intento y fallo en los 50
+ * productos de produccion con:
+ *
+ *   Unsupported URL scheme -- http and https are supported (scheme was data)
+ *
+ * El `fetch` del runtime de Convex solo habla http y https. En el navegador
+ * `fetch` de un `data:` funciona, y en Node tambien — por eso un test con
+ * convexTest lo habria dejado pasar igual. Esta clase de bug (una API que existe
+ * en un runtime y no en el otro) no la agarra el test: la agarra leer la doc de
+ * APIs soportadas, que lista `atob` y `btoa` como disponibles.
+ */
+const dataUriABlob = (dataUri: string): Blob => {
+  const coma = dataUri.indexOf(",");
+  if (coma === -1) throw new Error("El data URI no tiene coma separadora");
+
+  const cabecera = dataUri.slice(0, coma);
+  const cuerpo = dataUri.slice(coma + 1);
+
+  if (!cabecera.includes("base64")) {
+    throw new Error(`Solo se soporta base64, llego "${cabecera}"`);
+  }
+
+  // El tipo se conserva para que el archivo se sirva con su Content-Type: sin eso
+  // el navegador puede ofrecer descargar la foto en vez de mostrarla.
+  const tipo = /^data:([^;,]+)/.exec(cabecera)?.[1] ?? "application/octet-stream";
+
+  const binario = atob(cuerpo);
+  const bytes = new Uint8Array(binario.length);
+  for (let i = 0; i < binario.length; i += 1) {
+    bytes[i] = binario.charCodeAt(i);
+  }
+
+  return new Blob([bytes], { type: tipo });
+};
+
 /** Items que todavia tienen la foto como base64 dentro del documento. */
 export const fotosPendientes = internalQuery({
   args: { limite: v.optional(v.number()) },
@@ -154,9 +192,11 @@ export const asentarFoto = internalMutation({
 
 export const migrarFotosAStorage = internalAction({
   args: { tanda: v.optional(v.number()) },
-  handler: async (ctx, { tanda = 10 }) => {
+  handler: async (ctx, { tanda = 50 }) => {
     const migrados: string[] = [];
-    const fallados: { nombre: string; motivo: string }[] = [];
+    // Map y no array, indexado por id: un item que falla sigue apareciendo como
+    // pendiente en la vuelta siguiente, y con un array quedaria anotado dos veces.
+    const fallados = new Map<string, { nombre: string; motivo: string }>();
 
     // Se vuelve a pedir la lista en cada vuelta y no se recorre una sola tanda:
     // asi el corte por "todavia tiene base64" se reevalua contra el estado real y
@@ -165,36 +205,51 @@ export const migrarFotosAStorage = internalAction({
       const pendientes: { id: Id<"items">; nombre: string; base64: string }[] =
         await ctx.runQuery(internal.migraciones.fotosPendientes, { limite: tanda });
 
-      if (pendientes.length === 0) break;
+      // Los que ya fallaron no se reintentan: el motivo es el dato, no la
+      // conexion, asi que volver a probar da el mismo error y gasta I/O al balde.
+      const porHacer = pendientes.filter((item) => !fallados.has(item.id));
+      if (porHacer.length === 0) break;
 
-      for (const item of pendientes) {
+      let migradosEnEstaVuelta = 0;
+
+      for (const item of porHacer) {
         try {
-          // El data URI se convierte a Blob con fetch, que sabe leerlos. Es mas
-          // corto y mas seguro que partir la cadena y decodificar a mano.
-          const blob = await (await fetch(item.base64)).blob();
-          const storageId = await ctx.storage.store(blob);
+          const storageId = await ctx.storage.store(dataUriABlob(item.base64));
 
           await ctx.runMutation(internal.migraciones.asentarFoto, {
             id: item.id,
             storageId,
           });
           migrados.push(item.nombre);
+          migradosEnEstaVuelta += 1;
         } catch (error) {
-          // Un item con el base64 cortado no puede frenar a los otros 43: se
+          // Un item con el base64 cortado no puede frenar a los otros 49: se
           // anota y se sigue. Si no, un solo dato malo deja la migracion a medias
           // sin decir cual fue.
-          fallados.push({
+          fallados.set(item.id, {
             nombre: item.nombre,
             motivo: error instanceof Error ? error.message : String(error),
           });
         }
       }
 
-      // Si toda la tanda fallo, seguir es un bucle infinito: los mismos items
-      // volverian a salir como pendientes para siempre.
-      if (migrados.length === 0 && fallados.length >= pendientes.length) break;
+      /*
+       * El corte mira SOLO esta vuelta, no el acumulado. La primera version
+       * chequeaba `migrados.length === 0` —el total— y eso era un bucle infinito:
+       * con un producto bueno y uno roto, el bueno migraba, el total dejaba de ser
+       * 0 para siempre, y el roto volvia a salir como pendiente en cada vuelta.
+       *
+       * Con el filtro de `porHacer` de arriba ya no haria falta, pero queda como
+       * segundo candado: una action en bucle quema I/O hasta el timeout, que es
+       * justo el recurso que esta migracion viene a ahorrar.
+       */
+      if (migradosEnEstaVuelta === 0) break;
     }
 
-    return { migrados: migrados.length, detalle: migrados, fallados };
+    return {
+      migrados: migrados.length,
+      detalle: migrados,
+      fallados: [...fallados.values()],
+    };
   },
 });
