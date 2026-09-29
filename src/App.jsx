@@ -1,5 +1,13 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { CartProvider } from './context/CartContext';
@@ -30,6 +38,7 @@ import './styles/global.css';
 // arregla asignandole la sede desde la pestana Mesas del panel.
 const ClientApp = ({ mesa = null }) => {
   const { clearCart } = useCart();
+  const navegar = useNavigate();
   const lockedToTable = !!mesa;
   const [showSplash, setSplash] = useState(!lockedToTable);
   const [currentPage, setCurrentPage] = useState(
@@ -67,6 +76,18 @@ const ClientApp = ({ mesa = null }) => {
         ) : currentPage === 'order-type' ? (
           <OrderType
             onSelectType={handleSelectType}
+            /*
+             * La sede viaja en la URL porque /menu es otra ruta y el estado de
+             * este componente no la cruza. Sin eso el cliente tendria que elegir
+             * el local dos veces seguidas, habiendolo elegido en la pantalla
+             * anterior.
+             *
+             * De paso queda el link por local para un QR impreso:
+             * /menu?sede=<id> entra directo a la carta de esa sede.
+             */
+            onVerMenu={() =>
+              navegar(sede ? `/menu?sede=${sede._id}` : '/menu')
+            }
             sede={sede}
             onChangeSede={() => setCurrentPage('sede-select')}
           />
@@ -111,7 +132,41 @@ const ClientApp = ({ mesa = null }) => {
  * mozo algo que ese local no vende.
  */
 const MenuApp = () => {
+  const [parametros] = useSearchParams();
+  const sedeDeUrl = parametros.get('sede');
+  // Se piden aca y no solo dentro de SedeSelect para poder resolver `?sede=`.
+  // Convex deduplica las queries iguales, asi que no es una consulta extra.
+  const sedes = useQuery(api.sedes.listar);
   const [sede, setSede] = useState(null);
+  const yaHidratado = useRef(false);
+
+  /*
+   * La sede de la URL se copia al estado UNA sola vez, y despues el estado es la
+   * unica fuente de verdad.
+   *
+   * El ref es lo que permite que "Cambiar de sede" funcione: sin el, poner la sede
+   * en null volveria a leer el parametro de la URL y la carta se quedaria clavada
+   * en el mismo local — un boton que no hace nada. Mismo patron que ProductModal
+   * usa para no pisar lo que el usuario esta escribiendo.
+   */
+  useEffect(() => {
+    if (yaHidratado.current || !sedeDeUrl || sedes === undefined) return;
+
+    // Un id invalido (QR viejo, sede borrada) cae al selector en vez de dejar la
+    // pantalla vacia sin explicacion.
+    setSede(sedes.find((s) => s._id === sedeDeUrl) ?? null);
+    yaHidratado.current = true;
+  }, [sedeDeUrl, sedes]);
+
+  // Con `?sede=` se espera a que resuelvan las sedes antes de decidir: si no, el
+  // selector aparece un instante y salta solo, que se ve como un parpadeo roto.
+  if (sedeDeUrl && !yaHidratado.current) {
+    return (
+      <div className="phone-shell">
+        <Loader message="Abriendo la carta..." />
+      </div>
+    );
+  }
 
   if (!sede) return (
     <div className="phone-shell">

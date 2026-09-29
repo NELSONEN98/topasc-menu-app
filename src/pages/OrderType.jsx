@@ -25,26 +25,33 @@ const MenuIcon = () => (
   </svg>
 );
 
-export const OrderType = ({ onSelectType, sede = null, onChangeSede }) => {
-  // 'dine-in' ya no se elige acá: se entra automáticamente por el QR de la mesa
-  //
-  // El orden del array ES el orden en pantalla: "Menú" va primero porque es la
-  // opción que se elige casi siempre.
-  //
-  // El `id` sigue siendo 'pickup' y no se renombra junto con la etiqueta: viaja
-  // al pedido como `tipoPedido`, está en la unión del schema de Convex y es lo
-  // que el panel traduce con TIPO_LABEL. Cambiarlo dejaría los pedidos ya
-  // guardados con un tipo que la app no sabe leer. Lo que cambió es cómo se le
-  // presenta al cliente, no qué tipo de pedido es.
+export const OrderType = ({ onSelectType, onVerMenu, sede = null, onChangeSede }) => {
+  /*
+   * 'dine-in' no se elige aca: se entra por el QR de la mesa.
+   *
+   * 'pickup' tampoco se ofrece mas: la funcionalidad de RECOGER quedo CONGELADA,
+   * no borrada. Todo su codigo sigue vivo a proposito — el literal 'pickup' en la
+   * union del schema, "Recoger" en TIPO_LABEL, el PickupModal con su codigo de
+   * retiro, y la rama de pickup en Cart.jsx. Los pedidos que ya estan guardados
+   * con ese tipo tienen que seguir mostrandose en el panel, y descongelarlo tiene
+   * que ser volver a agregar una opcion a este array y nada mas.
+   *
+   * El orden del array ES el orden en pantalla: la carta va primero porque es la
+   * opcion que se elige casi siempre.
+   */
   const orderTypes = [
     {
-      id: 'pickup',
+      // `verMenu` y no un `id` de tipoPedido: esta opcion ya NO arranca un pedido,
+      // abre la carta de solo lectura en /menu. Marcarlo en los datos y no con un
+      // `if` sobre el id deja a la vista que son dos cosas distintas.
+      id: 'menu',
+      verMenu: true,
       label: 'Ver Menú',
       icon: MenuIcon,
-      // La descripción es la que ahora carga el significado: la etiqueta ya no
-      // dice "recoger", así que sin esto el cliente no sabría que lo tiene que
-      // ir a buscar al local.
-      description: 'Haz tu pedido desde la mesa o pide para llevar.',
+      // La descripcion cambio junto con el destino: antes prometia "haz tu pedido"
+      // y ahora lleva a una carta donde no se pide. Dejarla habria sido mentirle
+      // al cliente sobre lo que hace el boton.
+      description: 'Mirá la carta completa y pedí en el local.',
     },
     {
       id: 'delivery',
@@ -84,7 +91,11 @@ export const OrderType = ({ onSelectType, sede = null, onChangeSede }) => {
             <button
               key={type.id}
               className="order-type__btn"
-              onClick={() => onSelectType(type.id)}
+              // Dos destinos distintos: la carta abre /menu, el resto arranca un
+              // pedido. La navegación la resuelve quien nos monta (App.jsx), que
+              // es donde vive el router — así esta pantalla sigue solo juntando la
+              // elección, sin saber de rutas.
+              onClick={() => (type.verMenu ? onVerMenu?.() : onSelectType(type.id))}
               aria-label={type.label}
             >
               <div className="order-type__icon">

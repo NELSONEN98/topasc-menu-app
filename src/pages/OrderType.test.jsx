@@ -17,10 +17,13 @@ const { OrderType } = await import('./OrderType');
 
 const abrir = (props = {}) => {
   const onSelectType = vi.fn();
+  const onVerMenu = vi.fn();
 
-  const utils = render(<OrderType onSelectType={onSelectType} {...props} />);
+  const utils = render(
+    <OrderType onSelectType={onSelectType} onVerMenu={onVerMenu} {...props} />
+  );
 
-  return { ...utils, onSelectType };
+  return { ...utils, onSelectType, onVerMenu };
 };
 
 const opciones = () =>
@@ -51,29 +54,43 @@ describe('OrderType — orden de las opciones', () => {
   });
 });
 
-describe('OrderType — "Menú" sigue siendo un pedido para recoger', () => {
-  test('elegirlo manda el tipo pickup, no otro', async () => {
-    // El punto del test: cambió la etiqueta, NO el tipo de pedido. `pickup` viaja
-    // al pedido como `tipoPedido`, está en la unión del schema de Convex y es lo
-    // que el panel traduce para la cocina. Si alguien "completa" el renombre
-    // cambiando el id, los pedidos guardados quedan con un tipo que la app no
-    // sabe leer y el local no se entera de que hay que ir a buscarlo.
+describe('OrderType — "Ver Menú" abre la carta, NO arranca un pedido', () => {
+  test('elegirlo lleva a la carta y no crea ningún pedido', async () => {
+    // El cambio de fondo: antes esta opción arrancaba un pedido para recoger, y
+    // ahora abre /menu, que es de solo lectura. Si volviera a llamar a
+    // `onSelectType`, el cliente terminaría en el flujo de pedido con un tipo que
+    // hoy está congelado.
     const usuario = userEvent.setup();
-    const { onSelectType } = abrir();
+    const { onSelectType, onVerMenu } = abrir();
 
     await usuario.click(screen.getByRole('button', { name: /Menú/ }));
 
-    expect(onSelectType).toHaveBeenCalledWith('pickup');
+    expect(onVerMenu).toHaveBeenCalledTimes(1);
+    expect(onSelectType).not.toHaveBeenCalled();
   });
 
-  test('avisa que el pedido no se lo llevan a la casa', () => {
-    // La etiqueta dice "Ver Menú", que no habla de entrega: esta línea es lo
-    // único que le aclara al cliente que este pedido no es un domicilio. Si
-    // alguien la borra "porque es obvia", el cliente elige mal y el local
-    // termina con un pedido que nadie va a buscar.
+  test('"recoger" ya no se ofrece: está congelado', () => {
+    // Congelado, NO borrado: el literal 'pickup' sigue en el schema y el panel
+    // sigue mostrando los pedidos viejos que lo tienen. Lo único que se saca es la
+    // puerta de entrada. Si alguien lo vuelve a agregar acá sin querer, este test
+    // lo frena.
+    const usuario = userEvent.setup();
+    const { onSelectType } = abrir();
+
+    return Promise.all(
+      screen.getAllByRole('button').map((boton) => usuario.click(boton))
+    ).then(() => {
+      expect(onSelectType).not.toHaveBeenCalledWith('pickup');
+    });
+  });
+
+  test('la descripción dice que se pide en el local', () => {
+    // La etiqueta "Ver Menú" no habla de entrega: esta línea es lo único que le
+    // aclara al cliente que por acá no le llevan el pedido a la casa. Antes decía
+    // "haz tu pedido", que con la carta de solo lectura era mentira.
     abrir();
 
-    expect(screen.getByText(/pide para llevar/)).toBeInTheDocument();
+    expect(screen.getByText(/pedí en el local/)).toBeInTheDocument();
   });
 
   test('"Domicilio" sigue mandando delivery', async () => {
