@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -14,12 +15,16 @@ import {
 } from '@dnd-kit/sortable';
 
 import { SedeModal } from '../SedeModal';
+import { CartaQrModal } from '../CartaQrModal';
 import { SeccionHeader } from './SeccionHeader';
 import { SedeFilaSortable } from './SedeFilaSortable';
 import { useSedesAdmin } from '../../../hooks/useSedesAdmin';
 
 export const SedesSection = () => {
   const { sedes, productosPorSede, resumen, modal, acciones } = useSedesAdmin();
+  // Qué sede tiene el QR de la carta abierto. Vive acá y no en el hook porque es
+  // estado de pantalla, no del CRUD: mismo criterio que MesasSection con su QR.
+  const [sedeQr, setSedeQr] = useState(null);
 
   const sensores = useSensors(
     useSensor(PointerSensor, {
@@ -92,6 +97,7 @@ export const SedesSection = () => {
                     onEditar={modal.abrirEdicion}
                     onEliminar={acciones.eliminar}
                     onAlternarActivo={acciones.alternarActivo}
+                    onVerQr={setSedeQr}
                   />
                 ))}
               </SortableContext>
@@ -105,6 +111,12 @@ export const SedesSection = () => {
         onClose={modal.cerrar}
         sede={modal.editando}
         onSave={acciones.guardar}
+      />
+
+      <CartaQrModal
+        isOpen={sedeQr !== null}
+        onClose={() => setSedeQr(null)}
+        sede={sedeQr}
       />
     </div>
   );

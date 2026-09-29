@@ -50,6 +50,7 @@ export const SedeFilaSortable = ({
   onEditar,
   onEliminar,
   onAlternarActivo,
+  onVerQr,
 }) => {
   const {
     attributes,
@@ -129,6 +130,16 @@ export const SedeFilaSortable = ({
       </div>
 
       <div className="admin-table-actions">
+        {/* QR de la CARTA de este local, no de una mesa: abre /menu?sede=<id>, que
+            es la vista de solo lectura. Va acá y no en Mesas porque no pertenece a
+            ninguna mesa — se pega en la pared o en la barra del local. */}
+        <button
+          className="btn-qr"
+          onClick={() => onVerQr(sede)}
+          aria-label={`Ver el QR de la carta de ${sede.nombre}`}
+        >
+          <span className="btn-texto">QR carta</span>
+        </button>
         <button
           className="btn-edit"
           onClick={() => onEditar(sede)}
