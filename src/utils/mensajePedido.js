@@ -6,12 +6,14 @@
  * tamaño metido en un handler de 60 líneas no se puede testear, y lo que no se
  * testea se rompe cuando alguien agrega un campo.
  *
- * SOBRE LA NEGRITA: los títulos van con *asterisco*, que es la marca de negrita
- * de WhatsApp. Ojo con esto — WhatsApp Web/Desktop no siempre la interpreta
- * cuando el texto llega prellenado por un link wa.me en vez de tecleado a mano,
- * y ahí el asterisco queda literal. Ya pasó en este proyecto: por eso el formato
- * anterior usaba MAYÚSCULAS. Si vuelve a verse sin negrita, el cambio es acá y
- * en un solo lugar.
+ * SOBRE LA NEGRITA: los títulos van con *asterisco*, la marca de negrita de
+ * WhatsApp, y se VERIFICÓ con un pedido real que renderiza bien (2026-09-30).
+ *
+ * Vale la aclaración porque antes en este proyecto salió literal: por eso una
+ * versión intermedia del formato usaba MAYÚSCULAS en vez de asteriscos. Qué
+ * cambió no quedó claro —cliente, versión de WhatsApp, o que el problema de
+ * entonces fuera otro—, así que si algún día vuelve a verse sin negrita no hay
+ * que investigar de cero: el formato se cambia acá y en un solo lugar.
  */
 
 import { formatearTelefono } from './telefonoCliente';
