@@ -413,7 +413,30 @@ describe('ProductDetailModal — las salsas se MUESTRAN en la carta', () => {
     leerPlato();
 
     expect(screen.getByText(/Salsas a elección/)).toBeInTheDocument();
-    expect(screen.getByText(/Salsa Roja · Salsa Rosada · Salsa de Ajo/)).toBeInTheDocument();
+    expect(screen.getByText('Salsa Roja')).toBeInTheDocument();
+    expect(screen.getByText('Salsa Rosada')).toBeInTheDocument();
+    expect(screen.getByText('Salsa de Ajo')).toBeInTheDocument();
+  });
+
+  test('cada salsa va en su propia pastilla, no en una línea corrida', () => {
+    // Seis nombres pegados con "·" se leen como un solo pegote de texto y hay que
+    // ir despacio para separarlos. Una pastilla por salsa se cuenta de un vistazo.
+    leerPlato();
+
+    // `listitem` y no divs: es una lista de verdad, así un lector de pantalla la
+    // anuncia como tal en vez de leer un párrafo corrido.
+    const pastillas = screen.getAllByRole('listitem');
+    expect(pastillas.map((li) => li.textContent)).toEqual(
+      expect.arrayContaining(['Salsa Roja', 'Salsa Rosada', 'Salsa de Ajo'])
+    );
+  });
+
+  test('las pastillas NO son botones', () => {
+    // En la carta las salsas son información. Algo que parece tocable y no
+    // responde se lee como que la app está fallando.
+    leerPlato();
+
+    expect(screen.queryByRole('button', { name: 'Salsa Roja' })).not.toBeInTheDocument();
   });
 
   test('pero NO se pueden elegir', () => {

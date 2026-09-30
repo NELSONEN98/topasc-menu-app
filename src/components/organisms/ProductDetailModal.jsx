@@ -373,9 +373,27 @@ export const ProductDetailModal = ({
                 <span className="detail-section__badge">Incluidas</span>
               </div>
 
-              <p className="detail-salsas-lectura">
-                {salsasBase.map((salsa) => salsa.nombre).join(' · ')}
-              </p>
+              {/*
+                Una pastilla por salsa y no una linea de nombres separados por
+                puntos: seis nombres pegados con "·" se leen como un solo pegote de
+                texto y hay que ir despacio para separarlos. Cada salsa en su
+                pastilla se cuenta de un vistazo.
+
+                `ul` real y no `div`s: es una lista de verdad, y asi un lector de
+                pantalla la anuncia como "lista de 6 elementos" en vez de leer un
+                parrafo corrido.
+
+                Sin `button` ni `cursor: pointer`: en la carta las salsas son
+                informacion. Algo que parece tocable e no responde se lee como que
+                la app esta fallando.
+              */}
+              <ul className="detail-salsas-chips">
+                {salsasBase.map((salsa) => (
+                  <li key={salsa._id} className="detail-salsas-chip">
+                    {salsa.nombre}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
