@@ -269,3 +269,12 @@
     order: 3;
   }
 }
+
+/* "+ envío" al lado del total mientras la sede no esté elegida: el número que se
+   ve todavía no incluye el domicilio, y callarlo sería decir un precio y cobrar
+   otro. */
+.cart__summary-aviso {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #999;
+}

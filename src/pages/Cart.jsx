@@ -14,6 +14,7 @@ import { useCart } from '../context/CartContext';
 import { useNotificacion } from '../context/NotificacionContext';
 import { esCategoriaDeBebida } from '../utils/categorias';
 import { itemsVisibles } from '../utils/menu';
+import { sedesParaElPedido } from '../utils/sedesParaElPedido';
 import { armarMensajePedido } from '../utils/mensajePedido';
 import { DELIVERY_FEES, WHATSAPP_NUMBER } from '../config/settings';
 import './Cart.css';
@@ -88,12 +89,42 @@ export const Cart = ({
    * ni siquiera acertaba la clave (el objeto la tiene como `dineIn`) y caia al
    * `|| 0` de casualidad.
    */
+  /*
+   * La sede efectiva: la que vino de afuera (QR de mesa) o la que el cliente eligio
+   * en el modal de domicilio.
+   *
+   * En domicilio la sede se elige al FINAL, asi que hasta que confirme el modal no
+   * hay sede — y sin sede no hay costo de domicilio que mostrar.
+   */
+  const sedeEfectiva = sede ?? address?.sede ?? null;
+  const sedeSinDefinir = orderType === 'delivery' && !sedeEfectiva;
+
   const deliveryFee =
-    orderType === 'delivery'
-      ? sede?.costoDomicilio ?? DELIVERY_FEES.delivery
+    orderType === 'delivery' && sedeEfectiva
+      ? sedeEfectiva.costoDomicilio ?? DELIVERY_FEES.delivery
       : 0;
   const subtotal = getTotal();
   const total = subtotal + deliveryFee;
+
+  /*
+   * Que sedes pueden preparar lo que hay en el carrito.
+   *
+   * Hace falta porque la sede se elige al final: el cliente navega el menu completo
+   * y puede armar un carrito que un local no tiene. En produccion son 3 de 49
+   * productos, pero bastan para que un pedido llegue al WhatsApp de una sede que no
+   * lo puede preparar.
+   *
+   * `itemsCompletos` pide el menu SIN sede a proposito: es de ahi que sale el
+   * `sedeIds` de cada producto, y filtrado por sede no se podria comparar contra
+   * las otras.
+   */
+  const sedesTodas = useQuery(api.sedes.listar) ?? SIN_DATOS;
+  const itemsCompletos = useQuery(api.items.listarMenu, {}) ?? SIN_DATOS;
+
+  const sedesPosibles = useMemo(
+    () => sedesParaElPedido(sedesTodas, cartItems, itemsCompletos),
+    [sedesTodas, cartItems, itemsCompletos]
+  );
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
@@ -166,10 +197,12 @@ export const Cart = ({
     crearPedido({
       tipoPedido: orderType,
       total,
-      // Sin sede (pedido por QR) los dos van undefined y Convex los omite: el
-      // pedido queda guardado igual, solo que sin local asociado.
-      sedeId: sede?._id,
-      sedeNombre: sede?.nombre,
+      // `sedeEfectiva` y no `sede`: en domicilio la sede sale del modal, no de la
+      // pantalla de entrada. Sin ella (pedido por QR sin sede) los dos van
+      // undefined y Convex los omite — el pedido queda guardado igual, solo que
+      // sin local asociado.
+      sedeId: sedeEfectiva?._id,
+      sedeNombre: sedeEfectiva?.nombre,
       costoDomicilio: orderType === 'delivery' ? deliveryFee : undefined,
       // Ya no salen solo de `pickup`: domicilio también los pide, y sin esto el
       // panel mostraba los pedidos a domicilio sin nombre ni forma de llamar.
@@ -194,7 +227,8 @@ export const Cart = ({
       orderType,
       items: cartItems,
       cliente,
-      sede,
+      // La sede elegida: es la que el encabezado del mensaje tiene que nombrar.
+      sede: sedeEfectiva,
       address,
       pickup,
       mesaNumero: mesaNumeroFinal,
@@ -205,9 +239,16 @@ export const Cart = ({
       formatearPrecio: formatPrice,
     });
 
-    // sede?.whatsapp: numero propio del local elegido. Sin sede (pedido por
-    // QR, ver la nota en App.jsx) cae al numero de pruebas de settings.js.
-    const numeroWhatsapp = sede?.whatsapp || WHATSAPP_NUMBER;
+    /*
+     * El WhatsApp de la sede ELEGIDA. Es la línea más importante de todo esto: de
+     * acá depende a qué local le llega el pedido, y las tres sedes tienen números
+     * distintos. Mandarlo al que no es significa que un local prepara algo que no
+     * le pidieron y el otro nunca se enteró.
+     *
+     * Sin sede (pedido por QR sin sede asignada, ver la nota en App.jsx) cae al
+     * número de respaldo de settings.js.
+     */
+    const numeroWhatsapp = sedeEfectiva?.whatsapp || WHATSAPP_NUMBER;
     const whatsappUrl = `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(message)}`;
 
     setShowConfirmation(false);
@@ -293,15 +334,31 @@ export const Cart = ({
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {/*
+              Mientras la sede no esté elegida NO se muestra un número de envío.
+
+              El costo cambia entre sedes —una es gratis y dos cobran $2.000— así
+              que mostrar el de respaldo y después cambiarlo sería decirle un precio
+              y cobrarle otro. Preferible decir que falta un dato.
+            */}
             {orderType === 'delivery' && (
               <div className="cart__summary-row">
                 <span>Envío</span>
-                <span>{deliveryFee === 0 ? 'Gratis' : formatPrice(deliveryFee)}</span>
+                <span>
+                  {sedeSinDefinir
+                    ? 'Según la sede'
+                    : deliveryFee === 0
+                      ? 'Gratis'
+                      : formatPrice(deliveryFee)}
+                </span>
               </div>
             )}
             <div className="cart__summary-row cart__summary-row--total">
               <span>Total</span>
-              <span>{formatPrice(total)}</span>
+              <span>
+                {formatPrice(total)}
+                {sedeSinDefinir && <span className="cart__summary-aviso"> + envío</span>}
+              </span>
             </div>
           </div>
 
@@ -337,6 +394,7 @@ export const Cart = ({
         <AddressModal
           onConfirm={handleAddressConfirm}
           onCancel={() => setShowAddressModal(false)}
+          sedesPosibles={sedesPosibles}
         />
       )}
 

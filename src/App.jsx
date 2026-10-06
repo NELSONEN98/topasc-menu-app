@@ -42,16 +42,25 @@ const ClientApp = ({ mesa = null }) => {
   const navegar = useNavigate();
   const lockedToTable = !!mesa;
   const [showSplash, setSplash] = useState(!lockedToTable);
+  /*
+   * Arranca en el tipo de orden, NO en elegir sede.
+   *
+   * La pantalla de sede al entrar ya no hace falta y era un paso de mas para todos:
+   *   - "Ver Menu" lleva a /menu, que pide la sede ahi (o la trae en la ruta).
+   *   - Domicilio la pide en el modal de direccion, al final, que es lo que se
+   *     pidio: el cliente arma el pedido y recien despues dice de donde quiere que
+   *     se lo manden.
+   *   - A dine-in se entra por el QR de la mesa, que ya trae su sede.
+   *
+   * Asi que ninguna rama necesita la sede antes de ver el menu. El menu se muestra
+   * COMPLETO —`listarMenu` sin sede devuelve todo— y el checkout avisa si alguna
+   * sede no puede preparar lo que el cliente armo.
+   */
   const [currentPage, setCurrentPage] = useState(
-    lockedToTable ? 'home' : 'sede-select'
+    lockedToTable ? 'home' : 'order-type'
   );
   const [sede, setSede] = useState(mesa?.sede ?? null);
   const [orderType, setOrderType] = useState(lockedToTable ? 'dine-in' : null);
-
-  const handleSelectSede = (sedeElegida) => {
-    setSede(sedeElegida);
-    setCurrentPage('order-type');
-  };
 
   const handleSelectType = (type) => {
     clearCart();
@@ -72,25 +81,20 @@ const ClientApp = ({ mesa = null }) => {
     <div className="phone-shell">
       <StatusBar sede={sede} />
       <div className="scroll-area">
-        {currentPage === 'sede-select' ? (
-          <SedeSelect onSelectSede={handleSelectSede} />
-        ) : currentPage === 'order-type' ? (
+        {currentPage === 'order-type' ? (
           <OrderType
             onSelectType={handleSelectType}
             /*
-             * La sede viaja en la URL porque /menu es otra ruta y el estado de
-             * este componente no la cruza. Sin eso el cliente tendria que elegir
-             * el local dos veces seguidas, habiendolo elegido en la pantalla
-             * anterior.
+             * Sin sede va a /menu pelado, que la pide ahi. Con sede (entrada por el
+             * QR de una mesa) va directo a la carta de ese local.
              *
-             * De paso queda el link por local para un QR impreso:
-             * /menu?sede=<id> entra directo a la carta de esa sede.
+             * Ya no se elige la sede antes de esta pantalla: la pide quien la
+             * necesita, cuando la necesita.
              */
             onVerMenu={() =>
               navegar(sede ? `/menu/${slugDeSede(sede)}` : '/menu')
             }
             sede={sede}
-            onChangeSede={() => setCurrentPage('sede-select')}
           />
         ) : currentPage === 'home' ? (
           <Home

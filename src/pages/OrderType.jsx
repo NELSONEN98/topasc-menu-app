@@ -65,18 +65,26 @@ export const OrderType = ({ onSelectType, onVerMenu, sede = null, onChangeSede }
     <div className="order-type">
       <Hero />
 
+      {/* El banner solo aparece cuando YA hay una sede: hoy eso pasa únicamente al
+          entrar por el QR de una mesa. En el flujo normal la sede se elige al
+          final, en el modal de domicilio, así que acá no hay nada que mostrar. */}
       {sede && (
         <div className="order-type__sede-banner">
           <span>
             Pides desde: <strong>{sede.nombre}</strong>
           </span>
-          <button
-            type="button"
-            className="order-type__sede-change"
-            onClick={onChangeSede}
-          >
-            Cambiar
-          </button>
+          {/* El botón solo si hay a dónde volver. Con la sede clavada por el QR de
+              la mesa no se puede cambiar, y un botón que no hace nada se lee como
+              que la app está fallando. */}
+          {onChangeSede && (
+            <button
+              type="button"
+              className="order-type__sede-change"
+              onClick={onChangeSede}
+            >
+              Cambiar
+            </button>
+          )}
         </div>
       )}
 

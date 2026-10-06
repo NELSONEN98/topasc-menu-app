@@ -98,3 +98,83 @@
   font: 500 0.75rem 'Inter', sans-serif;
   color: #666;
 }
+
+/* ============================================================
+   DE QUE SEDE SALE EL PEDIDO — se elige en el checkout, no al entrar
+   ============================================================ */
+.sede-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sede-pedido__titulo {
+  font: 700 0.8125rem 'Poppins', sans-serif;
+  color: #241C15;
+}
+
+/*
+  Tarjeta y no un radio suelto: 44px de alto minimo porque se toca con el pulgar
+  en el celular, que es desde donde entran casi todos los pedidos.
+*/
+.sede-pedido__opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1.5px solid #E0D5C7;
+  border-radius: 0.75rem;
+  background: #FFF;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sede-pedido__opcion:has(input:checked) {
+  border-color: #E11E2B;
+  background: #FFF8F8;
+}
+
+/*
+  La sede que no puede atender el carrito se APAGA pero se sigue viendo: el
+  cliente entiende por que no le sirve, en vez de mirar una lista mas corta sin
+  explicacion. Si se escondiera y quedara una sola, pareceria que la app fallo.
+*/
+.sede-pedido__opcion.is-no-puede {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #FAFAF8;
+}
+
+.sede-pedido__opcion input {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.125rem 0 0;
+  accent-color: #E11E2B;
+  cursor: inherit;
+}
+
+.sede-pedido__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  text-align: left;
+}
+
+.sede-pedido__texto strong {
+  font: 600 0.875rem 'Inter', sans-serif;
+  color: #241C15;
+}
+
+.sede-pedido__texto small {
+  font: 500 0.75rem 'Inter', sans-serif;
+  color: #666;
+}
+
+/* En rojo porque es el motivo por el que esa opcion no esta disponible, no un
+   dato mas. */
+.sede-pedido__falta {
+  color: #C0392B !important;
+}
