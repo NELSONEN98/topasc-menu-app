@@ -161,3 +161,285 @@ describe("migrarFotosAStorage", () => {
     expect(resultado.fallados).toHaveLength(1);
   });
 });
+
+describe("consolidarPorCantidad", () => {
+  const sembrarAlitas = async (t: ReturnType<typeof convexTest>) =>
+    await t.run(async (ctx) => {
+      const destino = await ctx.db.insert("categorias", {
+        nombre: "ALITAS",
+        orden: 16,
+        activo: true,
+        variantes: { etiqueta: "¿Cuántas?", opciones: ["6", "9", "12", "24", "36"] },
+      });
+      const bbq = await ctx.db.insert("categorias", {
+        nombre: "ALITAS BBQ",
+        orden: 7,
+        activo: true,
+      });
+      const miel = await ctx.db.insert("categorias", {
+        nombre: "ALITAS MIEL MOSTAZA",
+        orden: 8,
+        activo: true,
+      });
+
+      const foto = await ctx.storage.store(new Blob(["foto"]));
+
+      for (const [nombre, precio, cat] of [
+        ["Alitas BBQ x6", 22000, bbq],
+        ["Alitas BBQ x12", 39000, bbq],
+        ["Alitas BBQ x36", 95000, bbq],
+        ["Alitas Miel Mostaza x6", 25000, miel],
+        ["Alitas Miel Mostaza x12", 42000, miel],
+      ] as const) {
+        await ctx.db.insert("items", {
+          categoriaId: cat as any,
+          nombre,
+          precio: precio as number,
+          disponible: true,
+          activo: true,
+          llevaSalsas: true,
+          imagenStorageId: foto,
+        });
+      }
+
+      return { destino, bbq, miel };
+    });
+
+  test("por defecto SIMULA y no toca nada", async () => {
+    // Esto borra productos de produccion: el primer intento no puede ser el real.
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+
+    const r = await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq, miel],
+    });
+
+    expect(r.simulacion).toBe(true);
+    expect(r.plan).toHaveLength(2);
+
+    const items = await t.run(async (ctx) => ctx.db.query("items").collect());
+    expect(items).toHaveLength(5); // nada se movio
+  });
+
+  test("agrupa por sabor y arma las presentaciones con los precios cargados", async () => {
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+
+    const r = await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq, miel],
+      confirmar: true,
+    });
+
+    expect(r.creados.sort()).toEqual(["Alitas BBQ", "Alitas Miel Mostaza"]);
+    expect(r.borrados).toBe(5);
+
+    const items = await t.run(async (ctx) => ctx.db.query("items").collect());
+    expect(items).toHaveLength(2);
+
+    const bbqNuevo = items.find((i) => i.nombre === "Alitas BBQ");
+    expect(bbqNuevo?.presentaciones).toEqual([
+      { tamano: "6", precio: 22000 },
+      { tamano: "12", precio: 39000 },
+      { tamano: "36", precio: 95000 },
+    ]);
+    // El precio de arriba es el "desde" de la tarjeta: el mas barato.
+    expect(bbqNuevo?.precio).toBe(22000);
+    expect(bbqNuevo?.categoriaId).toBe(destino);
+  });
+
+  test("el producto nuevo hereda la foto y no queda sin imagen", async () => {
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+
+    await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq, miel],
+      confirmar: true,
+    });
+
+    const items = await t.run(async (ctx) => ctx.db.query("items").collect());
+    for (const item of items) {
+      expect(item.imagenStorageId).toBeTruthy();
+    }
+
+    // Y la foto que heredo sigue EXISTIENDO: si se hubiera borrado junto con los
+    // productos viejos, las tarjetas quedarian sin imagen.
+    const archivos = await t.run(async (ctx) =>
+      (await ctx.db.system.query("_storage").collect()).map((f) => f._id)
+    );
+    expect(archivos).toContain(items[0].imagenStorageId);
+  });
+
+  test("borra las categorias origen cuando quedan vacias", async () => {
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+
+    const r = await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq, miel],
+      confirmar: true,
+    });
+
+    expect(r.categoriasBorradas.sort()).toEqual(["ALITAS BBQ", "ALITAS MIEL MOSTAZA"]);
+    const cats = await t.run(async (ctx) => ctx.db.query("categorias").collect());
+    expect(cats.map((c) => c.nombre)).toEqual(["ALITAS"]);
+  });
+
+  test("CONSERVA la categoria si quedo algo que no entraba en ninguna familia", async () => {
+    // Si no, un producto que alguien dejo ahi se perderia con la categoria.
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+    await t.run(async (ctx) =>
+      ctx.db.insert("items", {
+        categoriaId: bbq,
+        nombre: "Alitas BBQ x6",
+        precio: 22000,
+        disponible: true,
+        activo: false, // inactivo: igual sigue siendo una fila de la tabla
+      })
+    );
+
+    const r = await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq, miel],
+      confirmar: true,
+    });
+
+    // El x6 inactivo tambien entra en la familia, asi que la categoria igual queda
+    // vacia. Lo que importa es que el conteo cierre y nada quede huerfano.
+    expect(r.borrados).toBe(6);
+  });
+
+  test("CORTA si un producto no termina en una cantidad", async () => {
+    // Seguir dejaria la familia a medias: unos consolidados y otros sueltos.
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+    await t.run(async (ctx) =>
+      ctx.db.insert("items", {
+        categoriaId: bbq,
+        nombre: "Alitas con papas",
+        precio: 30000,
+        disponible: true,
+        activo: true,
+      })
+    );
+
+    await expect(
+      t.mutation(internal.migraciones.consolidarPorCantidad, {
+        destinoId: destino,
+        origenIds: [bbq, miel],
+        confirmar: true,
+      })
+    ).rejects.toThrow(/no termina en una cantidad/);
+  });
+
+  test("CORTA si la cantidad no esta en las variantes de la categoria", async () => {
+    const t = convexTest(schema, modules);
+    const { destino, bbq, miel } = await sembrarAlitas(t);
+    await t.run(async (ctx) =>
+      ctx.db.insert("items", {
+        categoriaId: bbq,
+        nombre: "Alitas BBQ x18",
+        precio: 50000,
+        disponible: true,
+        activo: true,
+      })
+    );
+
+    await expect(
+      t.mutation(internal.migraciones.consolidarPorCantidad, {
+        destinoId: destino,
+        origenIds: [bbq, miel],
+        confirmar: true,
+      })
+    ).rejects.toThrow(/no esta en las variantes/);
+  });
+
+  test("CORTA si la categoria destino no tiene variantes", async () => {
+    // Sin variantes, el formulario no muestra las filas y el cliente no puede
+    // elegir: los productos quedarian con presentaciones invisibles.
+    const t = convexTest(schema, modules);
+    const { bbq, miel } = await sembrarAlitas(t);
+    const sinVariantes = await t.run(async (ctx) =>
+      ctx.db.insert("categorias", { nombre: "PELADA", orden: 20, activo: true })
+    );
+
+    await expect(
+      t.mutation(internal.migraciones.consolidarPorCantidad, {
+        destinoId: sinVariantes,
+        origenIds: [bbq, miel],
+        confirmar: true,
+      })
+    ).rejects.toThrow(/no tiene variantes configuradas/);
+  });
+});
+
+describe("consolidarPorCantidad — fotos compartidas (regresion)", () => {
+  test("dos productos con la MISMA foto no la borran dos veces", async () => {
+    /*
+     * EL BUG: la version original borraba la foto al procesar cada producto. Con
+     * los 5 productos del test compartiendo un archivo, el primero lo borraba y el
+     * segundo tiraba "Delete on non-existent doc" — y si no hubiera tirado, le
+     * habria dejado la tarjeta sin imagen al producto que seguia usandolo.
+     *
+     * En produccion cada alita tenia su propia foto, asi que no se habria notado
+     * hasta que alguien reusara una.
+     */
+    const t = convexTest(schema, modules);
+
+    const { destino, bbq } = await t.run(async (ctx) => {
+      const destino = await ctx.db.insert("categorias", {
+        nombre: "ALITAS",
+        orden: 1,
+        activo: true,
+        variantes: { etiqueta: "¿Cuántas?", opciones: ["6", "12"] },
+      });
+      const bbq = await ctx.db.insert("categorias", {
+        nombre: "ALITAS BBQ",
+        orden: 2,
+        activo: true,
+      });
+
+      // UNA sola foto para los dos productos.
+      const compartida = await ctx.db.system ? await ctx.storage.store(new Blob(["x"])) : null;
+
+      for (const [nombre, precio] of [
+        ["Alitas BBQ x6", 22000],
+        ["Alitas BBQ x12", 39000],
+      ] as const) {
+        await ctx.db.insert("items", {
+          categoriaId: bbq,
+          nombre,
+          precio: precio as number,
+          disponible: true,
+          activo: true,
+          imagenStorageId: compartida!,
+        });
+      }
+
+      return { destino, bbq };
+    });
+
+    const r = await t.mutation(internal.migraciones.consolidarPorCantidad, {
+      destinoId: destino,
+      origenIds: [bbq],
+      confirmar: true,
+    });
+
+    expect(r.borrados).toBe(2);
+    // No se borro ninguna foto: la unica que habia la heredo el producto nuevo.
+    expect(r.fotosBorradas).toBe(0);
+
+    const items = await t.run(async (ctx) => ctx.db.query("items").collect());
+    expect(items).toHaveLength(1);
+    expect(items[0].imagenStorageId).toBeTruthy();
+
+    // Y el archivo sigue existiendo, o la tarjeta quedaria sin imagen.
+    const archivos = await t.run(async (ctx) =>
+      (await ctx.db.system.query("_storage").collect()).length
+    );
+    expect(archivos).toBe(1);
+  });
+});

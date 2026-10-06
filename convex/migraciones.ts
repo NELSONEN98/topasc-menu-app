@@ -253,3 +253,212 @@ export const migrarFotosAStorage = internalAction({
     };
   },
 });
+
+/* ============================================================================
+ * Consolida los productos de una familia que estan cargados uno por variante.
+ *
+ * El caso: las alitas estaban como 10 productos — "Alitas BBQ x6", "x9", "x12",
+ * "x24", "x36" y lo mismo en Miel Mostaza — repartidos en dos categorias. Son 2
+ * productos con 5 precios cada uno. El cliente veia 5 tarjetas que solo se
+ * diferenciaban en el numero.
+ *
+ * Agrupa por el nombre SIN el sufijo de cantidad, arma `presentaciones` con los
+ * precios que ya estaban cargados, y borra los productos viejos.
+ *
+ * CORRER PRIMERO EN SIMULACION (es el default):
+ *   npx convex run migraciones:consolidarPorCantidad --prod '{"destinoId":"...","origenIds":["...","..."]}'
+ *
+ * Y recien despues, en serio:
+ *   ... '{"destinoId":"...","origenIds":[...],"confirmar":true}'
+ *
+ * Los ids van EXPLICITOS y no se buscan por nombre: borrar productos de
+ * produccion a partir de un match de texto es exactamente como se borra lo que no
+ * se queria borrar.
+ * ========================================================================== */
+
+// "Alitas BBQ x12" -> { base: "Alitas BBQ", cantidad: "12" }
+const SUFIJO_CANTIDAD = /^(.*?)\s*x\s*(\d+)\s*$/i;
+
+export const consolidarPorCantidad = internalMutation({
+  args: {
+    destinoId: v.id("categorias"),
+    origenIds: v.array(v.id("categorias")),
+    confirmar: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { destinoId, origenIds, confirmar = false }) => {
+    const destino = await ctx.db.get(destinoId);
+    if (!destino) throw new Error("La categoria destino no existe");
+    if (!destino.variantes?.opciones?.length) {
+      // Sin variantes en la categoria, el formulario no muestra las filas de
+      // precio y el cliente no puede elegir: los productos quedarian con
+      // `presentaciones` cargadas pero invisibles.
+      throw new Error(
+        `"${destino.nombre}" no tiene variantes configuradas: cargalas primero en el panel`
+      );
+    }
+
+    const todos = await ctx.db.query("items").collect();
+    const origen = todos.filter((item) => origenIds.includes(item.categoriaId));
+
+    if (origen.length === 0) throw new Error("Las categorias origen no tienen productos");
+
+    // Se agrupa por el nombre sin el sufijo. Si un producto NO tiene sufijo de
+    // cantidad se corta todo: seguir dejaria la familia a medias, con unos
+    // productos consolidados y otros sueltos, y nadie sabria cual es cual.
+    const familias = new Map<string, { cantidad: string; item: (typeof origen)[0] }[]>();
+    for (const item of origen) {
+      const match = SUFIJO_CANTIDAD.exec(item.nombre.trim());
+      if (!match) {
+        throw new Error(
+          `"${item.nombre}" no termina en una cantidad (x6, x12...): no se puede agrupar`
+        );
+      }
+
+      const [, base, cantidad] = match;
+      if (!destino.variantes.opciones.includes(cantidad)) {
+        throw new Error(
+          `"${item.nombre}" usa la cantidad ${cantidad}, que no esta en las variantes de "${destino.nombre}"`
+        );
+      }
+
+      const familia = familias.get(base) ?? [];
+      familia.push({ cantidad, item });
+      familias.set(base, familia);
+    }
+
+    const plan: {
+      nuevo: string;
+      presentaciones: { tamano: string; precio: number }[];
+      borra: string[];
+    }[] = [];
+
+    for (const [base, miembros] of familias) {
+      // Ordenado por precio: es el orden que ve el cliente, y de menor a mayor es
+      // como se lee un precio que sube.
+      const ordenados = [...miembros].sort((a, b) => a.item.precio - b.item.precio);
+
+      plan.push({
+        nuevo: base,
+        presentaciones: ordenados.map((m) => ({
+          tamano: m.cantidad,
+          precio: m.item.precio,
+        })),
+        borra: ordenados.map((m) => m.item.nombre),
+      });
+    }
+
+    // En simulacion se devuelve el plan y NO se toca nada. Es el default a
+    // proposito: esto borra productos de produccion.
+    if (!confirmar) {
+      return {
+        simulacion: true,
+        destino: destino.nombre,
+        plan,
+        aviso: "Nada se modifico. Volve a correrlo con \"confirmar\": true",
+      };
+    }
+
+    const creados: string[] = [];
+    const borrados: string[] = [];
+    // Las fotos de los productos que se borran, y las que NO se pueden tocar
+    // porque un producto nuevo las heredo. Ver la nota de mas abajo.
+    const fotosCandidatas = new Set<Id<"_storage">>();
+    const fotosEnUso = new Set<Id<"_storage">>();
+
+    for (const [base, miembros] of familias) {
+      const ordenados = [...miembros].sort((a, b) => a.item.precio - b.item.precio);
+      // El mas barato es el modelo: de ahi salen la foto, la descripcion, las
+      // sedes y el resto. Es deterministico, que importa mas que cual se elija.
+      const modelo = ordenados[0].item;
+
+      await ctx.db.insert("items", {
+        categoriaId: destinoId,
+        nombre: base,
+        descripcion: modelo.descripcion,
+        ingredientes: modelo.ingredientes,
+        // El precio de arriba es el "desde $X" de la tarjeta: el mas barato.
+        precio: ordenados[0].item.precio,
+        presentaciones: ordenados.map((m) => ({
+          tamano: m.cantidad,
+          precio: m.item.precio,
+        })),
+        // La foto del modelo se REUSA, no se copia: el producto nuevo apunta al
+        // mismo archivo. Por eso mas abajo se borra la de los otros y no esta.
+        imagenUrl: modelo.imagenUrl,
+        imagenStorageId: modelo.imagenStorageId,
+        llevaSalsas: modelo.llevaSalsas,
+        sedeIds: modelo.sedeIds,
+        disponible: modelo.disponible,
+        activo: true,
+      });
+      creados.push(base);
+
+      // La foto del modelo la hereda el producto nuevo: no se puede borrar.
+      if (modelo.imagenStorageId) fotosEnUso.add(modelo.imagenStorageId);
+
+      for (const { item } of ordenados) {
+        if (item.imagenStorageId) fotosCandidatas.add(item.imagenStorageId);
+        await ctx.db.delete(item._id);
+        borrados.push(item.nombre);
+      }
+    }
+
+    /*
+     * Las fotos se borran al final y de a UNA, no mientras se borran los
+     * productos.
+     *
+     * Dos razones, y las dos se descubrieron con un test:
+     *   - Dos productos pueden compartir el mismo archivo. Borrarlo al procesar el
+     *     primero rompe la imagen del segundo, o tira "Delete on non-existent doc"
+     *     al intentar borrarlo de nuevo. El Set lo deja en una sola vez.
+     *   - Una foto que quedo heredada por un producto NUEVO, o que todavia usa
+     *     algun producto que no entro en esta consolidacion, no se puede tocar.
+     *     Por eso se chequea contra lo que quedo vivo en la base, y no contra lo
+     *     que esta migracion cree saber.
+     */
+    const vivos = await ctx.db.query("items").collect();
+    const referenciadas = new Set(
+      vivos.map((item) => item.imagenStorageId).filter(Boolean)
+    );
+
+    let fotosBorradas = 0;
+    for (const foto of fotosCandidatas) {
+      if (fotosEnUso.has(foto) || referenciadas.has(foto)) continue;
+
+      await ctx.storage.delete(foto);
+      fotosBorradas += 1;
+    }
+
+    // Las categorias origen se borran solo si quedaron VACIAS. Si alguien dejo
+    // ahi un producto que no entraba en ninguna familia, la categoria sobrevive
+    // con el adentro en vez de perderse.
+    const categoriasBorradas: string[] = [];
+    const categoriasConservadas: { nombre: string; quedan: number }[] = [];
+
+    for (const origenId of origenIds) {
+      const quedan = (await ctx.db.query("items").collect()).filter(
+        (item) => item.categoriaId === origenId
+      );
+      const categoria = await ctx.db.get(origenId);
+      if (!categoria) continue;
+
+      if (quedan.length === 0) {
+        await ctx.db.delete(origenId);
+        categoriasBorradas.push(categoria.nombre);
+      } else {
+        categoriasConservadas.push({ nombre: categoria.nombre, quedan: quedan.length });
+      }
+    }
+
+    return {
+      simulacion: false,
+      destino: destino.nombre,
+      creados,
+      borrados: borrados.length,
+      detalleBorrados: borrados,
+      fotosBorradas,
+      categoriasBorradas,
+      categoriasConservadas,
+    };
+  },
+});
