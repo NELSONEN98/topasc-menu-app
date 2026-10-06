@@ -29,7 +29,7 @@ export const CartaQrModal = ({ isOpen, onClose, sede = null }) => {
     setTarjeta(null);
     setError('');
 
-    pngCarta({ sedeNombre: sede?.nombre ?? null, sedeId: sede?._id ?? null })
+    pngCarta({ sede })
       .then((dataUrl) => {
         if (!cancelado) setTarjeta(dataUrl);
       })
@@ -41,11 +41,14 @@ export const CartaQrModal = ({ isOpen, onClose, sede = null }) => {
     return () => {
       cancelado = true;
     };
-  }, [isOpen, sede?._id, sede?.nombre]);
+    // `sede?.slug` va en las dependencias: si el admin le cambia la dirección a la
+    // sede, la tarjeta tiene que redibujarse con el QR nuevo. Sin eso seguiría
+    // mostrando —y descargando— un QR que apunta a la URL vieja.
+  }, [isOpen, sede?._id, sede?.nombre, sede?.slug]);
 
   if (!isOpen) return null;
 
-  const url = urlDeCarta(sede?._id ?? null);
+  const url = urlDeCarta(sede);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -102,7 +105,7 @@ export const CartaQrModal = ({ isOpen, onClose, sede = null }) => {
               onClick={() =>
                 descargar(
                   tarjeta,
-                  nombreArchivoCarta({ sedeNombre: sede?.nombre ?? null })
+                  nombreArchivoCarta({ sede })
                 )
               }
             >

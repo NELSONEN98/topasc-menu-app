@@ -23,6 +23,7 @@ import { AdminPanel } from './pages/AdminPanel';
 import { Authenticated, Unauthenticated, AuthLoading } from 'convex/react';
 import { SignIn, useClerk } from '@clerk/react';
 import { useCart } from './context/CartContext';
+import { sedePorSlug, slugDeSede } from './utils/sedeSlug';
 import './styles/global.css';
 
 // mesa: cuando viene por QR, el pedido queda "clavado" a esa mesa —
@@ -86,7 +87,7 @@ const ClientApp = ({ mesa = null }) => {
              * /menu?sede=<id> entra directo a la carta de esa sede.
              */
             onVerMenu={() =>
-              navegar(sede ? `/menu?sede=${sede._id}` : '/menu')
+              navegar(sede ? `/menu/${slugDeSede(sede)}` : '/menu')
             }
             sede={sede}
             onChangeSede={() => setCurrentPage('sede-select')}
@@ -133,7 +134,13 @@ const ClientApp = ({ mesa = null }) => {
  */
 const MenuApp = () => {
   const [parametros] = useSearchParams();
-  const sedeDeUrl = parametros.get('sede');
+  // `/menu/:slug` es la forma linda y compartible: /menu/sede-dalia.
+  //
+  // `?sede=<id>` se sigue aceptando y no es legacy muerto: es el fallback para
+  // una sede cuyo slug no resuelve, y lo usan los links que ya circulen. Los dos
+  // caminos terminan en el mismo estado.
+  const { slug } = useParams();
+  const sedeDeUrl = slug ?? parametros.get('sede');
   // Se piden aca y no solo dentro de SedeSelect para poder resolver `?sede=`.
   // Convex deduplica las queries iguales, asi que no es una consulta extra.
   const sedes = useQuery(api.sedes.listar);
@@ -152,9 +159,16 @@ const MenuApp = () => {
   useEffect(() => {
     if (yaHidratado.current || !sedeDeUrl || sedes === undefined) return;
 
-    // Un id invalido (QR viejo, sede borrada) cae al selector en vez de dejar la
-    // pantalla vacia sin explicacion.
-    setSede(sedes.find((s) => s._id === sedeDeUrl) ?? null);
+    // Se prueban las dos formas: primero el slug (la ruta linda) y despues el id
+    // crudo del `?sede=`. Un slug o id invalido —QR viejo, sede borrada, sede
+    // renombrada por alguien que no sabia— cae al selector en vez de dejar la
+    // pantalla vacia sin explicacion. Un QR roto molesta; una pantalla en blanco
+    // hace que el cliente crea que el local no existe.
+    setSede(
+      sedePorSlug(sedes, sedeDeUrl) ??
+        sedes.find((s) => s._id === sedeDeUrl) ??
+        null
+    );
     yaHidratado.current = true;
   }, [sedeDeUrl, sedes]);
 
@@ -310,8 +324,11 @@ export const App = () => {
         <CartProvider>
           <Routes>
             <Route path="/" element={<ClientApp />} />
-            {/* Carta de solo lectura: se lee y se pide en el local. */}
+            {/* Carta de solo lectura: se lee y se pide en el local.
+                /menu          -> pide elegir la sede
+                /menu/:slug    -> la carta de ESA sede, lista para compartir */}
             <Route path="/menu" element={<MenuApp />} />
+            <Route path="/menu/:slug" element={<MenuApp />} />
             <Route path="/mesa/:codigo" element={<MesaApp />} />
             <Route path="/admin" element={<AdminApp />} />
             <Route path="*" element={<Navigate to="/" />} />

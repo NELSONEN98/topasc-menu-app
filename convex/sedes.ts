@@ -101,6 +101,49 @@ const nombreRepetido = async (ctx: any, nombre: string, ignorarId?: string) => {
 };
 
 /*
+ * El slug de la carta (/menu/<slug>) no se puede repetir: dos sedes con el mismo
+ * slug dejan a UNA de las dos inalcanzable, y cual gana depende del orden en que
+ * vuelvan de la base. En un QR ya impreso eso es una ruleta.
+ *
+ * Se compara contra el slug EFECTIVO —el guardado o el nombre slugificado— porque
+ * una sede sin slug propio igual ocupa esa URL por su nombre. Si solo se mirara el
+ * campo, se podria guardar "sede-dalia" a mano en una sede mientras otra llamada
+ * "Sede Dalia" ya responde en esa misma direccion.
+ *
+ * `aSlug` esta duplicado de src/utils/qrMesa.js por el mismo motivo que
+ * `normalizarWhatsapp`: Convex bundlea solo la carpeta convex/ y no hay forma de
+ * compartir el modulo.
+ */
+const aSlug = (texto: string) =>
+  String(texto)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const slugEfectivo = (sede: any) => (sede.slug?.trim() || aSlug(sede.nombre ?? ""));
+
+const FORMATO_SLUG = /^[a-z0-9-]+$/;
+
+const validarSlug = async (ctx: any, slug: string, ignorarId?: string) => {
+  if (!FORMATO_SLUG.test(slug) || slug.startsWith("-") || slug.endsWith("-")) {
+    throw new Error(
+      `"${slug}" no sirve como direccion: solo minusculas, numeros y guiones`
+    );
+  }
+
+  const todas = await ctx.db.query("sedes").collect();
+  const choca = todas.some(
+    (sede: any) => sede._id !== ignorarId && slugEfectivo(sede) === slug
+  );
+
+  if (choca) {
+    throw new Error(`Ya hay una sede en la direccion /menu/${slug}`);
+  }
+};
+
+/*
  * wa.me solo acepta digitos y exige el numero internacional COMPLETO. Un numero
  * con +, espacios o guiones arma un link roto; uno sin codigo de pais arma un
  * link que no rutea a nadie. Las dos cosas fallan en silencio: la sede se
@@ -166,6 +209,7 @@ export const crear = mutation({
     direccion: v.optional(v.string()),
     whatsapp: v.string(),
     costoDomicilio: v.optional(v.number()),
+    slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requerirAdmin(ctx);
@@ -180,6 +224,12 @@ export const crear = mutation({
       throw new Error(`Ya existe una sede llamada "${nombre}"`);
     }
 
+    // Sin slug a mano se deriva del nombre: la sede nace con su URL funcionando
+    // y despues se puede ajustar. Si se dejara vacio, la carta de esa sede no
+    // tendria direccion hasta que alguien la edite.
+    const slug = args.slug?.trim() || aSlug(nombre);
+    await validarSlug(ctx, slug);
+
     validarCostoDomicilio(args.costoDomicilio);
 
     // Va ultimo porque lanza solo: el chequeo de vacio que estaba aca abajo
@@ -188,6 +238,7 @@ export const crear = mutation({
 
     return await ctx.db.insert("sedes", {
       nombre,
+      slug,
       whatsapp,
       costoDomicilio: args.costoDomicilio,
       // Si viene vacia se guarda ausente y no como "": el schema la declara
@@ -218,6 +269,7 @@ export const actualizar = mutation({
        */
       costoDomicilio: v.optional(v.union(v.number(), v.null())),
       activo: v.optional(v.boolean()),
+      slug: v.optional(v.string()),
     }),
   },
   handler: async (ctx, { id, campos }) => {
@@ -237,10 +289,35 @@ export const actualizar = mutation({
         throw new Error(`Ya existe una sede llamada "${nombre}"`);
       }
       parche.nombre = nombre;
+
+      /*
+       * Renombrar NO cambia el slug, y eso es justamente el punto de guardarlo.
+       *
+       * Pero una sede que todavia no tiene slug propio lo esta tomando del
+       * nombre, asi que renombrarla le cambiaria la URL por debajo. Se le fija
+       * el slug viejo antes de cambiarle el nombre: la carta sigue respondiendo
+       * en la direccion que ya se repartio.
+       */
+      const actual = await ctx.db.get(id);
+      if (actual && !actual.slug?.trim() && campos.slug === undefined) {
+        parche.slug = aSlug(actual.nombre);
+      }
     }
 
     if (campos.whatsapp !== undefined) {
       parche.whatsapp = normalizarWhatsapp(campos.whatsapp);
+    }
+
+    // El slug se valida y se guarda SIEMPRE que llegue, incluso vacio: vaciarlo
+    // en el formulario significa "volve a derivarlo del nombre", y para eso hay
+    // que recalcularlo, no borrar el campo (sin campo la sede queda tomando el
+    // nombre nuevo, que es lo que esto justamente evita).
+    if (campos.slug !== undefined) {
+      const slug = campos.slug.trim() || aSlug(String(parche.nombre ?? campos.nombre ?? ""));
+      const definitivo = slug || aSlug((await ctx.db.get(id))?.nombre ?? "");
+
+      await validarSlug(ctx, definitivo, id);
+      parche.slug = definitivo;
     }
 
     // Vaciar el campo de direccion en el formulario tiene que BORRAR la

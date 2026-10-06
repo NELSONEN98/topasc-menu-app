@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { numeroDeInput } from '../../utils/numeroDeInput';
 import { normalizarWhatsapp } from '../../utils/whatsapp';
+import { slugDeSede, errorDeSlug } from '../../utils/sedeSlug';
 import '../styles/ProductModal.css';
 
 export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
@@ -10,12 +11,17 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
     whatsapp: '',
     costoDomicilio: '',
     activo: true,
+    slug: '',
   });
 
   useEffect(() => {
     if (sede) {
       setFormData({
         nombre: sede.nombre || '',
+        // El slug EFECTIVO y no el campo crudo: una sede sin slug guardado hoy
+        // responde por su nombre, y mostrar el campo vacío haría creer que no
+        // tiene dirección. Mismo criterio que los flags de CategoriaModal.
+        slug: slugDeSede(sede),
         // `direccion` es optional en el schema: una sede puede no tenerla.
         direccion: sede.direccion || '',
         whatsapp: sede.whatsapp || '',
@@ -31,6 +37,9 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
         whatsapp: '',
         costoDomicilio: '',
         activo: true,
+        // Vacío en el alta: el servidor lo deriva del nombre. Así el admin no
+        // tiene que inventar una dirección antes de saber cómo se llama la sede.
+        slug: '',
       });
     }
     // Mismo criterio que ProductModal y CategoriaModal: solo al abrir o al
@@ -90,6 +99,36 @@ export const SedeModal = ({ isOpen, onClose, sede, onSave }) => {
               cada pedido.
             </small>
           </div>
+
+          {/* Solo al EDITAR: en el alta el servidor lo deriva del nombre, y pedirlo
+              antes de que la sede exista es pedirle al admin que invente una URL
+              para algo que todavía no nombró. */}
+          {sede && (
+            <div className="form-group">
+              <label htmlFor="sede-slug">Dirección de la carta</label>
+              <div className="input-con-prefijo">
+                <span className="input-prefijo" aria-hidden="true">/menu/</span>
+                <input
+                  id="sede-slug"
+                  type="text"
+                  name="slug"
+                  value={formData.slug}
+                  onChange={handleChange}
+                  placeholder="sede-morichal"
+                />
+              </div>
+              {errorDeSlug(formData.slug) ? (
+                <small className="form-error">{errorDeSlug(formData.slug)}</small>
+              ) : (
+                <small className="form-ayuda">
+                  El link que se comparte y al que apunta el QR de esta carta.{' '}
+                  <strong>No cambia solo al renombrar la sede</strong>, justamente para
+                  que los QR ya impresos sigan funcionando. Si lo cambiás acá, los
+                  stickers viejos dejan de servir.
+                </small>
+              )}
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="sede-direccion">Dirección</label>

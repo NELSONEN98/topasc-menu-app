@@ -1,5 +1,6 @@
 import { QR_BASE_URL } from '../config/settings';
 import { qrDataUrl, aSlug, descargar } from './qrMesa';
+import { slugDeSede } from './sedeSlug';
 
 /*
  * QR de la CARTA de solo lectura (/menu), uno por sede.
@@ -21,15 +22,24 @@ import { qrDataUrl, aSlug, descargar } from './qrMesa';
 const BASE = QR_BASE_URL.trim().replace(/\/+$/, '');
 
 /**
- * La sede va en la URL y no se pregunta al abrir: un QR pegado en la pared de un
- * local ya sabe en que local esta. Preguntarle la sede a quien acaba de escanear
- * un sticker DE ese local es pedirle un dato que el sticker ya tiene.
+ * La sede va en la RUTA y no en un query param: /menu/sede-dalia.
+ *
+ * Es para compartir. Un `/menu?sede=j57x8k2m...` con el id de Convex adentro no se
+ * puede dictar por telefono, no se entiende al verlo, y pegado en una bio de
+ * Instagram parece un link roto. El slug se lee, se escribe a mano y se recuerda.
+ *
+ * Recibe la SEDE y no el slug suelto para que quien llama no tenga que acordarse
+ * de derivarlo: el slug efectivo lo resuelve `slugDeSede` (campo guardado, o el
+ * nombre como respaldo).
  *
  * Sin sede se cae a /menu pelado, que muestra el selector. Es el caso del QR
- * "generico" para redes o una tarjeta de contacto, donde no hay un local implicito.
+ * "generico" para redes o una tarjeta, donde no hay un local implicito.
  */
-export const urlDeCarta = (sedeId) =>
-  sedeId ? `${BASE}/menu?sede=${sedeId}` : `${BASE}/menu`;
+export const urlDeCarta = (sede) => {
+  const slug = sede ? slugDeSede(sede) : '';
+
+  return slug ? `${BASE}/menu/${slug}` : `${BASE}/menu`;
+};
 
 const LIENZO = { ancho: 1000, alto: 1320 };
 const QR_PX = 800;
@@ -41,8 +51,8 @@ const QR_PX = 800;
  * mismo formato y se pegan juntas. Si una saliera mas grande, no se podrian
  * mandar a imprimir en la misma tanda.
  */
-export const pngCarta = async ({ sedeNombre = null, sedeId = null } = {}) => {
-  const url = urlDeCarta(sedeId);
+export const pngCarta = async ({ sede = null } = {}) => {
+  const url = urlDeCarta(sede);
 
   const imagen = await new Promise((resolve, reject) => {
     const img = new Image();
@@ -69,7 +79,7 @@ export const pngCarta = async ({ sedeNombre = null, sedeId = null } = {}) => {
   // sticker es de un local o de todos.
   ctx.fillStyle = '#E11E2B';
   ctx.font = 'bold 46px Arial, Helvetica, sans-serif';
-  ctx.fillText(sedeNombre || 'Todas las sedes', 500, 92);
+  ctx.fillText(sede?.nombre || 'Todas las sedes', 500, 92);
 
   ctx.fillStyle = '#241C15';
   ctx.font = 'bold 76px Arial, Helvetica, sans-serif';
@@ -92,7 +102,9 @@ export const pngCarta = async ({ sedeNombre = null, sedeId = null } = {}) => {
 };
 
 /** El PNG se manda suelto por WhatsApp: el nombre del archivo es todo el contexto. */
-export const nombreArchivoCarta = ({ sedeNombre = null } = {}) =>
-  `carta-${aSlug(sedeNombre || 'todas-las-sedes')}.png`;
+export const nombreArchivoCarta = ({ sede = null } = {}) =>
+  // El slug y no el nombre: asi el archivo se llama igual que la URL a la que
+  // apunta, y es trivial ver que sticker corresponde a que link.
+  `carta-${sede ? slugDeSede(sede) : 'todas-las-sedes'}.png`;
 
 export { descargar };

@@ -12,12 +12,22 @@ import { QR_BASE_URL } from '../config/settings';
 
 const BASE = QR_BASE_URL.trim().replace(/\/+$/, '');
 
+const DALIA = { _id: 'sede_dalia', nombre: 'Sede Dalia', slug: 'dalia' };
+const MORICHAL = { _id: 'sede_morichal', nombre: 'Sede Morichal' }; // sin slug propio
+
 describe('urlDeCarta', () => {
-  test('con sede entra directo a la carta de ese local', () => {
-    // Es el punto del QR por sede: un sticker pegado en la pared de un local ya
-    // sabe en qué local está. Preguntarle la sede a quien acaba de escanearlo es
-    // pedirle un dato que el sticker ya tiene.
-    expect(urlDeCarta('sede_dalia')).toBe(`${BASE}/menu?sede=sede_dalia`);
+  test('la sede va en la RUTA, no en un query param', () => {
+    // Es lo que hace el link compartible: un "/menu?sede=j57x8k2m..." con el id de
+    // Convex adentro no se puede dictar por teléfono, no se entiende al verlo, y
+    // pegado en una bio de Instagram parece un link roto.
+    expect(urlDeCarta(DALIA)).toBe(`${BASE}/menu/dalia`);
+    expect(urlDeCarta(DALIA)).not.toContain('?');
+  });
+
+  test('una sede sin slug propio usa su nombre', () => {
+    // Las que ya están en producción no tienen el campo: su QR tiene que funcionar
+    // igual desde el día uno.
+    expect(urlDeCarta(MORICHAL)).toBe(`${BASE}/menu/sede-morichal`);
   });
 
   test('sin sede cae al menú pelado, que muestra el selector', () => {
@@ -30,40 +40,39 @@ describe('urlDeCarta', () => {
     // Una barra de más hace "//menu", que no matchea la ruta de React Router y cae
     // en el catch-all. En un QR ya impreso eso no se arregla — es el mismo cuidado
     // que se tuvo con el QR de mesa.
-    expect(urlDeCarta('sede_x')).not.toContain('//menu');
+    expect(urlDeCarta(DALIA)).not.toContain('//menu');
     expect(urlDeCarta(null)).not.toContain('//menu');
   });
 
   test('apunta a /menu y no a la app de pedido', () => {
     // Si apuntara a "/" el cliente caería en el flujo de pedido, que es justo lo
     // que este QR viene a evitar.
-    expect(urlDeCarta('sede_x')).toMatch(/\/menu(\?|$)/);
+    expect(urlDeCarta(DALIA)).toMatch(/\/menu\//);
   });
 });
 
 describe('nombreArchivoCarta', () => {
-  test('lleva el nombre de la sede, sin tildes ni espacios', () => {
-    // El PNG se manda suelto por WhatsApp: del otro lado el nombre del archivo es
-    // todo el contexto que llega.
-    expect(nombreArchivoCarta({ sedeNombre: 'Sede Dalia' })).toBe('carta-sede-dalia.png');
+  test('el archivo se llama igual que la URL a la que apunta', () => {
+    // Es lo que hace trivial ver qué sticker corresponde a qué link. El PNG se
+    // manda suelto por WhatsApp: del otro lado el nombre del archivo es todo el
+    // contexto que llega.
+    expect(nombreArchivoCarta({ sede: DALIA })).toBe('carta-dalia.png');
   });
 
-  test('normaliza acentos', () => {
-    expect(nombreArchivoCarta({ sedeNombre: 'Sede Morichál' })).toBe(
-      'carta-sede-morichal.png'
-    );
+  test('una sede sin slug propio usa su nombre normalizado', () => {
+    expect(nombreArchivoCarta({ sede: MORICHAL })).toBe('carta-sede-morichal.png');
   });
 
   test('sin sede se distingue igual', () => {
     // Un archivo llamado "carta-.png" no le dice nada a nadie.
     expect(nombreArchivoCarta()).toBe('carta-todas-las-sedes.png');
-    expect(nombreArchivoCarta({ sedeNombre: null })).toBe('carta-todas-las-sedes.png');
+    expect(nombreArchivoCarta({ sede: null })).toBe('carta-todas-las-sedes.png');
   });
 
   test('se distingue del QR de mesa por el nombre', () => {
     // Los dos PNG se mandan por el mismo WhatsApp: si se llamaran parecido, se
     // termina pegando el de pedir donde iba el de leer.
-    expect(nombreArchivoCarta({ sedeNombre: 'Sede Dalia' })).toContain('carta-');
-    expect(nombreArchivoCarta({ sedeNombre: 'Sede Dalia' })).not.toContain('mesa');
+    expect(nombreArchivoCarta({ sede: DALIA })).toContain('carta-');
+    expect(nombreArchivoCarta({ sede: DALIA })).not.toContain('mesa');
   });
 });

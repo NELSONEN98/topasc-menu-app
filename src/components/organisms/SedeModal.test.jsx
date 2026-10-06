@@ -18,7 +18,7 @@ describe('SedeModal — alta', () => {
     abrir();
 
     expect(screen.getByLabelText(/Nombre/)).toHaveValue('');
-    expect(screen.getByLabelText(/Dirección/)).toHaveValue('');
+    expect(screen.getByLabelText('Dirección')).toHaveValue('');
     expect(screen.getByLabelText(/WhatsApp/)).toHaveValue('');
   });
 
@@ -35,7 +35,7 @@ describe('SedeModal — alta', () => {
     const { onSave } = abrir();
 
     await usuario.type(screen.getByLabelText(/Nombre/), 'Sede Morichal');
-    await usuario.type(screen.getByLabelText(/Dirección/), 'Calle 1 # 2-3');
+    await usuario.type(screen.getByLabelText('Dirección'), 'Calle 1 # 2-3');
     await usuario.type(screen.getByLabelText(/WhatsApp/), '573206873870');
     await usuario.click(screen.getByRole('button', { name: /Agregar sede/ }));
 
@@ -73,7 +73,7 @@ describe('SedeModal — edicion', () => {
     abrir({ sede: SEDE });
 
     expect(screen.getByLabelText(/Nombre/)).toHaveValue('Sede Dalia');
-    expect(screen.getByLabelText(/Dirección/)).toHaveValue('Carrera 8 # 18-203');
+    expect(screen.getByLabelText('Dirección')).toHaveValue('Carrera 8 # 18-203');
     expect(screen.getByLabelText(/WhatsApp/)).toHaveValue('573206873870');
   });
 
@@ -82,7 +82,7 @@ describe('SedeModal — edicion', () => {
 
     // `direccion` es optional en el schema: sin el `|| ''` el input quedaria
     // no-controlado y React tiraria un warning.
-    expect(screen.getByLabelText(/Dirección/)).toHaveValue('');
+    expect(screen.getByLabelText('Dirección')).toHaveValue('');
   });
 
   test('muestra el switch de activa y refleja su estado', () => {
@@ -95,9 +95,76 @@ describe('SedeModal — edicion', () => {
     const usuario = userEvent.setup();
     const { onSave } = abrir({ sede: SEDE });
 
-    await usuario.clear(screen.getByLabelText(/Dirección/));
+    await usuario.clear(screen.getByLabelText('Dirección'));
     await usuario.click(screen.getByRole('button', { name: /Guardar cambios/ }));
 
     expect(onSave.mock.calls[0][0].direccion).toBe('');
+  });
+});
+
+describe('SedeModal — dirección de la carta (/menu/<slug>)', () => {
+  const DALIA = {
+    _id: 'sede_dalia',
+    nombre: 'Sede Dalia',
+    whatsapp: '573000000000',
+    slug: 'dalia',
+    activo: true,
+  };
+
+  const campoSlug = () => screen.queryByLabelText(/Dirección de la carta/);
+
+  test('en el ALTA no se pide: el servidor lo deriva del nombre', () => {
+    // Pedirlo antes de que la sede exista es pedirle al admin que invente una URL
+    // para algo que todavía no nombró.
+    abrir();
+
+    expect(campoSlug()).not.toBeInTheDocument();
+  });
+
+  test('al editar muestra el slug guardado', () => {
+    abrir({ sede: DALIA });
+
+    expect(campoSlug()).toHaveValue('dalia');
+  });
+
+  test('una sede SIN slug guardado muestra el derivado del nombre', () => {
+    // Hoy esa sede responde por su nombre: mostrar el campo vacío haría creer que
+    // no tiene dirección, y guardarlo así le cambiaría la URL por debajo.
+    abrir({ sede: { ...DALIA, slug: undefined } });
+
+    expect(campoSlug()).toHaveValue('sede-dalia');
+  });
+
+  test('avisa que cambiarlo rompe los QR ya impresos', () => {
+    // Es la consecuencia que el admin no puede adivinar: un sticker pegado en la
+    // pared no se arregla.
+    abrir({ sede: DALIA });
+
+    expect(screen.getByText(/stickers viejos dejan de servir/)).toBeInTheDocument();
+  });
+
+  test('marca el error cuando se escribe algo que no sirve en una URL', () => {
+    const usuario = userEvent.setup();
+    abrir({ sede: DALIA });
+
+    return usuario.type(campoSlug(), ' con espacio').then(() => {
+      expect(screen.getByText(/Solo minúsculas, números y guiones/)).toBeInTheDocument();
+    });
+  });
+
+  test('renombrar la sede NO cambia la dirección de la carta', () => {
+    // El punto de guardar el slug. Si se moviera con el nombre, renombrar mataría
+    // todos los QR repartidos.
+    const usuario = userEvent.setup();
+    const { onSave } = abrir({ sede: DALIA });
+
+    return usuario
+      .clear(screen.getByLabelText(/Nombre/))
+      .then(() => usuario.type(screen.getByLabelText(/Nombre/), 'Dalia Centro'))
+      .then(() => usuario.click(screen.getByRole('button', { name: /Guardar/ })))
+      .then(() => {
+        expect(onSave.mock.calls[0][0].nombre).toBe('Dalia Centro');
+        expect(onSave.mock.calls[0][0].slug).toBe('dalia');
+      });
   });
 });

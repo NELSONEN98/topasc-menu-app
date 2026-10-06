@@ -5,6 +5,7 @@ import { useNotificacion } from '../context/NotificacionContext';
 import { mensajeDeError } from '../utils/mensajeDeError';
 import { aNumero } from '../utils/numeroDeInput';
 import { normalizarWhatsapp } from '../utils/whatsapp';
+import { errorDeSlug } from '../utils/sedeSlug';
 
 const SIN_DATOS = [];
 
@@ -105,6 +106,18 @@ export const useSedesAdmin = () => {
       return;
     }
 
+    // Mismo criterio con el slug: el servidor es el que manda, pero en produccion
+    // Convex oculta sus mensajes, asi que el aviso util tiene que salir de aca.
+    // Solo se valida si el formulario lo trae: en el alta va vacio a proposito y
+    // el servidor lo deriva del nombre.
+    if (formData.slug) {
+      const errorSlug = errorDeSlug(formData.slug);
+      if (errorSlug) {
+        notificar.info(errorSlug);
+        return;
+      }
+    }
+
     /*
      * Vacio y cero son cosas distintas y no se pueden aplastar:
      *   ''  = "no lo configuro, usen el de respaldo"  -> undefined
@@ -137,6 +150,11 @@ export const useSedesAdmin = () => {
             // intacto. `null` es la señal explicita de borrado.
             costoDomicilio: costoDomicilio ?? null,
             activo: formData.activo,
+            // Va siempre al editar, incluso vacío: vaciarlo significa "volvé a
+            // derivarlo del nombre", y eso el servidor lo tiene que recalcular.
+            // Si no lo mandáramos, la sede quedaría con el slug viejo para
+            // siempre sin forma de resetearlo.
+            slug: formData.slug ?? '',
           },
         });
       } else {

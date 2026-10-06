@@ -318,6 +318,22 @@ export default defineSchema({
 
   sedes: defineTable({
     nombre: v.string(),
+    /**
+     * Pedacito de URL de la carta de esta sede: /menu/<slug>.
+     *
+     * Es un campo guardado y NO se deriva del nombre en cada render, y el motivo
+     * es concreto: esta URL se imprime en un QR y se pega en la pared. Si saliera
+     * del nombre, renombrar "Sede Dalia" a "Dalia Centro" cambiaria el slug y
+     * dejaria muertos todos los stickers ya impresos — y un sticker pegado no se
+     * arregla. Guardado, el nombre se puede cambiar cuantas veces se quiera sin
+     * tocar lo que ya se repartio.
+     *
+     * Optional por las sedes que ya estan en produccion. Ausente = se usa el
+     * nombre slugificado como respaldo (ver src/utils/sedeSlug.js), asi los links
+     * funcionan desde el dia uno sin tener que ir a completar nada. En cuanto una
+     * sede se guarda desde el panel, queda explicito.
+     */
+    slug: v.optional(v.string()),
     // Numero de WhatsApp al que llegan los pedidos de esta sede (sin +, sin
     // espacios). Por ahora las dos sedes usan el mismo numero de pruebas;
     // cuando cada local tenga el suyo, se edita aca sin tocar codigo.
