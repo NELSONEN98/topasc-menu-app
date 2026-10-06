@@ -7,6 +7,30 @@ import { mensajeDeError } from '../utils/mensajeDeError';
 const SIN_DATOS = [];
 
 /**
+ * Las variantes del formulario al shape que guarda el schema, o `null` para
+ * borrarlas.
+ *
+ * El admin las escribe separadas por comas ("6, 9, 12") porque una lista corta se
+ * tipea de un tirón; acá se parten. Se recortan y se sacan las vacías para que
+ * "6, 9, , 12" o una coma colgada al final no generen una opción en blanco que el
+ * cliente vería como un renglón vacío en el selector.
+ *
+ * `null` y no undefined: Convex omite los campos de objeto que valen undefined al
+ * serializar, así que undefined no llegaría como "borralas" sino como "no las
+ * menciones", y el patch dejaría las viejas intactas.
+ */
+const variantesDelForm = ({ varianteOpciones, varianteEtiqueta }) => {
+  const opciones = String(varianteOpciones ?? '')
+    .split(',')
+    .map((opcion) => opcion.trim())
+    .filter((opcion) => opcion !== '');
+
+  if (opciones.length === 0) return null;
+
+  return { etiqueta: String(varianteEtiqueta ?? '').trim(), opciones };
+};
+
+/**
  * Pestaña de Categorias. Consulta `listarTodas` (no `listar`) porque el admin
  * necesita ver tambien las inactivas para poder reactivarlas.
  */
@@ -112,6 +136,11 @@ export const useCategoriasAdmin = () => {
             // '' significa "no vende bebidas envasadas" y va como undefined, que
             // es lo que BORRA el campo en un patch de Convex.
             tipoBebida: formData.tipoBebida || undefined,
+            // `null` y no undefined para borrarlas: Convex omite los campos de
+            // objeto que valen undefined al serializar, así que vaciar el input no
+            // llegaría como "borralas" sino como "no las menciones", y las viejas
+            // quedarían intactas. Mismo problema que `costoDomicilio` en sedes.
+            variantes: variantesDelForm(formData),
             // Se borra el campo viejo en cada guardado: así toda categoría que se
             // toca deja de depender de él, y cuando no quede ninguna se puede
             // sacar del schema. Ver la nota en schema.ts.
@@ -126,6 +155,8 @@ export const useCategoriasAdmin = () => {
           esBebida: formData.esBebida,
           admiteLeche: formData.admiteLeche,
           tipoBebida: formData.tipoBebida || undefined,
+          // En el alta va undefined cuando no hay: no hay nada previo que borrar.
+          variantes: variantesDelForm(formData) ?? undefined,
         });
       }
 

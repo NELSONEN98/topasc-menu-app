@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './ProductDetailModal.css';
 import { useCart, SIN_SALSAS } from '../../context/CartContext';
-import { esCategoriaDeBebida } from '../../utils/categorias';
+import { esCategoriaDeBebida, variantesDeCategoria } from '../../utils/categorias';
 
 // Referencia estable para el fallback: un `[]` nuevo por render no sirve como
 // default de una prop.
@@ -126,6 +126,21 @@ export const ProductDetailModal = ({
    */
   const tamanoUnico = presentaciones.length === 1 ? presentaciones[0].tamano : null;
   const ofreceTamano = presentaciones.length > 1;
+
+  /*
+   * La pregunta sale de la CATEGORÍA, no está escrita acá.
+   *
+   * "¿Qué tamaño?" en una gaseosa y "¿Cuántas?" en unas alitas son la misma
+   * mecánica con dos preguntas distintas: preguntarle el tamaño a unas alitas no
+   * significa nada. Ver `variantesDeCategoria`.
+   *
+   * El respaldo cubre un producto cuya categoría no declara variantes pero que
+   * igual las tiene cargadas (quedó de antes, o le cambiaron la categoría): mejor
+   * una pregunta genérica que un título en blanco.
+   */
+  const pregunta =
+    variantesDeCategoria(categorias, product.categoriaId)?.etiqueta ??
+    'Elegí una opción';
 
   const tamanoElegido =
     presentaciones.find((p) => p.tamano === (tamano ?? tamanoUnico)) ?? null;
@@ -259,6 +274,14 @@ export const ProductDetailModal = ({
             ve de una todo lo que puede pedirle al mozo, sin tener que abrir nada.
           */}
           {soloLectura && presentaciones.length > 0 && (
+            <>
+            {/* La pregunta como título también en la carta: sin ella, una lista de
+                "6 / 9 / 12" con precios al lado no dice de qué está hablando. */}
+            {presentaciones.length > 1 && (
+              <div className="detail-section__header">
+                <span className="detail-section__title">{pregunta}</span>
+              </div>
+            )}
             <ul className="detail-lista-precios">
               {presentaciones.map((opcion) => (
                 <li key={opcion.tamano} className="detail-lista-precios__fila">
@@ -269,6 +292,7 @@ export const ProductDetailModal = ({
                 </li>
               ))}
             </ul>
+            </>
           )}
 
           {/* Mismo criterio para los jugos: en agua y en leche con su precio. */}
@@ -289,7 +313,7 @@ export const ProductDetailModal = ({
             <div className="detail-section">
               <div className="detail-section__header">
                 <label className="detail-section__title" htmlFor="detail-tamano">
-                  ¿Qué tamaño?
+                  {pregunta}
                 </label>
                 <span className="detail-section__badge detail-section__badge--required">
                   Obligatorio
@@ -316,7 +340,10 @@ export const ProductDetailModal = ({
                 value={tamano ?? ''}
                 onChange={(e) => setTamano(e.target.value || null)}
               >
-                <option value="">Elegí el tamaño</option>
+                {/* Genérico y NO la pregunta de arriba: repetir "¿Cuántas?" como
+                    primera opción del desplegable que ya tiene "¿Cuántas?" de
+                    título es decir dos veces lo mismo en dos renglones seguidos. */}
+                <option value="">Elegí una opción</option>
                 {presentaciones.map((opcion) => (
                   <option key={opcion.tamano} value={opcion.tamano}>
                     {opcion.tamano} — {formatPrice(opcion.precio)}
@@ -553,7 +580,10 @@ export const ProductDetailModal = ({
               {puedeAgregar
                 ? `Agregar · ${formatPrice(total)}`
                 : !tamanoResuelto
-                  ? 'Elegí el tamaño'
+                  // La misma pregunta de la categoría: el texto dice QUE falta, y
+                  // "Elegí el tamaño" en unas alitas mandaría a buscar un tamaño
+                  // que el producto no tiene.
+                  ? pregunta
                   : !preparacionResuelta
                     ? 'Elegí la preparación'
                     : 'Elegí una salsa'}

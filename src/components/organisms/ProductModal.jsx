@@ -7,6 +7,7 @@ import {
   esCategoriaDeBebida,
   esCategoriaConLeche,
   tipoBebidaDeItem,
+  variantesDeCategoria,
 } from '../../utils/categorias';
 import {
   TIPOS_BEBIDA,
@@ -192,8 +193,20 @@ export const ProductModal = ({
    * desincronice.
    */
   const tipoBebida = tipoBebidaDeItem(categorias, formData.categoriaId);
-  const tamanosDelTipo = tamanosDeTipo(tipoBebida);
-  const etiquetaDelTipo = TIPOS_BEBIDA[tipoBebida]?.etiqueta ?? 'Bebida envasada';
+  /*
+   * De acá salen las filas de precio, y viene de UN solo lugar: las variantes que
+   * el admin definió para la categoría, o el catálogo del tipo de bebida.
+   *
+   * Antes esto preguntaba `tipoBebida !== null`, y eso ataba el mecanismo a las
+   * bebidas: unas alitas x6/x12 son el mismo problema y no tenían por dónde
+   * entrar. Ver `variantesDeCategoria`.
+   */
+  const variantes = variantesDeCategoria(categorias, formData.categoriaId);
+  const tamanosDelTipo = variantes?.opciones ?? [];
+  // El título del bloque: "Gaseosa" / "Jugo envasado" cuando sale del catálogo de
+  // bebidas, y la pregunta de la categoría cuando la definió el admin.
+  const etiquetaDelTipo =
+    TIPOS_BEBIDA[tipoBebida]?.etiqueta ?? variantes?.etiqueta ?? 'Variantes';
 
   /**
    * El "desde $X" que va a mostrar la tarjeta: el más barato de los tamaños
@@ -309,10 +322,25 @@ export const ProductModal = ({
       // asi que vaciarlo es lo que lo apaga.
       const tipoNuevo = tipoBebidaDeItem(categorias, newValue);
       const tipoAnterior = tipoBebidaDeItem(categorias, prev.categoriaId);
-      // Los tamaños se conservan SOLO si el tipo no cambio: los de una gaseosa
-      // (250 ml a 2.5 lt) no existen en un agua (600 ml), asi que pasar de una a
-      // otra tiene que vaciarlos. Si no, quedarian precios guardados para tamaños
-      // que el formulario ya no muestra y que nadie podria ver ni borrar.
+
+      /*
+       * Los precios cargados se conservan SOLO si las variantes son las mismas.
+       *
+       * Se comparan las OPCIONES y no el tipo de bebida: con variantes genéricas,
+       * pasar de "Alitas" (6, 9, 12…) a "Picadas" (Personal, Mediana…) también
+       * cambia el juego de filas, y mirar solo el tipo de bebida —null en las dos—
+       * las daría por iguales. Quedarían precios guardados para variantes que el
+       * formulario ya no muestra y que nadie podría ver ni borrar.
+       */
+      const variantesNuevas = variantesDeCategoria(categorias, newValue);
+      const variantesViejas = variantesDeCategoria(categorias, prev.categoriaId);
+      const mismasVariantes =
+        variantesNuevas !== null &&
+        variantesViejas !== null &&
+        variantesNuevas.opciones.join('|') === variantesViejas.opciones.join('|');
+
+      // Marca y sabor son del catálogo de bebidas, así que siguen atados al tipo:
+      // un "Postobón / Manzana" no significa nada en una categoría de alitas.
       const mismoTipo = tipoNuevo !== null && tipoNuevo === tipoAnterior;
 
       return {
@@ -323,7 +351,7 @@ export const ProductModal = ({
         precioConLeche: admiteLeche ? prev.precioConLeche : '',
         marca: mismoTipo ? prev.marca : '',
         sabor: mismoTipo ? prev.sabor : '',
-        presentaciones: mismoTipo ? prev.presentaciones : {},
+        presentaciones: mismasVariantes ? prev.presentaciones : {},
       };
     });
   };
@@ -519,9 +547,10 @@ export const ProductModal = ({
             )}
           </fieldset>
 
-          {/* Solo en las categorías que venden bebidas envasadas. Un jugo natural
-              no viene envasado, y una salchipapa menos. */}
-          {tipoBebida !== null && (
+          {/* Solo en las categorías que venden en variantes: gaseosas por tamaño,
+              alitas por cantidad. Un jugo natural no tiene variantes y una
+              hamburguesa tampoco. */}
+          {variantes !== null && (
           <fieldset className="form-seccion">
             <legend className="form-seccion__titulo">{etiquetaDelTipo}</legend>
 

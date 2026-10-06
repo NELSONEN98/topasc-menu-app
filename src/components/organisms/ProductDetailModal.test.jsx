@@ -134,10 +134,13 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
   test('pide elegir el tamaño y bloquea el agregar', () => {
     abrir(POSTOBON);
 
-    expect(screen.getByText(/Qué tamaño/)).toBeInTheDocument();
+    // `getByLabelText` y no `getByText`: la pregunta es el label del desplegable, y
+    // buscarla como texto suelto ahora matchea también el título de la sección.
+    expect(selectorTamano()).toBeInTheDocument();
     // `product.precio` es el "desde" de la tarjeta, no el precio de ninguna
-    // presentación concreta: sin elegir no hay precio que cobrar.
-    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeDisabled();
+    // presentación concreta: sin elegir no hay precio que cobrar. El botón dice la
+    // pregunta de la categoría, así que en una gaseosa pide el tamaño.
+    expect(screen.getByRole('button', { name: /Qué tamaño/ })).toBeDisabled();
   });
 
   test('el precio se muestra como "desde" hasta que elige', () => {
@@ -185,7 +188,7 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     expect(screen.getByRole('button', { name: /Agregar/ })).toHaveTextContent('3.000');
   });
 
-  test('volver a "Elegí el tamaño" vuelve a bloquear el agregar', async () => {
+  test('des-elegir el tamaño vuelve a bloquear el agregar', async () => {
     // El desplegable permite des-elegir, los botones no: sin esto el cliente
     // podría dejarlo en blanco y agregar el producto sin tamaño.
     const usuario = userEvent.setup();
@@ -194,7 +197,7 @@ describe('ProductDetailModal — tamaño de la gaseosa', () => {
     await elegirTamano(usuario, '2.5 lt');
     await elegirTamano(usuario, '');
 
-    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Qué tamaño/ })).toBeDisabled();
   });
 
   test('un agua de un solo tamaño NO pregunta nada', () => {
@@ -384,7 +387,7 @@ describe('ProductDetailModal — carta de solo lectura (/menu)', () => {
     abrir(POSTOBON);
 
     expect(screen.getByLabelText(/Qué tamaño/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Elegí el tamaño/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Qué tamaño/ })).toBeInTheDocument();
   });
 });
 
@@ -487,5 +490,99 @@ describe('ProductDetailModal — las salsas se MUESTRAN en la carta', () => {
     expect(screen.queryAllByRole('checkbox').length).toBeGreaterThan(0);
     // Y no aparece la versión de lectura.
     expect(screen.queryByText(/Salsas a elección/)).not.toBeInTheDocument();
+  });
+});
+
+describe('ProductDetailModal — alitas: una entrada, el conteo al tocar', () => {
+  const CATS_ALITAS = [
+    ...CATEGORIAS,
+    {
+      _id: 'cat_alitas',
+      nombre: 'Alitas',
+      variantes: { etiqueta: '¿Cuántas?', opciones: ['6', '9', '12', '24', '36'] },
+    },
+  ];
+
+  const ALITAS_BBQ = {
+    _id: 'item_alitas',
+    nombre: 'Alitas BBQ',
+    categoriaId: 'cat_alitas',
+    precio: 22000,
+    presentaciones: [
+      { tamano: '6', precio: 22000 },
+      { tamano: '12', precio: 39000 },
+      { tamano: '36', precio: 95000 },
+    ],
+  };
+
+  const verAlitas = (props = {}) =>
+    abrir(ALITAS_BBQ, { categorias: CATS_ALITAS, ...props });
+
+  test('pregunta "¿Cuántas?" y NO "¿Qué tamaño?"', () => {
+    // Es el punto de que la pregunta viva en la categoría: preguntarle el tamaño a
+    // unas alitas no significa nada.
+    verAlitas();
+
+    expect(screen.getByLabelText(/Cuántas/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Qué tamaño/)).not.toBeInTheDocument();
+  });
+
+  test('ofrece los conteos que el local cargó, con su precio', () => {
+    verAlitas();
+
+    expect(screen.getByRole('option', { name: /^6 — /})).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /^36 — /})).toBeInTheDocument();
+    // El 9 y el 24 existen en la categoría pero este producto no les puso precio:
+    // no se venden y no llegan al cliente.
+    expect(screen.queryByRole('option', { name: /^9 — / })).not.toBeInTheDocument();
+  });
+
+  test('elegir un conteo cobra SU precio', async () => {
+    const usuario = userEvent.setup();
+    verAlitas();
+
+    await usuario.selectOptions(screen.getByLabelText(/Cuántas/), '12');
+    // La salsa también: unas alitas SÍ llevan salsa, así que sin elegirla el botón
+    // sigue bloqueado — y con razón. El conteo solo no alcanza para pedir.
+    await usuario.click(screen.getByRole('checkbox', { name: /Salsa Roja/ }));
+
+    const agregar = screen.getByRole('button', { name: /Agregar/ });
+    expect(agregar).toBeEnabled();
+    expect(agregar).toHaveTextContent('39.000');
+  });
+
+  test('el conteo NO reemplaza a la salsa: las dos son obligatorias', () => {
+    // Y el botón nombra primero el conteo, que es lo más arriba en la pantalla.
+    verAlitas();
+
+    expect(screen.getByRole('button', { name: /Cuántas/ })).toBeDisabled();
+    expect(screen.getByText(/Elegí tus salsas/)).toBeInTheDocument();
+  });
+
+  test('sin elegir, el botón dice qué falta en los términos de las alitas', () => {
+    // "Elegí el tamaño" mandaría a buscar un tamaño que el producto no tiene.
+    verAlitas();
+
+    expect(screen.getByRole('button', { name: /Cuántas/ })).toBeDisabled();
+  });
+
+  test('el precio de la tarjeta se muestra como "desde"', () => {
+    // 22.000 a secas con las de 36 en 95.000 sería mentirle al cliente.
+    verAlitas();
+
+    expect(screen.getByText(/desde/)).toBeInTheDocument();
+  });
+
+  test('en la carta de /menu los conteos se LEEN con su precio', () => {
+    // Mismo criterio que las gaseosas: en una carta eso es la información, no un
+    // paso del pedido.
+    verAlitas({ soloLectura: true });
+
+    expect(screen.queryByLabelText(/Cuántas/)).not.toBeInTheDocument();
+    // La pregunta queda como título de la lista, o "6 ... $22.000" no diría de qué
+    // está hablando.
+    expect(screen.getByText('¿Cuántas?')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText(/95\.000/)).toBeInTheDocument();
   });
 });

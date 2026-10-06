@@ -1,3 +1,5 @@
+import { tamanosDeTipo } from '../config/bebidas';
+
 /*
  * Que categorias cuentan como "bebida". Decide dos cosas:
  *   - el boton "¿Desea agregar bebida?" del carrito ofrece estos productos
@@ -150,3 +152,44 @@ export const tipoBebidaDeItem = (categorias, categoriaId) =>
  */
 export const esCategoriaEnvasada = (categorias, categoriaId) =>
   tipoBebidaDeItem(categorias, categoriaId) !== null;
+
+// Respaldo por si una categoria quedo con opciones y sin pregunta: mejor una
+// pregunta generica que un titulo en blanco arriba del selector.
+const ETIQUETA_POR_DEFECTO = 'Elegí una opción';
+
+/*
+ * Las variantes en que se vende un producto, de donde sea que vengan.
+ *
+ * Es el UNICO lugar que responde "¿este producto se vende en variantes y cuales?".
+ * Antes esa pregunta se hacia con `tipoBebidaDeItem(...) !== null` desparramado por
+ * el formulario y el detalle, y eso ataba el mecanismo a las bebidas: las alitas
+ * x6/x12 son exactamente el mismo problema y no tenian por donde entrar.
+ *
+ * Dos fuentes, en este orden:
+ *   1. `categoria.variantes` — lo que el admin definio a mano para esta categoria.
+ *   2. el catalogo del tipo de bebida envasada (gaseosa, agua, cerveza...).
+ *
+ * Lo explicito gana: si alguien se tomo el trabajo de escribir las variantes de
+ * ESTA categoria, es mas especifico que un catalogo generico por tipo.
+ *
+ * Devuelve `{ etiqueta, opciones }` o null. La etiqueta es la pregunta que ve el
+ * cliente, y por eso viaja junto a las opciones: "¿Qué tamaño?" en una gaseosa y
+ * "¿Cuántas?" en unas alitas son la misma mecanica con dos preguntas distintas, y
+ * preguntarle el tamaño a unas alitas no significa nada.
+ */
+export const variantesDeCategoria = (categorias, categoriaId) => {
+  const categoria = categorias.find((c) => c._id === categoriaId);
+  if (!categoria) return null;
+
+  const propias = categoria.variantes;
+  if (propias?.opciones?.length) {
+    return {
+      etiqueta: propias.etiqueta?.trim() || ETIQUETA_POR_DEFECTO,
+      opciones: propias.opciones,
+    };
+  }
+
+  const opciones = tamanosDeTipo(tipoBebidaDeCategoria(categoria));
+
+  return opciones.length > 0 ? { etiqueta: '¿Qué tamaño?', opciones } : null;
+};

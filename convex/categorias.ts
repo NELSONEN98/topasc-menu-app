@@ -50,6 +50,33 @@ const nombreRepetido = async (
   );
 };
 
+/**
+ * Normaliza las variantes de una categoria: recorta, saca las vacias y los
+ * repetidos, y devuelve `undefined` si no queda ninguna.
+ *
+ * `undefined` es lo que BORRA el campo en un patch, y es lo correcto cuando la
+ * lista queda vacia: una categoria con `opciones: []` mostraria el bloque de
+ * variantes vacio en el formulario del producto, y el cliente veria un selector
+ * sin nada para elegir.
+ *
+ * Los repetidos se sacan porque dos filas con el mismo nombre dejan al admin
+ * cargando dos precios para la misma variante, y al cliente eligiendo entre dos
+ * opciones identicas.
+ */
+const limpiarVariantes = (
+  variantes?: { etiqueta: string; opciones: string[] } | null
+) => {
+  if (!variantes) return undefined;
+
+  const opciones = [
+    ...new Set(variantes.opciones.map((o) => o.trim()).filter((o) => o !== "")),
+  ];
+
+  if (opciones.length === 0) return undefined;
+
+  return { etiqueta: variantes.etiqueta.trim(), opciones };
+};
+
 export const crear = mutation({
   args: {
     nombre: v.string(),
@@ -65,6 +92,9 @@ export const crear = mutation({
         v.literal("agua"),
         v.literal("cerveza")
       )
+    ),
+    variantes: v.optional(
+      v.object({ etiqueta: v.string(), opciones: v.array(v.string()) })
     ),
   },
   handler: async (ctx, args) => {
@@ -86,6 +116,7 @@ export const crear = mutation({
       esBebida: args.esBebida,
       admiteLeche: args.admiteLeche,
       tipoBebida: args.tipoBebida,
+      variantes: limpiarVariantes(args.variantes),
     });
   },
 });
@@ -107,6 +138,19 @@ export const actualizar = mutation({
           v.literal("cerveza")
         )
       ),
+      /*
+       * `null` y no `undefined` para borrarlas: Convex OMITE los campos de objeto
+       * que valen undefined al serializar, asi que mandar `variantes: undefined`
+       * para sacarlas no llega como "borralas", llega como "no las menciones" y el
+       * patch deja las viejas intactas. Mismo problema y misma solucion que
+       * `costoDomicilio` en sedes.ts.
+       */
+      variantes: v.optional(
+        v.union(
+          v.object({ etiqueta: v.string(), opciones: v.array(v.string()) }),
+          v.null()
+        )
+      ),
       // Se acepta para poder LIMPIARLO: el formulario manda false y asi la
       // categoria deja de depender del campo viejo. Ver la nota en schema.ts.
       esGaseosa: v.optional(v.boolean()),
@@ -125,6 +169,13 @@ export const actualizar = mutation({
         throw new Error(`Ya existe una categoria llamada "${nombre}"`);
       }
       campos = { ...campos, nombre };
+    }
+
+    // `null` (borralas) -> undefined, que es lo que hace que el patch elimine el
+    // campo. Una lista que queda sin opciones tambien se borra: una categoria con
+    // `opciones: []` mostraria el bloque de variantes vacio en el formulario.
+    if (campos.variantes !== undefined) {
+      campos = { ...campos, variantes: limpiarVariantes(campos.variantes) } as typeof campos;
     }
 
     await ctx.db.patch(id, campos);

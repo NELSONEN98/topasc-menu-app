@@ -25,6 +25,16 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
     admiteLeche: false,
     // '' = esta categoria no vende bebidas envasadas.
     tipoBebida: '',
+    /*
+     * Las variantes en que se venden los productos de esta categoria: la pregunta
+     * que ve el cliente ("¿Cuántas?") y las opciones.
+     *
+     * Las opciones van como texto separado por comas y no como un editor de filas:
+     * cargar "6, 9, 12, 24, 36" de un tiron es mucho mas rapido que apretar
+     * "agregar" cinco veces, y es una lista corta que se escribe de memoria.
+     */
+    varianteEtiqueta: '',
+    varianteOpciones: '',
   });
 
   useEffect(() => {
@@ -41,6 +51,8 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         esBebida: categoriaEsBebida(categoria),
         admiteLeche: categoriaAdmiteLeche(categoria),
         tipoBebida: tipoBebidaDeCategoria(categoria) ?? '',
+        varianteEtiqueta: categoria.variantes?.etiqueta ?? '',
+        varianteOpciones: (categoria.variantes?.opciones ?? []).join(', '),
       });
     } else {
       setFormData({
@@ -49,6 +61,8 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
         esBebida: false,
         admiteLeche: false,
         tipoBebida: '',
+        varianteEtiqueta: '',
+        varianteOpciones: '',
       });
     }
     // Mismo criterio que ProductModal: solo al abrir o al cambiar de
@@ -168,6 +182,61 @@ export const CategoriaModal = ({ isOpen, onClose, categoria, onSave }) => {
               en el local: esos usan el precio con leche de arriba.
             </small>
           </div>
+
+          {/*
+            Solo cuando NO es bebida envasada: ahí las variantes ya salen del
+            catálogo del tipo (250 ml, 1.5 lt...) y dejar los dos a la vista sería
+            ofrecer dos formas de definir lo mismo.
+
+            Es el mecanismo para las alitas x6/x12, las picadas Personal/Familiar y
+            cualquier cosa que hoy esté cargada como cinco productos distintos.
+          */}
+          {!formData.tipoBebida && (
+            <>
+              <div className="form-group">
+                <label htmlFor="categoria-varianteOpciones">Se vende en variantes</label>
+                <input
+                  id="categoria-varianteOpciones"
+                  type="text"
+                  name="varianteOpciones"
+                  value={formData.varianteOpciones}
+                  onChange={handleChange}
+                  placeholder="Ej: 6, 9, 12, 24, 36"
+                />
+                <small className="form-ayuda">
+                  Separadas por comas. Al cargar un producto de esta categoría vas a
+                  ponerle <strong>un precio a cada una</strong>, y el cliente elige al
+                  pedir. Así las alitas son <strong>un</strong> producto con cinco
+                  precios en vez de cinco productos. Dejalo vacío si cada producto
+                  tiene un solo precio.
+                </small>
+              </div>
+
+              {/* Solo tiene sentido si hay variantes: sin opciones, una pregunta
+                  suelta no se le muestra a nadie. */}
+              {formData.varianteOpciones.trim() !== '' && (
+                <div className="form-group">
+                  <label htmlFor="categoria-varianteEtiqueta">
+                    Qué se le pregunta al cliente
+                  </label>
+                  <input
+                    id="categoria-varianteEtiqueta"
+                    type="text"
+                    name="varianteEtiqueta"
+                    value={formData.varianteEtiqueta}
+                    onChange={handleChange}
+                    placeholder="Ej: ¿Cuántas?"
+                  />
+                  <small className="form-ayuda">
+                    Es el título que ve el cliente arriba de las opciones. En unas alitas
+                    va <strong>"¿Cuántas?"</strong>; en una picada,{' '}
+                    <strong>"¿Qué tamaño?"</strong>. Preguntarle el tamaño a unas alitas
+                    no significa nada.
+                  </small>
+                </div>
+              )}
+            </>
+          )}
 
           <div className="modal-actions">
             <button type="button" className="btn-cancel" onClick={onClose}>

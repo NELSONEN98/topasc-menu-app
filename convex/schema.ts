@@ -86,6 +86,37 @@ export default defineSchema({
         v.literal("cerveza")
       )
     ),
+    /**
+     * Las variantes en que se venden los productos de esta categoria, con la
+     * pregunta que se le hace al cliente.
+     *
+     * Ejemplo (Alitas):  { etiqueta: "¿Cuántas?",
+     *                      opciones: ["6", "9", "12", "24", "36"] }
+     *
+     * POR QUE EXISTE: ya habia un mecanismo para "un producto, varias variantes
+     * con su precio" — `items.presentaciones`, que usan las gaseosas. El problema
+     * no era el mecanismo sino el CANDADO: el formulario solo mostraba ese bloque
+     * para categorias de bebida envasada, y las filas salian de un catalogo fijo
+     * por tipo de bebida. Esto generaliza el candado en vez de duplicar todo el
+     * camino (detalle -> carrito -> pedido -> WhatsApp) para un segundo campo.
+     *
+     * Vive en la CATEGORIA y no en el codigo porque los conteos son del negocio:
+     * las alitas van de 6 a 36 hoy y pueden cambiar mañana, y el local no deberia
+     * necesitar un deploy para agregar "x18". Se define una vez por categoria y
+     * cada producto solo llena precios.
+     *
+     * Gana sobre `tipoBebida` cuando las dos cosas estan: es el dato mas
+     * especifico, y lo escribio alguien a mano para ESTA categoria.
+     *
+     * Optional: las categorias que ya existen no lo tienen, y sus productos
+     * siguen con precio unico como hasta ahora.
+     */
+    variantes: v.optional(
+      v.object({
+        etiqueta: v.string(),
+        opciones: v.array(v.string()),
+      })
+    ),
     // El indice es lo que hace que `orden` ordene de verdad.
     //
     // Convex ordena SIEMPRE por el indice que se este recorriendo, y sin

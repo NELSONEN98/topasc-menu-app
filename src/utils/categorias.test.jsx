@@ -7,6 +7,7 @@ import {
   tipoBebidaDeCategoria,
   categoriaEsBebida,
   categoriaAdmiteLeche,
+  variantesDeCategoria,
 } from './categorias';
 
 const CATEGORIAS = [
@@ -221,5 +222,80 @@ describe('jugo envasado vs jugo natural — la confusion mas peligrosa', () => {
     expect(tipoBebidaDeCategoria({ nombre: 'Jugos Hit', tipoBebida: 'jugo-envasado' })).toBe(
       'jugo-envasado'
     );
+  });
+});
+
+describe('variantesDeCategoria — un solo camino para gaseosas y alitas', () => {
+  const ALITAS = {
+    _id: 'cat_alitas',
+    nombre: 'Alitas',
+    variantes: { etiqueta: '¿Cuántas?', opciones: ['6', '9', '12', '24', '36'] },
+  };
+  const PICADAS = {
+    _id: 'cat_picadas',
+    nombre: 'Picadas',
+    variantes: { etiqueta: '¿Qué tamaño?', opciones: ['Personal', 'Mediana', 'Familiar'] },
+  };
+  const CON_VARIANTES = [...CATEGORIAS, ALITAS, PICADAS];
+
+  test('las alitas se venden por cantidad, con SU pregunta', () => {
+    // El caso que lo motivó: 5 productos "Alitas BBQ x6/x9/x12/x24/x36" que son
+    // UN producto con cinco precios.
+    expect(variantesDeCategoria(CON_VARIANTES, 'cat_alitas')).toEqual({
+      etiqueta: '¿Cuántas?',
+      opciones: ['6', '9', '12', '24', '36'],
+    });
+  });
+
+  test('una gaseosa saca sus variantes del catálogo de bebidas', () => {
+    // El mismo mecanismo, otra fuente: es el punto de tener una sola función.
+    const variantes = variantesDeCategoria(CATEGORIAS, 'cat_gaseosa');
+
+    expect(variantes.etiqueta).toBe('¿Qué tamaño?');
+    expect(variantes.opciones).toContain('250 ml');
+    expect(variantes.opciones).toContain('2.5 lt');
+  });
+
+  test('preguntarle el tamaño a unas alitas no significa nada', () => {
+    // Por eso la etiqueta viaja con las opciones y no está escrita en el detalle.
+    expect(variantesDeCategoria(CON_VARIANTES, 'cat_alitas').etiqueta).not.toMatch(
+      /tamaño/
+    );
+    expect(variantesDeCategoria(CON_VARIANTES, 'cat_picadas').etiqueta).toMatch(/tamaño/);
+  });
+
+  test('lo explícito de la categoría GANA sobre el catálogo de bebidas', () => {
+    // Si alguien se tomó el trabajo de escribir las variantes de esta categoría,
+    // es más específico que un catálogo genérico por tipo.
+    const raraRara = {
+      _id: 'cat_rara',
+      nombre: 'Gaseosas',
+      variantes: { etiqueta: '¿Cuántas?', opciones: ['1', '6'] },
+    };
+
+    expect(variantesDeCategoria([raraRara], 'cat_rara').opciones).toEqual(['1', '6']);
+  });
+
+  test('una categoría sin variantes ni bebida devuelve null', () => {
+    // Una hamburguesa tiene un precio y punto: el bloque no se dibuja.
+    expect(variantesDeCategoria(CATEGORIAS, 'cat_comida')).toBe(null);
+  });
+
+  test('una lista de opciones vacía cuenta como sin variantes', () => {
+    // Si no, el formulario mostraría el bloque vacío y el cliente un selector sin
+    // nada para elegir.
+    const vacia = { _id: 'c', nombre: 'X', variantes: { etiqueta: '¿Cuántas?', opciones: [] } };
+
+    expect(variantesDeCategoria([vacia], 'c')).toBe(null);
+  });
+
+  test('variantes sin pregunta caen a una genérica, no a un título en blanco', () => {
+    const sinEtiqueta = { _id: 'c', nombre: 'X', variantes: { etiqueta: '  ', opciones: ['6'] } };
+
+    expect(variantesDeCategoria([sinEtiqueta], 'c').etiqueta).toBe('Elegí una opción');
+  });
+
+  test('una categoría que no existe devuelve null', () => {
+    expect(variantesDeCategoria(CON_VARIANTES, 'cat_inexistente')).toBe(null);
   });
 });
