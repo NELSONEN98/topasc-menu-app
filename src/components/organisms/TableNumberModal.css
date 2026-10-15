@@ -8,19 +8,48 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Para que el modal nunca toque los bordes de la pantalla, y para que en un
+     celular muy chico quede aire donde agarrar el scroll. */
+  padding: 1rem;
+  /* Red de seguridad: si por lo que sea el contenido excede su propio
+     max-height, el overlay igual deja llegar al final en vez de cortarlo. */
+  overflow-y: auto;
   z-index: 3000;
   animation: fadeIn 0.3s ease-out;
 }
 
+/*
+  El modal NO puede crecer mas que la pantalla.
+
+  Antes no tenia ni max-height ni overflow: con el formulario de domicilio
+  completo —nombre, telefono, direccion, referencia, las tres sedes y el metodo de
+  pago— en un celular se cortaba arriba y abajo, y no habia forma de scrollear
+  hasta el boton de confirmar. El pedido quedaba imposible de terminar.
+
+  `dvh` y no `vh`: en el navegador de un celular `100vh` incluye el alto que ocupa
+  la barra de direcciones, que se colapsa al scrollear. Con `vh` el modal queda mas
+  alto que el area visible y el final se esconde DETRAS de la barra — justo el
+  sintoma que se estaba viendo. `dvh` mide el viewport real. El `vh` de arriba
+  queda como respaldo para navegadores viejos que no conocen `dvh`.
+*/
 .table-modal-content {
   background: #fff;
   border-radius: 1.5rem;
-  width: 90%;
+  width: 100%;
   max-width: 20rem;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  overflow-y: auto;
+  /* Al llegar al final del modal el gesto no se pasa a la pagina de atras, que
+     es lo que hace que el menu se mueva debajo mientras uno llena el form. */
+  overscroll-behavior: contain;
+  /* iOS necesita esto para que el scroll dentro de un elemento se sienta nativo
+     y no se trabe a mitad de camino. */
+  -webkit-overflow-scrolling: touch;
   animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
 }
@@ -78,9 +107,33 @@
   color: #ccc;
 }
 
+/*
+  Los botones quedan pegados abajo mientras el formulario scrollea.
+
+  En el modal de domicilio el form es largo, y con los botones al final del scroll
+  el cliente llena todo y despues tiene que seguir scrolleando para encontrar el
+  "Confirmar" — justo cuando ya quiere terminar. Asi lo tiene siempre a la vista.
+
+  `sticky` y no `fixed`: en los modales cortos (el de la mesa es un solo input) no
+  hay scroll, asi que sticky se comporta como una posicion normal y no cambia nada.
+  Un `fixed` los sacaria de la tarjeta.
+
+  El fondo y el padding negativo son para que el contenido que pasa por debajo no
+  se vea asomando entre los botones y el borde de la tarjeta.
+*/
 .table-modal-actions {
   display: flex;
   gap: 0.75rem;
+  position: sticky;
+  bottom: -2rem;
+  margin: 0 -2rem -2rem;
+  /* Sin padding ARRIBA: el modal ya separa sus bloques con `gap: 1.5rem`, y
+     sumarle padding aqui agregaria aire que antes no habia — se notaria en los
+     modales cortos, como el de la mesa, que tienen un solo campo y no scrollean.
+     El fondo opaco alcanza para que el contenido que pasa por debajo corte limpio
+     en el borde de los botones. */
+  padding: 0 2rem 2rem;
+  background: #fff;
 }
 
 .table-modal-btn {
