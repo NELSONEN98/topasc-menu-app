@@ -37,10 +37,24 @@ import './styles/global.css';
 // Una mesa sin sede —las que se crearon antes de que existiera el campo—
 // arranca en null, igual que antes: menu completo y numero de respaldo. Se
 // arregla asignandole la sede desde la pestana Mesas del panel.
-const ClientApp = ({ mesa = null }) => {
+/*
+ * `tipoInicial`: entra directo a ese tipo de pedido y se saltea la pantalla de
+ * eleccion. Lo usa /domicilios, el link que se comparte para pedir a domicilio.
+ *
+ * Se resuelve con una prop de ESTE componente y no con otro aparte —como se hizo
+ * con /menu— porque es el caso inverso: aca aplica TODA la maquina de estados del
+ * pedido (carrito, checkout, direccion, WhatsApp). Un componente nuevo tendria que
+ * duplicarla entera.
+ */
+// Se exporta para poder testear las entradas directas (/domicilios, el QR de una
+// mesa) sin montar el router, Clerk y el panel entero. No se usa desde ningun otro
+// lugar de la app.
+export const ClientApp = ({ mesa = null, tipoInicial = null }) => {
   const { clearCart } = useCart();
   const navegar = useNavigate();
   const lockedToTable = !!mesa;
+  // Entro por un link que ya dice que tipo de pedido es: no hay nada que elegir.
+  const tipoFijo = !!tipoInicial;
   const [showSplash, setSplash] = useState(!lockedToTable);
   /*
    * Arranca en el tipo de orden, NO en elegir sede.
@@ -57,10 +71,12 @@ const ClientApp = ({ mesa = null }) => {
    * sede no puede preparar lo que el cliente armo.
    */
   const [currentPage, setCurrentPage] = useState(
-    lockedToTable ? 'home' : 'order-type'
+    lockedToTable || tipoFijo ? 'home' : 'order-type'
   );
   const [sede, setSede] = useState(mesa?.sede ?? null);
-  const [orderType, setOrderType] = useState(lockedToTable ? 'dine-in' : null);
+  const [orderType, setOrderType] = useState(
+    lockedToTable ? 'dine-in' : tipoInicial
+  );
 
   const handleSelectType = (type) => {
     clearCart();
@@ -99,7 +115,13 @@ const ClientApp = ({ mesa = null }) => {
         ) : currentPage === 'home' ? (
           <Home
             onNavigateToCart={() => setCurrentPage('cart')}
-            onNavigateBack={lockedToTable ? undefined : handleNavigateBack}
+            // Sin botón de volver cuando el tipo viene dado: por el QR de una mesa
+            // o por el link de /domicilios. No hay pantalla anterior a la que
+            // regresar, y un botón que te saca del flujo que el link prometía es
+            // peor que no tenerlo. Mismo criterio que la entrada por QR.
+            onNavigateBack={
+              lockedToTable || tipoFijo ? undefined : handleNavigateBack
+            }
             orderType={orderType}
             mesa={mesa}
             sede={sede}
@@ -107,7 +129,13 @@ const ClientApp = ({ mesa = null }) => {
         ) : (
           <Cart
             onNavigateToHome={() => setCurrentPage('home')}
-            onNavigateBack={lockedToTable ? undefined : handleNavigateBack}
+            // Sin botón de volver cuando el tipo viene dado: por el QR de una mesa
+            // o por el link de /domicilios. No hay pantalla anterior a la que
+            // regresar, y un botón que te saca del flujo que el link prometía es
+            // peor que no tenerlo. Mismo criterio que la entrada por QR.
+            onNavigateBack={
+              lockedToTable || tipoFijo ? undefined : handleNavigateBack
+            }
             orderType={orderType}
             mesa={mesa}
             sede={sede}
@@ -328,6 +356,21 @@ export const App = () => {
         <CartProvider>
           <Routes>
             <Route path="/" element={<ClientApp />} />
+            {/*
+              Link para compartir: entra directo a pedir a domicilio, sin pasar por
+              la pantalla de "¿Cómo prefieres tu orden?".
+
+              La sede NO va en la ruta a propósito, al revés que en /menu: en
+              domicilio se elige al final, en el modal de dirección, porque de ella
+              salen el costo del envío y el WhatsApp de destino. Un /domicilios/dalia
+              estaría eligiendo por el cliente antes de que vea un solo producto.
+
+              El singular es un alias: en un link que se dicta o se escribe a mano,
+              comerse la "s" es lo más probable que pase.
+            */}
+            <Route path="/domicilios" element={<ClientApp tipoInicial="delivery" />} />
+            <Route path="/domicilio" element={<ClientApp tipoInicial="delivery" />} />
+
             {/* Carta de solo lectura: se lee y se pide en el local.
                 /menu          -> pide elegir la sede
                 /menu/:slug    -> la carta de ESA sede, lista para compartir */}
